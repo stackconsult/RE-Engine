@@ -1,0 +1,238 @@
+{
+  "Phase 1: Critical Infrastructure": {
+    "priority": "P0 - Must complete before Phase 2",
+    "steps": [
+      {
+        "step": "1. Error Handling & Retry Logic",
+        "actions": [
+          "Create failed_sends.csv with schema: id, original_approval_id, channel, target, message, error_code, error_msg, retry_count, max_retries, next_retry_at, failed_at",
+          "Create retry_failed_sends.py with exponential backoff (5min, 15min, 1hr, 4hr, 24hr)",
+          "Update send_approved_router.py to catch exceptions and write to failed_sends.csv",
+          "Create dead_letter.csv for permanently failed items after max retries"
+        ],
+        "integration": [
+          "Hook into OpenClaw channel error codes",
+          "Add cron: openclaw cron add 'retry-failed' '*/15 * * * *' 'cd $WORKSPACE/realestate-engine/scripts && python3 retry_failed_sends.py'"
+        ]
+      },
+      {
+        "step": "2. Rate Limiting & Throttling",
+        "actions": [
+          "Create config/rate_limits.json with per-channel quotas",
+          "Create send_window.csv to track sends per channel per hour/day",
+          "Create rate_limiter.py utility in scripts/utils/",
+          "Update send_approved_router.py to check rate limits before sending",
+          "Implement queue prioritization (hot replies > regular outbound)"
+        ],
+        "config": {
+          "whatsapp": {
+            "per_hour": 20,
+            "per_day": 150,
+            "min_delay_seconds": 180
+          },
+          "telegram": {
+            "per_hour": 30,
+            "per_day": 200,
+            "min_delay_seconds": 120
+          },
+          "email": {
+            "per_hour": 50,
+            "per_day": 500,
+            "min_delay_seconds": 30
+          },
+          "linkedin": {
+            "per_hour": 5,
+            "per_day": 25,
+            "min_delay_seconds": 600
+          }
+        }
+      },
+      {
+        "step": "3. DNC Enforcement",
+        "actions": [
+          "Expand dnc.csv schema: phone, email, reason, added_by, added_at, source (manual|complaint|legal), notes",
+          "Create check_dnc.py utility function in scripts/utils/",
+          "Update ALL draft generation scripts to import check_dnc and filter before creating approvals",
+          "Create add_to_dnc.py CLI tool for manual additions",
+          "Create dnc_reconcile.py to dedupe and validate DNC list"
+        ],
+        "integration": [
+          "Import check_dnc in every draft generation script",
+          "Add /add_dnc <identifier> <reason> WebChat command",
+          "Log all DNC blocks to events.csv"
+        ]
+      }
+    ]
+  },
+  "Phase 2: Observability & Metrics": {
+    "priority": "P0 - Must complete before Phase 3",
+    "prerequisites": "Complete Phase 1 Steps 1-3",
+    "steps": [
+      {
+        "step": "4. Events Schema & Logging",
+        "actions": [
+          "Finalize events.csv schema: event_id, timestamp, event_type, channel, lead_id, approval_id, status, metadata_json, user_id",
+          "Create log_event.py centralized logging utility in scripts/utils/",
+          "Define 12 event types: draft_created, approved, sent, delivered, bounced, replied, clicked, opted_out, dnc_added, etc.",
+          "Create events_daily_summary.csv for rollup stats"
+        ],
+        "event_types": [
+          "draft_created",
+          "draft_approved",
+          "draft_rejected",
+          "message_sent",
+          "message_delivered",
+          "message_bounced",
+          "message_failed",
+          "reply_received",
+          "hot_reply_detected",
+          "dnc_added",
+          "opt_out_received",
+          "link_clicked"
+        ]
+      },
+      {
+        "step": "5. Metrics Dashboard Data",
+        "actions": [
+          "Create metrics.py script to generate daily statistics",
+          "Output metrics.json with: sends_by_channel, approval_rate, delivery_rate, reply_rate, bounce_rate, dnc_count, backlog_count",
+          "Create metrics_history.csv for time-series tracking",
+          "Add cron: openclaw cron add 'daily-metrics' '0 23 * * *' 'cd $WORKSPACE/realestate-engine/scripts && python3 metrics.py'"
+        ]
+      },
+      {
+        "step": "6. Alerting System",
+        "actions": [
+          "Create alerts.py to check metric thresholds",
+          "Define alert conditions: bounce_rate > 10%, failed_sends > 50, backlog > 200, dnc_violations detected",
+          "Configure alerts to send via OpenClaw to your admin WhatsApp/Telegram",
+          "Create alerts_log.csv for alert history",
+          "Add cron: openclaw cron add 'hourly-alerts' '0 * * * *' 'cd $WORKSPACE/realestate-engine/scripts && python3 alerts.py'"
+        ]
+      }
+    ]
+  },
+  "Phase 3: Compliance & Audit Trail": {
+    "priority": "P1 - Must complete before production use",
+    "prerequisites": "Complete Phase 2 Steps 4-6",
+    "steps": [
+      {
+        "step": "7. Approval Audit Trail",
+        "actions": [
+          "Add columns to approvals.csv: approved_by, approved_at, approval_method (webchat|api|cli)",
+          "Create approvals_archive.csv for historical record of sent/rejected items",
+          "Create approval_changes.csv to log edits/modifications before approval",
+          "Create audit_report.py to generate compliance reports for legal/audit requests"
+        ]
+      },
+      {
+        "step": "8. Data Retention & Backup",
+        "actions": [
+          "Create backup_csvs.sh to tar.gz all CSVs with timestamp",
+          "Configure backup storage in $WORKSPACE/realestate-engine/backups/",
+          "Set retention policy: 7 days local, optional 90 days cloud",
+          "Create restore_from_backup.sh for disaster recovery",
+          "Add cron: openclaw cron add 'daily-backup' '0 2 * * *' 'cd $WORKSPACE/realestate-engine && bash scripts/backup_csvs.sh'"
+        ]
+      },
+      {
+        "step": "9. Opt-Out/Unsubscribe Flow",
+        "actions": [
+          "Add unsubscribe links to all email templates (legal requirement)",
+          "Create opt_out_handler.py to process opt-out requests",
+          "Configure auto-add opt-outs to dnc.csv with source=opt_out",
+          "Create opt_out_log.csv separate from DNC for compliance reporting",
+          "Update IMAP polling to detect 'STOP', 'UNSUBSCRIBE', 'REMOVE' keywords",
+          "Add /optout <identifier> WebChat command for manual opt-outs"
+        ]
+      },
+      {
+        "step": "10. GDPR/CCPA Compliance Tools",
+        "actions": [
+          "Create data_export.py to export all data for a contact (right to access)",
+          "Create data_delete.py to purge contact from all CSVs (right to be forgotten)",
+          "Create consent_log.csv to track when/how consent was obtained",
+          "Create compliance_report.py for legal/regulatory audit requests"
+        ]
+      }
+    ]
+  },
+  "Phase 4: LinkedIn/Facebook Semi-Auto": {
+    "priority": "P2 - Optional enhancement",
+    "prerequisites": "Complete Phase 1-3",
+    "steps": [
+      {
+        "step": "11. Browser Automation Setup",
+        "actions": [
+          "Document exact OpenClaw browser profile setup procedure",
+          "Create linkedin_open_draft.py to open LinkedIn message composer with pre-filled text",
+          "Create facebook_open_draft.py for FB Messenger pre-fill",
+          "Add browser action tracking to events.csv",
+          "Document manual Send click requirement (cannot be automated safely)"
+        ]
+      },
+      {
+        "step": "12. Manual Send Confirmation",
+        "actions": [
+          "Create /mark_sent <approval_id> WebChat command",
+          "Create manual_sends_pending.csv for items awaiting confirmation",
+          "Add alert if pending manual sends > 10 (bottleneck warning)",
+          "Document this as known limitation in README"
+        ]
+      }
+    ]
+  },
+  "Phase 5: Documentation & Testing": {
+    "priority": "P1 - Must complete before production",
+    "prerequisites": "Complete Phase 1-4",
+    "steps": [
+      {
+        "step": "13. Complete README.md",
+        "sections": [
+          "Section 0: Safety & Secrets (enhance existing)",
+          "Section 1: Install OpenClaw (enhance existing)",
+          "Section 2: Folder Structure & CSV Schemas (NEW - detailed tables)",
+          "Section 3: Secrets & Environment Variables (NEW)",
+          "Section 4: Scripts Reference (NEW - what each script does)",
+          "Section 5: Cron Jobs Complete Reference (UPDATE with all 10 crons)",
+          "Section 6: Observability & Metrics (NEW)",
+          "Section 7: Compliance & DNC (NEW)",
+          "Section 8: Error Handling & Troubleshooting (NEW)",
+          "Section 9: Backup & Disaster Recovery (NEW)",
+          "Section 10: Upgrade Path to Postgres/Neon (keep existing)"
+        ]
+      },
+      {
+        "step": "14. Cron Jobs Master Reference",
+        "actions": [
+          "Document all 10 openclaw cron add commands in README Section 5",
+          "Include frequency, script path, and purpose for each cron",
+          "Create cron dependency graph showing execution order",
+          "Create install_crons.sh script to install all crons at once"
+        ]
+      },
+      {
+        "step": "15. Testing & Validation Suite",
+        "actions": [
+          "Create tests/ directory",
+          "Create test_scripts.py to validate all script imports work",
+          "Create test_csvs.py to check CSV schema integrity",
+          "Create test_dnc_enforcement.py to verify DNC blocking works",
+          "Create test_rate_limits.py to check throttling logic",
+          "Add pre-commit hook to run tests before deployment"
+        ]
+      },
+      {
+        "step": "16. Troubleshooting Guide",
+        "sections": [
+          "Common errors and solutions reference table",
+          "How to check if OpenClaw daemon is running",
+          "How to view cron job logs and debug failures",
+          "How to manually trigger a script for testing",
+          "How to reset/recover from corrupted CSV files",
+          "Emergency stop procedure (disable all crons immediately)"
+        ]
+      }
+    ]
+  }
+}

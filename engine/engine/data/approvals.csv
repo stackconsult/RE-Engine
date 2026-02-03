@@ -1,0 +1,10 @@
+approval_id,ts_created,lead_id,channel,action_type,draft_subject,draft_text,draft_to,status,approved_by,approved_at,notes
+appr_ac2af55d-b63,2026-02-03T17:09:13.737Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T17:09:13.754Z,campaign=smoke
+appr_c94b1156-c42,2026-02-03T19:17:03.387Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T19:17:03.409Z,campaign=smoke
+appr_06ca3670-a8f,2026-02-03T19:36:38.241Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T19:36:38.343Z,campaign=smoke
+appr_793edb0b-13e,2026-02-03T20:03:45.263Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T20:03:45.331Z,campaign=smoke
+appr_b988368e-217,2026-02-03T22:31:52.626Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T22:31:52.645Z,campaign=smoke
+appr_fd73752f-221,2026-02-03T22:55:15.281Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T22:55:15.311Z,campaign=smoke
+appr_9941c0bf-a0e,2026-02-03T22:59:16.195Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T22:59:16.207Z,campaign=smoke
+appr_8a2ede4a-5fd,2026-02-03T23:01:39.566Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T23:01:39.577Z,campaign=smoke
+appr_f4353bfe-f7d,2026-02-03T23:02:33.141Z,lead_smoke,email,send_email,Smoke Test,Hello (smoke).,test@example.com,sent,smoke,2026-02-03T23:02:33.152Z,campaign=smoke

@@ -1,0 +1,21 @@
+{
+  "name": "@stackconsult/reengine-tinyfish",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "RE Engine TinyFish MCP server.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@tinyfish/mcp-server": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

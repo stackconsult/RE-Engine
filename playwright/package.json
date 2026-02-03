@@ -1,0 +1,28 @@
+{
+  "name": "@stackconsult/reengine-playwright",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Playwright harness for RE Engine human-browser automation with self-healing + artifacts.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "codegen": "playwright codegen",
+    "lint": "eslint .",
+    "format": "prettier -w ."
+  },
+  "dependencies": {
+    "pino": "^9.6.0",
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/node": "^22.13.4",
+    "eslint": "^9.19.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3"
+  }
+}

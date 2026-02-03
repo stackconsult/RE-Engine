@@ -1,0 +1,54 @@
+{
+  "name": "reengine",
+  "version": "1.0.0",
+  "description": "RE Engine - Production-grade Real Estate Outreach Engine with approval-first messaging, browser automation, and MCP integration",
+  "main": "engine/dist/index.js",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build:engine && npm run build:mcp && npm run build:playwright",
+    "build:engine": "cd engine && npm run build",
+    "build:mcp": "cd mcp/reengine-core && npm run build",
+    "build:playwright": "cd playwright && npx tsc",
+    "test": "npm run test:engine",
+    "test:engine": "cd engine && npm run test",
+    "smoke": "cd engine && npm run smoke",
+    "lint": "npm run lint:engine && npm run lint:playwright",
+    "lint:engine": "cd engine && npm run lint",
+    "lint:playwright": "cd playwright && npm run lint",
+    "typecheck": "npm run typecheck:engine && npm run typecheck:mcp && npm run typecheck:playwright",
+    "typecheck:engine": "cd engine && npm run typecheck",
+    "typecheck:mcp": "cd mcp/reengine-core && npm run typecheck",
+    "typecheck:playwright": "cd playwright && npx tsc --noEmit",
+    "start:mcp": "cd mcp/reengine-core && npm start",
+    "dev": "npm run build && npm run start:mcp"
+  },
+  "keywords": [
+    "real-estate",
+    "outreach",
+    "messaging",
+    "automation",
+    "approval-system",
+    "browser-automation",
+    "mcp"
+  ],
+  "author": "Stack Consulting",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stackconsult/reengine"
+  },
+  "workspaces": [
+    "engine",
+    "playwright",
+    "mcp/reengine-core"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "typescript": "^5.7.3",
+    "eslint": "^9.39.2"
+  },
+  "dependencies": {}
+}

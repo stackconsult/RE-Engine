@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE Engine - Real Estate Outreach Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-rocket text-blue-600 text-2xl"></i>
+                        <h1 class="text-2xl font-bold text-gray-900">RE Engine</h1>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="pulse-dot"></div>
+                        <span class="text-sm text-gray-600">System Operational</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="refreshData()" class="btn-secondary">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <div class="text-sm text-gray-600">
+                        <span id="current-time"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 fixed h-full pt-16">
+            <nav class="mt-6">
+                <div class="sidebar-item active" onclick="showSection('dashboard')">
+                    <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                </div>
+                <div class="sidebar-item" onclick="showSection('leads')">
+                    <i class="fas fa-users mr-3"></i>Leads
+                </div>
+                <div class="sidebar-item" onclick="showSection('approvals')">
+                    <i class="fas fa-clipboard-check mr-3"></i>Approvals
+                </div>
+                <div class="sidebar-item" onclick="showSection('channels')">
+                    <i class="fas fa-share-alt mr-3"></i>Channels
+                </div>
+                <div class="sidebar-item" onclick="showSection('browser')">
+                    <i class="fas fa-robot mr-3"></i>Browser Jobs
+                </div>
+                <div class="sidebar-item" onclick="showSection('compliance')">
+                    <i class="fas fa-shield-alt mr-3"></i>Compliance
+                </div>
+                <div class="sidebar-item" onclick="showSection('analytics')">
+                    <i class="fas fa-chart-line mr-3"></i>Analytics
+                </div>
+                <div class="sidebar-item" onclick="showSection('settings')">
+                    <i class="fas fa-cog mr-3"></i>Settings
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 ml-64 p-6">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="space-y-6">
+                <!-- Key Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="card metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Leads</p>
+                                <p class="text-3xl font-bold text-gray-900" id="total-leads">-</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-users text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Pending Approvals</p>
+                                <p class="text-3xl font-bold text-yellow-600" id="pending-approvals">-</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-yellow-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Sent Today</p>
+                                <p class="text-3xl font-bold text-green-600" id="sent-today">-</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-paper-plane text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Hot Leads</p>
+                                <p class="text-3xl font-bold text-red-600" id="hot-leads">-</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-fire text-red-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Channel Status -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Channel Rate Limits</h3>
+                        <div id="rate-limits" class="space-y-4">
+                            <!-- Rate limits will be populated here -->
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                        <div id="recent-activity" class="space-y-3">
+                            <!-- Activity will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onclick="showSection('approvals')" class="btn-primary">
+                            <i class="fas fa-clipboard-check mr-2"></i>Review Approvals
+                        </button>
+                        <button onclick="showSection('leads')" class="btn-secondary">
+                            <i class="fas fa-user-plus mr-2"></i>Add Lead
+                        </button>
+                        <button onclick="showSection('browser')" class="btn-secondary">
+                            <i class="fas fa-robot mr-2"></i>Browser Job
+                        </button>
+                        <button onclick="showSection('analytics')" class="btn-secondary">
+                            <i class="fas fa-chart-bar mr-2"></i>View Reports
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leads Section -->
+            <section id="leads-section" class="space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">Lead Management</h2>
+                    <button onclick="showAddLeadModal()" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Add Lead
+                    </button>
+                </div>
+
+                <!-- Lead Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-600" id="lead-count-new">0</p>
+                        <p class="text-sm text-gray-600">New</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-yellow-600" id="lead-count-drafted">0</p>
+                        <p class="text-sm text-gray-600">Drafted</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-purple-600" id="lead-count-sent">0</p>
+                        <p class="text-sm text-gray-600">Sent</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600" id="lead-count-replied">0</p>
+                        <p class="text-sm text-gray-600">Replied</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-red-600" id="lead-count-hot">0</p>
+                        <p class="text-sm text-gray-600">Hot</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-gray-600" id="lead-count-dnc">0</p>
+                        <p class="text-sm text-gray-600">DNC</p>
+                    </div>
+                </div>
+
+                <!-- Lead Search/Filter -->
+                <div class="card p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="lead-search" placeholder="Search by name, email, phone..." class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <select id="lead-status-filter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">All Statuses</option>
+                            <option value="new">New</option>
+                            <option value="drafted">Drafted</option>
+                            <option value="sent">Sent</option>
+                            <option value="replied">Replied</option>
+                            <option value="hot">Hot</option>
+                            <option value="dnc">DNC</option>
+                        </select>
+                        <select id="lead-source-filter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">All Sources</option>
+                            <option value="website">Website</option>
+                            <option value="referral">Referral</option>
+                            <option value="social">Social</option>
+                            <option value="import">Import</option>
+                        </select>
+                        <button onclick="searchLeads()" class="btn-primary">Search</button>
+                    </div>
+                </div>
+
+                <!-- Leads Table -->
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leads-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Leads will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Approvals Section -->
+            <section id="approvals-section" class="space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">Approval Queue</h2>
+                    <div class="flex space-x-2">
+                        <button onclick="bulkApprove()" class="btn-success">
+                            <i class="fas fa-check-double mr-2"></i>Bulk Approve
+                        </button>
+                        <button onclick="bulkReject()" class="btn-danger">
+                            <i class="fas fa-times mr-2"></i>Bulk Reject
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Approval Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-yellow-600" id="approval-count-pending">0</p>
+                        <p class="text-sm text-gray-600">Pending</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600" id="approval-count-approved">0</p>
+                        <p class="text-sm text-gray-600">Approved</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-red-600" id="approval-count-rejected">0</p>
+                        <p class="text-sm text-gray-600">Rejected</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-600" id="approval-count-sent">0</p>
+                        <p class="text-sm text-gray-600">Sent</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-red-600" id="approval-count-failed">0</p>
+                        <p class="text-sm text-gray-600">Failed</p>
+                    </div>
+                </div>
+
+                <!-- Approval Filters -->
+                <div class="card p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <select id="approval-status-filter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="sent">Sent</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        <select id="approval-channel-filter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">All Channels</option>
+                            <option value="email">Email</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="facebook">Facebook</option>
+                        </select>
+                        <input type="text" id="approval-search" placeholder="Search by lead or content..." class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <button onclick="searchApprovals()" class="btn-primary">Search</button>
+                    </div>
+                </div>
+
+                <!-- Approvals Table -->
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <input type="checkbox" id="select-all-approvals" onchange="toggleAllApprovals()">
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approvals-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Approvals will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Other sections (Channels, Browser, Compliance, Analytics, Settings) would be similar -->
+            <!-- For brevity, I'll focus on the core sections first -->
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="add-lead-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Add New Lead</h3>
+            <form id="add-lead-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="lead-first-name" placeholder="First Name" required class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="lead-last-name" placeholder="Last Name" required class="px-4 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <input type="email" id="lead-email" placeholder="Email" class="px-4 py-2 border border-gray-300 rounded-lg">
+                <input type="tel" id="lead-phone" placeholder="Phone (E.164 format)" class="px-4 py-2 border border-gray-300 rounded-lg">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="lead-city" placeholder="City" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="lead-province" placeholder="Province" class="px-4 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <select id="lead-source" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Select Source</option>
+                    <option value="website">Website</option>
+                    <option value="referral">Referral</option>
+                    <option value="social">Social Media</option>
+                    <option value="import">Import</option>
+                    <option value="manual">Manual Entry</option>
+                </select>
+                <input type="text" id="lead-tags" placeholder="Tags (comma separated)" class="px-4 py-2 border border-gray-300 rounded-lg">
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="hideAddLeadModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentSection = 'dashboard';
+        let leads = [];
+        let approvals = [];
+        let selectedApprovals = new Set();
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            loadData();
+            setInterval(loadData, 30000); // Refresh every 30 seconds
+        });
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString();
+        }
+
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            
+            // Show selected section
+            document.getElementById(`${section}-section`).classList.remove('hidden');
+            // Add active class to selected sidebar item
+            event.target.closest('.sidebar-item').classList.add('active');
+            
+            currentSection = section;
+        }
+
+        async function loadData() {
+            try {
+                // Load system status
+                const statusResponse = await fetch('/api/status');
+                const statusData = await statusResponse.json();
+                
+                // Load stats
+                const statsResponse = await fetch('/api/stats');
+                const statsData = await statsResponse.json();
+                
+                // Update dashboard metrics
+                updateDashboardMetrics(statsData);
+                
+                // Load leads
+                const leadsResponse = await fetch('/api/leads');
+                leads = await leadsResponse.json();
+                updateLeadsSection();
+                
+                // Load approvals
+                const approvalsResponse = await fetch('/api/approvals');
+                approvals = await approvalsResponse.json();
+                updateApprovalsSection();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function updateDashboardMetrics(stats) {
+            document.getElementById('total-leads').textContent = stats.leads || 0;
+            document.getElementById('pending-approvals').textContent = stats.approvals?.pending || 0;
+            document.getElementById('sent-today').textContent = stats.sent_today || 0;
+            document.getElementById('hot-leads').textContent = stats.hot_leads || 0;
+            
+            // Update rate limits
+            const rateLimitsContainer = document.getElementById('rate-limits');
+            if (stats.rate_limits) {
+                rateLimitsContainer.innerHTML = Object.entries(stats.rate_limits).map(([channel, data]) => `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium capitalize">${channel}</span>
+                            <span class="text-sm text-gray-600">${data.used}/${data.limit}</span>
+                        </div>
+                        <div class="rate-limit-bar">
+                            <div class="rate-limit-fill" style="width: ${(data.used / data.limit) * 100}%"></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Update recent activity
+            updateRecentActivity(stats.recent_activity || []);
+        }
+
+        function updateRecentActivity(activities) {
+            const container = document.getElementById('recent-activity');
+            container.innerHTML = activities.slice(0, 5).map(activity => `
+                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-${getActivityIcon(activity.type)} text-blue-600 text-xs"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-900">${activity.description}</p>
+                        <p class="text-xs text-gray-500">${new Date(activity.timestamp).toLocaleString()}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                'message_sent': 'paper-plane',
+                'approval_created': 'clipboard',
+                'lead_added': 'user-plus',
+                'browser_job': 'robot',
+                'dnc_added': 'shield-alt'
+            };
+            return icons[type] || 'circle';
+        }
+
+        function updateLeadsSection() {
+            // Update lead counts
+            const statusCounts = {};
+            leads.forEach(lead => {
+                statusCounts[lead.status] = (statusCounts[lead.status] || 0) + 1;
+            });
+            
+            Object.keys(statusCounts).forEach(status => {
+                const element = document.getElementById(`lead-count-${status}`);
+                if (element) element.textContent = statusCounts[status];
+            });
+            
+            // Update leads table
+            const tbody = document.getElementById('leads-table-body');
+            tbody.innerHTML = leads.map(lead => `
+                <tr class="table-row">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-gray-500 text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${lead.first_name} ${lead.last_name}</div>
+                                <div class="text-xs text-gray-500">ID: ${lead.lead_id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${lead.email}</div>
+                        <div class="text-xs text-gray-500">${lead.phone_e164}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${lead.city}, ${lead.province}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">${lead.source}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-badge lead-status-${lead.status}">${lead.status}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button onclick="viewLead('${lead.lead_id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="editLead('${lead.lead_id}')" class="text-green-600 hover:text-green-900 mr-3">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="addToDnc('${lead.lead_id}')" class="text-red-600 hover:text-red-900">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateApprovalsSection() {
+            // Update approval counts
+            const statusCounts = {};
+            approvals.forEach(approval => {
+                statusCounts[approval.status] = (statusCounts[approval.status] || 0) + 1;
+            });
+            
+            Object.keys(statusCounts).forEach(status => {
+                const element = document.getElementById(`approval-count-${status}`);
+                if (element) element.textContent = statusCounts[status];
+            });
+            
+            // Update approvals table
+            const tbody = document.getElementById('approvals-table-body');
+            tbody.innerHTML = approvals.map(approval => `
+                <tr class="table-row">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <input type="checkbox" value="${approval.approval_id}" onchange="toggleApprovalSelection('${approval.approval_id}')">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${approval.approval_id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${approval.lead_id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="channel-badge channel-${approval.channel}">${approval.channel}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${approval.action_type}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">
+                            <div class="font-medium">${approval.draft_subject || 'N/A'}</div>
+                            <div class="text-xs text-gray-500 truncate max-w-xs">${approval.draft_text}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-badge approval-${approval.status}">${approval.status}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(approval.ts_created).toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        ${approval.status === 'pending' ? `
+                            <button onclick="approveApproval('${approval.approval_id}')" class="text-green-600 hover:text-green-900 mr-3">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button onclick="rejectApproval('${approval.approval_id}')" class="text-red-600 hover:text-red-900 mr-3">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
+                        <button onclick="viewApproval('${approval.approval_id}')" class="text-blue-600 hover:text-blue-900">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function refreshData() {
+            loadData();
+        }
+
+        // Modal functions
+        function showAddLeadModal() {
+            document.getElementById('add-lead-modal').classList.remove('hidden');
+        }
+
+        function hideAddLeadModal() {
+            document.getElementById('add-lead-modal').classList.add('hidden');
+            document.getElementById('add-lead-form').reset();
+        }
+
+        // Form submission
+        document.getElementById('add-lead-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const leadData = {
+                first_name: document.getElementById('lead-first-name').value,
+                last_name: document.getElementById('lead-last-name').value,
+                email: document.getElementById('lead-email').value,
+                phone_e164: document.getElementById('lead-phone').value,
+                city: document.getElementById('lead-city').value,
+                province: document.getElementById('lead-province').value,
+                source: document.getElementById('lead-source').value,
+                tags: document.getElementById('lead-tags').value
+            };
+            
+            try {
+                const response = await fetch('/api/leads', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(leadData)
+                });
+                
+                if (response.ok) {
+                    hideAddLeadModal();
+                    loadData();
+                    alert('Lead added successfully!');
+                } else {
+                    alert('Error adding lead');
+                }
+            } catch (error) {
+                alert('Error adding lead: ' + error.message);
+            }
+        });
+
+        // Approval actions
+        function toggleApprovalSelection(approvalId) {
+            if (selectedApprovals.has(approvalId)) {
+                selectedApprovals.delete(approvalId);
+            } else {
+                selectedApprovals.add(approvalId);
+            }
+        }
+
+        function toggleAllApprovals() {
+            const selectAll = document.getElementById('select-all-approvals');
+            const checkboxes = document.querySelectorAll('#approvals-table-body input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                const approvalId = checkbox.value;
+                if (selectAll.checked) {
+                    selectedApprovals.add(approvalId);
+                } else {
+                    selectedApprovals.delete(approvalId);
+                }
+            });
+        }
+
+        async function approveApproval(approvalId) {
+            try {
+                const response = await fetch(`/api/approvals/${approvalId}/approve`, { method: 'POST' });
+                if (response.ok) {
+                    loadData();
+                    alert('Approval approved!');
+                } else {
+                    alert('Error approving approval');
+                }
+            } catch (error) {
+                alert('Error approving approval: ' + error.message);
+            }
+        }
+
+        async function rejectApproval(approvalId) {
+            try {
+                const response = await fetch(`/api/approvals/${approvalId}/reject`, { method: 'POST' });
+                if (response.ok) {
+                    loadData();
+                    alert('Approval rejected!');
+                } else {
+                    alert('Error rejecting approval');
+                }
+            } catch (error) {
+                alert('Error rejecting approval: ' + error.message);
+            }
+        }
+
+        // Placeholder functions for other features
+        function viewLead(leadId) { console.log('View lead:', leadId); }
+        function editLead(leadId) { console.log('Edit lead:', leadId); }
+        function addToDnc(leadId) { console.log('Add to DNC:', leadId); }
+        function viewApproval(approvalId) { console.log('View approval:', approvalId); }
+        function bulkApprove() { console.log('Bulk approve'); }
+        function bulkReject() { console.log('Bulk reject'); }
+        function searchLeads() { console.log('Search leads'); }
+        function searchApprovals() { console.log('Search approvals'); }
+    </script>
+</body>
+</html>

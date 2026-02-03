@@ -1,0 +1,19 @@
+import pino from "pino";
+export const logger = pino({
+    level: process.env.LOG_LEVEL || "info",
+    redact: {
+        paths: [
+            "req.headers.authorization",
+            "headers.authorization",
+            "*.password",
+            "*.token",
+            "*.apiKey",
+        ],
+        remove: true,
+    },
+    transport: {
+        target: "pino/file",
+        options: { destination: "./logs/playwright.log" },
+    },
+});
+//# sourceMappingURL=logger.js.map

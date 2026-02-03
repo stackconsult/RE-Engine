@@ -1,0 +1,28 @@
+---
+name: realestate-outreach-engine
+description: Operate the RE Engine inside OpenClaw WebChat: approvals, router, ingest, and social handoff. Approval-first sending only.
+---
+
+# RealEstate Outreach Engine (RE Engine)
+
+## Safety
+- Never sends unless an approval row is explicitly `status=approved`.
+- Never bypass CAPTCHA/2FA; will request human completion.
+
+## WebChat Commands
+- `/re_show_approvals [status=pending] [limit=50]`
+- `/re_approve <approval_id>`
+- `/re_reject <approval_id> [reason]`
+- `/re_edit <approval_id> [to=...] [subject=...] [text=...]`
+- `/re_run_router [max=20]`
+- `/re_run_imap [max=25]`
+- `/re_run_hot_scan [minutes=60] [max_hot=25]`
+- `/re_run_social_ingest <linkedin|facebook> [hot-only|always|off]`
+- `/re_mark_sent_manual <approval_id>`
+
+## Operator flow
+1) Run `/re_show_approvals`
+2) Approve or edit
+3) Run `/re_run_router`
+4) For social: click send/post, then `/re_mark_sent_manual`
+

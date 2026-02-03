@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Local state / data (may contain PII)
+realestate-engine/data/
+engine/data/
+
+# Playwright artifacts
+playwright-report/
+test-results/
+*.trace.zip
+*.webm
+*.png
+storageState*.json
+
+# Node
+node_modules/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+tinyfish-cookbook/
