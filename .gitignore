@@ -4,6 +4,10 @@
 *.key
 *.pem
 
+# OpenClaw config (contains API keys)
+.openclaw/
+~/.openclaw/
+
 # Local state / data (may contain PII)
 realestate-engine/data/
 engine/data/
