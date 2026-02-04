@@ -1,18 +1,48 @@
 # RE Engine (Real Estate Outreach Engine)
 
-A production-ready multi-channel outreach automation system for real estate professionals. Built with Node.js, featuring MCP integration, Playwright browser automation, comprehensive WhatsApp integration, and approval-first messaging across WhatsApp, Telegram, Email, LinkedIn, and Facebook.
+A production-ready multi-channel outreach automation system for real estate professionals. Built with Node.js, featuring comprehensive AI integration, MCP servers, Playwright browser automation, advanced WhatsApp integration, and approval-first messaging across multiple channels with both local and cloud AI capabilities.
 
 ## 🚀 Features
 
-- **Complete WhatsApp Integration**: 100% Whapi.Cloud API coverage with 35+ MCP tools
-- **Advanced Lead Management**: Multi-factor scoring, A-F grading, and automated workflows
-- **Multi-channel outreach**: WhatsApp, Telegram, Email, LinkedIn, Facebook
-- **Approval-first system**: All outbound messages require explicit approval
-- **CSV-based storage**: Local-first data storage with upgrade path to PostgreSQL
-- **Browser automation**: Playwright-powered human-in-the-loop automation
-- **MCP integration**: Extensible tool servers for enhanced capabilities
-- **Real-time monitoring**: Web dashboard for approvals and oversight
-- **Automated workflows**: Scheduled campaigns and response routing
+### 🤖 Advanced AI Integration
+- **Google Vertex AI**: Gemini models with 8 MCP tools for advanced AI capabilities
+- **Local LLAMA Integration**: 25+ optimized models with intelligent orchestration
+- **Dual AI Strategy**: Local processing (free) + Cloud backup (paid)
+- **Real Estate Specialized**: Document analysis, lead scoring, property matching
+- **11 LLAMA Tools**: Text generation, code creation, image analysis, embeddings
+- **Semantic Search**: Advanced property and lead matching capabilities
+
+### 📱 Complete WhatsApp Integration
+- **100% Whapi.Cloud API Coverage**: 35+ MCP tools for complete automation
+- **Advanced Features**: Stories, newsletters, business profiles, groups, labels
+- **Real-time Communication**: Two-way messaging with media support
+- **Contact Management**: Advanced contact database and segmentation
+
+### 🎯 Lead Management & Automation
+- **Multi-factor Lead Scoring**: AI-powered qualification with reasoning models
+- **A-F Grading System**: Comprehensive lead quality assessment
+- **Automated Workflows**: Scheduled campaigns and intelligent response routing
+- **Document Processing**: OCR for contracts and property documents
+- **Property Analysis**: AI-powered image analysis and feature extraction
+
+### 📊 Multi-channel Outreach
+- **WhatsApp**: Primary channel with advanced features
+- **Telegram**: Bot integration with rich media support
+- **Email**: SMTP/IMAP integration with SpaceEmail
+- **LinkedIn**: Professional networking automation
+- **Facebook**: Social media outreach capabilities
+
+### 🔒 Approval-First System
+- **Human Oversight**: All outbound messages require explicit approval
+- **Real-time Dashboard**: Web interface for approvals and monitoring
+- **Audit Trail**: Complete message history and approval records
+- **Safety Controls**: Rate limiting and content filtering
+
+### 💾 Data Storage & Infrastructure
+- **Local-First Storage**: CSV-based with upgrade path to PostgreSQL
+- **Flexible Architecture**: Support for multiple database backends
+- **Browser Automation**: Playwright-powered human-in-the-loop automation
+- **MCP Integration**: 5 extensible tool servers for enhanced capabilities
 
 ## 🏗️ Architecture
 
@@ -21,9 +51,11 @@ RE-Engine/
 ├── engine/           # Core Node.js engine
 ├── playwright/       # Browser automation harness
 ├── mcp/             # MCP servers for tool integration
-│   ├── reengine-outreach/  # WhatsApp integration server
-│   ├── reengine-tinyfish/   # Web scraping server
-│   └── whapi-mcp-optimal/  # Official Whapi.Cloud server
+│   ├── reengine-outreach/    # WhatsApp integration (35+ tools)
+│   ├── reengine-vertexai/     # Google Vertex AI integration (8 tools)
+│   ├── reengine-llama/        # Local LLAMA integration (11 tools)
+│   ├── reengine-tinyfish/     # Web scraping server
+│   └── whapi-mcp-optimal/      # Official Whapi.Cloud server
 ├── web-dashboard/   # React-based approval dashboard
 ├── docs/           # Documentation and specs
 ├── tests/          # Unit and integration tests
@@ -32,10 +64,21 @@ RE-Engine/
 
 ## 📋 Prerequisites
 
+### System Requirements
 - Node.js v22+
 - macOS (current MVP target)
-- Whapi.Cloud account with WhatsApp number
-- SpaceEmail account (for SMTP/IMAP)
+- 8GB+ RAM (for local AI models)
+- 50GB+ storage (for AI models)
+
+### AI Services
+- **Ollama** (for local LLAMA models)
+- **Google Cloud Project** (for Vertex AI)
+- **API Keys**: Vertex AI, Whapi.Cloud, SpaceEmail
+
+### Communication Services
+- **Whapi.Cloud** (WhatsApp Business API)
+- **SpaceEmail** (SMTP/IMAP email service)
+- **Social Media** (Telegram, LinkedIn, Facebook bots)
 
 ## 🛠️ Installation
 
@@ -56,22 +99,48 @@ npm install -g openclaw@latest
 openclaw onboard --install-daemon
 ```
 
-### 4. Install Ollama (AI model provider)
+### 4. Install Ollama (local AI models)
 ```bash
 # Download and install Ollama
 curl -fsSL https://ollama.ai/install.sh | sh
 
-# Pull recommended models
-ollama pull qwen:7b
-ollama pull deepseek-coder:6.7b
+# Pull recommended models for real estate
+ollama pull llama3.1:8b
+ollama pull mistral-small3.2
+ollama pull qwen3-coder:30b
+ollama pull llama4:16x17b
+ollama pull deepseek-r1:32b
+ollama pull firefunction-v2:70b
+ollama pull qwen3-embedding:8b
+ollama pull granite3.2-vision:2b
+ollama pull glm-ocr
 
 # Start Ollama server
 ollama serve &
 ```
 
-### 5. Build WhatsApp MCP Server
+### 5. Build MCP Servers
 ```bash
+# Build WhatsApp integration
 cd mcp/reengine-outreach
+npm install
+npm run build
+cd ../..
+
+# Build Vertex AI integration
+cd mcp/reengine-vertexai
+npm install
+npm run build
+cd ../..
+
+# Build LLAMA integration
+cd mcp/reengine-llama
+npm install
+npm run build
+cd ../..
+
+# Build TinyFish scraper
+cd mcp/reengine-tinyfish
 npm install
 npm run build
 cd ../..
@@ -85,15 +154,75 @@ cp .env.example .env
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Required API Keys & Services
+
+#### 1. WhatsApp (Whapi.Cloud)
 ```bash
-# WhatsApp API Configuration (Whapi.Cloud)
+# Sign up at https://whapi.cloud/
 WHATSAPP_API_KEY="your_whapi_cloud_api_key"
 WHATSAPP_API_URL="https://gate.whapi.cloud"
 WHATSAPP_WEBHOOK_URL="https://your-domain.cloud/webhook-path"
 WHATSAPP_CHANNEL_ID="your_channel_id"
 WHATSAPP_PHONE_NUMBER="+1234567890"
 WHATSAPP_START_CHAT_LINK="https://wa.me/1234567890?text=Start"
+```
+
+#### 2. Google Vertex AI
+```bash
+# Create Google Cloud Project: creditx-478204
+# Enable Vertex AI API
+# Create service account and get API key
+VERTEX_AI_API_KEY="your_vertex_ai_api_key"
+VERTEX_AI_PROJECT_ID="creditx-478204"
+VERTEX_AI_REGION="us-central1"
+VERTEX_AI_MODEL="gemini-2.5-flash-lite"
+```
+
+#### 3. Local AI (Ollama)
+```bash
+# Already configured with installation
+OLLAMA_API_KEY="25a220dae3084bc597e45ce45a1b4acf.lnm3LOMMFyh-uPM9KZ2urOvX"
+OLLAMA_BASE_URL="http://127.0.0.1:11434/v1"
+OLLAMA_MODEL="llama3.1:8b"
+```
+
+#### 4. Email (SpaceEmail)
+```bash
+# Sign up at https://space.email/
+SPACE_EMAIL_API_KEY="your_space_email_api_key"
+SPACE_EMAIL_IMAP_HOST="imap.space.email"
+SPACE_EMAIL_SMTP_HOST="smtp.space.email"
+```
+
+#### 5. Web Scraping (TinyFish)
+```bash
+# Sign up at https://mino.ai/
+TINYFISH_API_KEY="your_tinyfish_api_key"
+TINYFISH_API_URL="https://mino.ai/v1/automation/run-sse"
+```
+
+### Optional Social Media Integrations
+
+#### Telegram Bot
+```bash
+# Create bot with @BotFather on Telegram
+TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
+TELEGRAM_WEBHOOK_URL="https://your-domain.cloud/telegram-webhook"
+```
+
+#### LinkedIn Automation
+```bash
+# LinkedIn automation service (if applicable)
+LINKEDIN_API_KEY="your_linkedin_api_key"
+LINKEDIN_WEBHOOK_URL="https://your-domain.cloud/linkedin-webhook"
+```
+
+#### Facebook Pages
+```bash
+# Facebook Page access token
+FACEBOOK_PAGE_ACCESS_TOKEN="your_facebook_page_token"
+FACEBOOK_WEBHOOK_URL="https://your-domain.cloud/facebook-webhook"
+```
 
 # SpaceEmail Configuration
 SPACEMAIL_USER="your-email@domain.com"

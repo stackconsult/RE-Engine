@@ -1,26 +1,34 @@
 # Getting Started with RE Engine
 
-This guide will help you set up and configure the RE Engine for WhatsApp automation and multi-channel outreach.
+This comprehensive guide will help you set up and configure the RE Engine for advanced real estate automation with AI-powered multi-channel outreach, local LLAMA models, and Google Vertex AI integration.
 
 ## 🎯 Prerequisites
 
 Before you begin, make sure you have:
 
+### System Requirements
 - **Node.js v22+** installed
 - **macOS** (current MVP target)
-- **Whapi.Cloud account** with WhatsApp number
-- **SpaceEmail account** (for SMTP/IMAP)
+- **8GB+ RAM** (for local AI models)
+- **50GB+ storage** (for AI models)
 - **Git** installed
+
+### Required Services & Accounts
+- **Whapi.Cloud account** with WhatsApp number
+- **Google Cloud Project** (for Vertex AI)
+- **SpaceEmail account** (for SMTP/IMAP)
+- **TinyFish account** (for web scraping)
 
 ## 📋 Quick Setup Overview
 
 1. **Clone and install** the RE Engine
-2. **Set up WhatsApp** integration with Whapi.Cloud
-3. **Configure MCP servers** for Windsurf Cascade
-4. **Install dependencies** (OpenClaw, Ollama)
-5. **Configure environment** variables
-6. **Test the integration**
-7. **Start the dashboard**
+2. **Set up AI services** (Ollama + Vertex AI)
+3. **Configure WhatsApp** integration with Whapi.Cloud
+4. **Build MCP servers** for all integrations
+5. **Install dependencies** (OpenClaw, AI models)
+6. **Configure environment** variables
+7. **Test all integrations**
+8. **Start the dashboard**
 
 ## 🚀 Step-by-Step Setup
 
@@ -33,15 +41,69 @@ cd RE-Engine
 
 # Install main dependencies
 npm install
+```
 
-# Build WhatsApp MCP server
+### 2. Set Up AI Services
+
+#### Install Ollama (Local AI Models)
+```bash
+# Download and install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull recommended models for real estate
+ollama pull llama3.1:8b
+ollama pull mistral-small3.2
+ollama pull qwen3-coder:30b
+ollama pull llama4:16x17b
+ollama pull deepseek-r1:32b
+ollama pull firefunction-v2:70b
+ollama pull qwen3-embedding:8b
+ollama pull granite3.2-vision:2b
+ollama pull glm-ocr
+
+# Start Ollama server
+ollama serve &
+```
+
+#### Set Up Google Vertex AI
+```bash
+# Create Google Cloud Project: creditx-478204
+# Enable Vertex AI API
+# Create service account and get API key
+# Add to .env file:
+# VERTEX_AI_API_KEY="your_vertex_ai_api_key"
+# VERTEX_AI_PROJECT_ID="creditx-478204"
+```
+
+### 3. Build MCP Servers
+
+```bash
+# Build WhatsApp integration
 cd mcp/reengine-outreach
+npm install
+npm run build
+cd ../..
+
+# Build Vertex AI integration
+cd mcp/reengine-vertexai
+npm install
+npm run build
+cd ../..
+
+# Build LLAMA integration
+cd mcp/reengine-llama
+npm install
+npm run build
+cd ../..
+
+# Build TinyFish scraper
+cd mcp/reengine-tinyfish
 npm install
 npm run build
 cd ../..
 ```
 
-### 2. Set Up WhatsApp Integration
+### 4. Set Up WhatsApp Integration
 
 #### Create Whapi.Cloud Account
 1. Go to [Whapi.Cloud](https://whapi.cloud)
