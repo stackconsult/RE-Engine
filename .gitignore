@@ -27,3 +27,7 @@ __pycache__/
 # macOS
 .DS_Store
 tinyfish-cookbook/
+
+# Node.js binaries (too large for GitHub)
+node-v*.tar.gz
+node-v*/
