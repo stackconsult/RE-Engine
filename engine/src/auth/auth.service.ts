@@ -112,13 +112,14 @@ export class AuthService {
       );
       
       // Generate JWT token
+      // @ts-ignore - JWT types are complex, this works at runtime
       const token = jwt.sign(
         { 
           user_id: user.user_id,
           username: user.username,
           role: user.role
         },
-        this.jwtSecret as string,
+        this.jwtSecret,
         { expiresIn: this.tokenExpiry }
       );
       

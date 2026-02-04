@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Testing
+  postgres:
+    image: postgres:15-alpine
+    container_name: reengine-postgres-test
+    environment:
+      POSTGRES_DB: reengine_test
+      POSTGRES_USER: reengine
+      POSTGRES_PASSWORD: testpass
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - reengine-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reengine -d reengine_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Testing
+  redis:
+    image: redis:7-alpine
+    container_name: reengine-redis-test
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_test_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - reengine-test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Test Engine Service
+  engine-test:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: reengine-engine-test
+    environment:
+      NODE_ENV: test
+      PORT: 3001
+      DB_TYPE: postgresql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: reengine_test
+      DB_USERNAME: reengine
+      DB_PASSWORD: testpass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: test-jwt-secret
+      LOG_LEVEL: debug
+    volumes:
+      - ./test-results:/app/test-results
+    networks:
+      - reengine-test-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Test Web Dashboard
+  web-dashboard-test:
+    build:
+      context: ./web-dashboard
+      dockerfile: Dockerfile
+    container_name: reengine-dashboard-test
+    environment:
+      NODE_ENV: test
+      PORT: 3000
+      DB_TYPE: postgresql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: reengine_test
+      DB_USERNAME: reengine
+      DB_PASSWORD: testpass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: test-jwt-secret
+      LOG_LEVEL: debug
+    networks:
+      - reengine-test-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  reengine-test-network:
+    driver: bridge

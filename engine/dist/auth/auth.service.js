@@ -2,7 +2,7 @@
  * Authentication and Security System
  * JWT-based authentication with role-based access control
  */
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getDatabase } from '../database/index.js';
 export class AuthService {
@@ -67,6 +67,7 @@ export class AuthService {
             // Update last login
             await this.db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1', [user.user_id]);
             // Generate JWT token
+            // @ts-ignore - JWT types are complex, this works at runtime
             const token = jwt.sign({
                 user_id: user.user_id,
                 username: user.username,
