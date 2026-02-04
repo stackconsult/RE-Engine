@@ -51,7 +51,20 @@ npm install -g openclaw@latest
 openclaw onboard --install-daemon
 ```
 
-### 4. Configure environment
+### 4. Install Ollama (AI model provider)
+```bash
+# Download and install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull recommended models
+ollama pull qwen:7b
+ollama pull deepseek-coder:6.7b
+
+# Start Ollama server
+ollama serve &
+```
+
+### 5. Configure environment
 ```bash
 cp .env.example .env
 # Edit .env with your credentials
@@ -72,12 +85,42 @@ SPACEMAIL_SMTP_PORT="465"
 # Telegram Configuration
 RE_TELEGRAM_ALERT_TARGET="your-chat-id"
 RE_CONTACT_CAPTURE_ALERTS="telegram"
+
+# Ollama Configuration
+OLLAMA_API_KEY="your-ollama-api-key"
 ```
 
-### OpenClaw Configuration
+### OpenClaw + Ollama Configuration
 Add to `~/.openclaw/openclaw.json`:
 ```json
 {
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "ollama/qwen:7b"
+      }
+    }
+  },
+  "models": {
+    "providers": {
+      "ollama": {
+        "apiKey": "${OLLAMA_API_KEY}",
+        "baseUrl": "http://127.0.0.1:11434/v1",
+        "api": "openai-responses",
+        "models": [
+          {
+            "id": "qwen:7b",
+            "name": "Qwen 7B",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+            "contextWindow": 32768,
+            "maxTokens": 32768
+          }
+        ]
+      }
+    }
+  },
   "channels": {
     "whatsapp": {
       "dmPolicy": "pairing",

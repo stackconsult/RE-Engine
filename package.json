@@ -24,7 +24,9 @@
     "typecheck:mcp": "cd mcp/reengine-core && npm run typecheck",
     "typecheck:playwright": "cd playwright && npx tsc --noEmit",
     "start:mcp": "cd mcp/reengine-core && npm start",
-    "dev": "npm run build && npm run start:mcp"
+    "dev": "npm run build && npm run start:mcp",
+    "setup:ollama": "./scripts/setup-ollama.sh",
+    "test:ollama": "curl http://localhost:11434/api/tags"
   },
   "keywords": [
     "real-estate",
