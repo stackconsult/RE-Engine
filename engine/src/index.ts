@@ -13,3 +13,16 @@ export * from "./classify/index.js";
 
 export * from "./policy/policy.js";
 export * from "./util/index.js";
+
+// Production Foundation Services
+export * from "./production/production-bootstrap.service.js";
+export * from "./production/types.js";
+export * from "./production/dependencies.js";
+
+// Production Security & Monitoring
+export * from "./security/production-security.service.js";
+export * from "./monitoring/production-health.service.js";
+
+// Dual Agent Architecture
+export * from "./agents/production-build-agents.js";
+export * from "./agents/user-agent-orchestration.js";
