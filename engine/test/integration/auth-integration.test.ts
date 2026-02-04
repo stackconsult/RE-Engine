@@ -367,5 +367,6 @@ describe('Authentication Integration Tests', () => {
       assert.ok(duration < 1000, 
         `Concurrent operations took ${duration}ms, expected < 1000ms`);
     });
+    });
   });
 });
