@@ -8,9 +8,10 @@ import { getDatabase } from '../database/index.js';
 export class AuthService {
     db = getDatabase();
     jwtSecret;
-    tokenExpiry = '24h';
+    tokenExpiry;
     constructor() {
         this.jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+        this.tokenExpiry = '24h';
     }
     async initialize() {
         await this.db.initialize();
@@ -67,12 +68,13 @@ export class AuthService {
             // Update last login
             await this.db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1', [user.user_id]);
             // Generate JWT token
-            // @ts-ignore - JWT types are complex, this works at runtime
-            const token = jwt.sign({
+            const payload = {
                 user_id: user.user_id,
                 username: user.username,
                 role: user.role
-            }, this.jwtSecret, { expiresIn: this.tokenExpiry });
+            };
+            // @ts-expect-error - JWT types are complex, this works at runtime
+            const token = jwt.sign(payload, this.jwtSecret, { expiresIn: this.tokenExpiry });
             const decoded = jwt.decode(token);
             return {
                 token,
@@ -156,7 +158,7 @@ export class AuthService {
             if (users.length === 0) {
                 return false;
             }
-            const permissions = users[0].permissions;
+            const permissions = users[0].permissions || [];
             // Wildcard permission
             if (permissions.includes('*')) {
                 return true;
@@ -206,7 +208,7 @@ export class AuthService {
             return false;
         }
     }
-    generateApiKey(userId) {
+    generateApiKey(_userId) {
         return crypto.randomBytes(32).toString('hex');
     }
     async close() {

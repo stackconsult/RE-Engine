@@ -1,19 +1,162 @@
 import pino from "pino";
-export const logger = pino({
-    level: process.env.LOG_LEVEL || "info",
+import path from "path";
+import { hostname } from "os";
+// Create a production-ready logger configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const logLevel = process.env.LOG_LEVEL || 'info';
+// Base logger configuration
+const baseConfig = {
+    level: logLevel,
+    formatters: {
+        // Add timestamp and correlation ID
+        log: (log) => {
+            log.timestamp = new Date().toISOString();
+            log.pid = process.pid;
+            log.hostname = hostname();
+            return log;
+        }
+    },
     redact: {
+        // Redact sensitive information
         paths: [
-            "req.headers.authorization",
-            "headers.authorization",
-            "*.password",
-            "*.token",
-            "*.apiKey",
+            'req.headers.authorization',
+            'headers.authorization',
+            '*.password',
+            '*.token',
+            '*.apiKey',
+            '*.jwt',
+            '*.secret',
+            'password',
+            'token',
+            'apiKey',
+            'jwt',
+            'secret'
         ],
         remove: true,
     },
-    transport: {
-        target: "pino/file",
-        options: { destination: "/Users/kirtissiemens/.gemini/tmp/48988562a6ad217ad9a52dcc8d28f1d5d0edeed18d0b9311e9f17102177477ae/smoke.log" },
-    },
-});
+    // Transport configuration
+    transport: isProduction
+        ? {
+            target: 'pino/file',
+            options: {
+                destination: path.join(process.cwd(), 'logs', 'app.log'),
+                mkdir: true
+            }
+        }
+        : {
+            target: 'pino-pretty',
+            options: {
+                colorize: true,
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname'
+            }
+        }
+};
+// Create child loggers for different modules
+export const logger = pino(baseConfig);
+export const authLogger = logger.child({ module: 'auth' });
+export const dbLogger = logger.child({ module: 'database' });
+export const apiLogger = logger.child({ module: 'api' });
+export const mcpLogger = logger.child({ module: 'mcp' });
+export const approvalLogger = logger.child({ module: 'approvals' });
+export const leadLogger = logger.child({ module: 'leads' });
+// Structured logging helpers
+export const logAuthEvent = (event, userId, metadata) => {
+    authLogger.info({
+        event,
+        userId,
+        metadata,
+        timestamp: new Date().toISOString()
+    });
+};
+export const logDatabaseOperation = (operation, table, duration, error) => {
+    const logData = {
+        operation,
+        table,
+        timestamp: new Date().toISOString()
+    };
+    if (duration !== undefined) {
+        logData.duration = `${duration}ms`;
+    }
+    if (error) {
+        logData.error = error.message;
+        dbLogger.error(logData);
+    }
+    else {
+        dbLogger.info(logData);
+    }
+};
+export const logApiRequest = (method, url, statusCode, duration, userId) => {
+    const logData = {
+        method,
+        url,
+        statusCode,
+        timestamp: new Date().toISOString()
+    };
+    if (duration !== undefined) {
+        logData.duration = `${duration}ms`;
+    }
+    if (userId) {
+        logData.userId = userId;
+    }
+    if (statusCode >= 400) {
+        apiLogger.warn(logData);
+    }
+    else {
+        apiLogger.info(logData);
+    }
+};
+export const logApprovalAction = (action, approvalId, userId, metadata) => {
+    approvalLogger.info({
+        action,
+        approvalId,
+        userId,
+        metadata,
+        timestamp: new Date().toISOString()
+    });
+};
+export const logSystemEvent = (event, severity = 'info', metadata) => {
+    const logData = {
+        event,
+        severity,
+        metadata,
+        timestamp: new Date().toISOString()
+    };
+    switch (severity) {
+        case 'error':
+            logger.error(logData);
+            break;
+        case 'warn':
+            logger.warn(logData);
+            break;
+        case 'debug':
+            logger.debug(logData);
+            break;
+        default:
+            logger.info(logData);
+    }
+};
+// Performance monitoring
+export const logPerformance = (operation, duration, metadata) => {
+    logger.info({
+        event: 'performance',
+        operation,
+        duration: `${duration}ms`,
+        metadata,
+        timestamp: new Date().toISOString()
+    });
+};
+// Error logging with context
+export const logError = (error, context, metadata) => {
+    const logData = {
+        error: error.message,
+        stack: error.stack,
+        context,
+        metadata,
+        timestamp: new Date().toISOString()
+    };
+    logger.error(logData);
+};
+// Export the main logger for backward compatibility
+export default logger;
 //# sourceMappingURL=logger.js.map

@@ -1,5 +1,6 @@
 import pino from "pino";
 import path from "path";
+import { hostname } from "os";
 // Create a production-ready logger configuration
 const isProduction = process.env.NODE_ENV === 'production';
 const logLevel = process.env.LOG_LEVEL || 'info';
@@ -11,7 +12,7 @@ const baseConfig = {
         log: (log) => {
             log.timestamp = new Date().toISOString();
             log.pid = process.pid;
-            log.hostname = require('os').hostname();
+            log.hostname = hostname();
             return log;
         }
     },
