@@ -1,5 +1,6 @@
 import pino from "pino";
 import path from "path";
+import { hostname } from "os";
 
 // Create a production-ready logger configuration
 const isProduction = process.env.NODE_ENV === 'production';
@@ -10,10 +11,10 @@ const baseConfig = {
   level: logLevel,
   formatters: {
     // Add timestamp and correlation ID
-    log: (log: any) => {
+    log: (log: Record<string, unknown>) => {
       log.timestamp = new Date().toISOString();
       log.pid = process.pid;
-      log.hostname = require('os').hostname();
+      log.hostname = hostname();
       return log;
     }
   },
@@ -65,7 +66,7 @@ export const approvalLogger = logger.child({ module: 'approvals' });
 export const leadLogger = logger.child({ module: 'leads' });
 
 // Structured logging helpers
-export const logAuthEvent = (event: string, userId?: string, metadata?: any) => {
+export const logAuthEvent = (event: string, userId?: string, metadata?: Record<string, unknown>) => {
   authLogger.info({
     event,
     userId,
@@ -74,8 +75,8 @@ export const logAuthEvent = (event: string, userId?: string, metadata?: any) => 
   });
 };
 
-export const logDatabaseOperation = (operation: string, table: string, duration?: number, error?: any) => {
-  const logData: any = {
+export const logDatabaseOperation = (operation: string, table: string, duration?: number, error?: Error) => {
+  const logData: Record<string, unknown> = {
     operation,
     table,
     timestamp: new Date().toISOString()
@@ -94,7 +95,7 @@ export const logDatabaseOperation = (operation: string, table: string, duration?
 };
 
 export const logApiRequest = (method: string, url: string, statusCode: number, duration?: number, userId?: string) => {
-  const logData: any = {
+  const logData: Record<string, unknown> = {
     method,
     url,
     statusCode,
@@ -116,7 +117,7 @@ export const logApiRequest = (method: string, url: string, statusCode: number, d
   }
 };
 
-export const logApprovalAction = (action: string, approvalId: string, userId?: string, metadata?: any) => {
+export const logApprovalAction = (action: string, approvalId: string, userId?: string, metadata?: Record<string, unknown>) => {
   approvalLogger.info({
     action,
     approvalId,
@@ -126,7 +127,7 @@ export const logApprovalAction = (action: string, approvalId: string, userId?: s
   });
 };
 
-export const logSystemEvent = (event: string, severity: 'info' | 'warn' | 'error' | 'debug' = 'info', metadata?: any) => {
+export const logSystemEvent = (event: string, severity: 'info' | 'warn' | 'error' | 'debug' = 'info', metadata?: Record<string, unknown>) => {
   const logData = {
     event,
     severity,
@@ -150,7 +151,7 @@ export const logSystemEvent = (event: string, severity: 'info' | 'warn' | 'error
 };
 
 // Performance monitoring
-export const logPerformance = (operation: string, duration: number, metadata?: any) => {
+export const logPerformance = (operation: string, duration: number, metadata?: Record<string, unknown>) => {
   logger.info({
     event: 'performance',
     operation,
@@ -161,8 +162,8 @@ export const logPerformance = (operation: string, duration: number, metadata?: a
 };
 
 // Error logging with context
-export const logError = (error: Error, context?: string, metadata?: any) => {
-  const logData: any = {
+export const logError = (error: Error, context?: string, metadata?: Record<string, unknown>) => {
+  const logData: Record<string, unknown> = {
     error: error.message,
     stack: error.stack,
     context,

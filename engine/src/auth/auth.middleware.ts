@@ -3,6 +3,7 @@
  * JWT token verification and user session management
  */
 
+import { Request, Response, NextFunction } from 'express';
 import { AuthService, AuthToken } from './auth.service.js';
 
 export interface AuthenticatedRequest extends Request {
@@ -22,7 +23,7 @@ export class AuthMiddleware {
 
   // Express middleware for authentication
   authenticate() {
-    return async (req: any, res: any, next: any) => {
+    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const token = this.extractToken(req);
         
@@ -48,7 +49,7 @@ export class AuthMiddleware {
 
   // Role-based authorization middleware
   authorize(requiredPermission: string) {
-    return async (req: any, res: any, next: any) => {
+    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.user) {
           return res.status(401).json({ error: 'Not authenticated' });
@@ -73,7 +74,7 @@ export class AuthMiddleware {
   }
 
   // Login endpoint
-  async login(req: any, res: any) {
+  async login(req: Request, res: Response) {
     try {
       const { username, password } = req.body;
 
@@ -102,14 +103,14 @@ export class AuthMiddleware {
   }
 
   // Logout endpoint
-  async logout(req: any, res: any) {
+  async logout(req: AuthenticatedRequest, res: Response) {
     // In a real implementation, you might want to invalidate the token
     // For now, we'll just return success
     res.json({ success: true, message: 'Logged out successfully' });
   }
 
   // Get current user info
-  async getCurrentUser(req: any, res: any) {
+  async getCurrentUser(req: AuthenticatedRequest, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -129,7 +130,7 @@ export class AuthMiddleware {
   }
 
   // Change password
-  async changePassword(req: any, res: any) {
+  async changePassword(req: AuthenticatedRequest, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -159,7 +160,7 @@ export class AuthMiddleware {
     }
   }
 
-  private extractToken(req: any): string | null {
+  private extractToken(req: AuthenticatedRequest): string | null {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -176,7 +177,7 @@ export class AuthMiddleware {
   }
 
   // Generate API key for user
-  async generateApiKey(req: any, res: any) {
+  async generateApiKey(req: AuthenticatedRequest, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });

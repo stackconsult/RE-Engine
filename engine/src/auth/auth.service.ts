@@ -7,6 +7,27 @@ import * as jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getDatabase } from '../database/index.js';
 
+export interface JWTPayload {
+  user_id: string;
+  username: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+
+export interface DatabaseRow {
+  user_id: string;
+  username: string;
+  email: string;
+  password_hash: string;
+  role: 'admin' | 'operator' | 'viewer';
+  permissions: string[];
+  active: boolean;
+  created_at: string;
+  last_login?: string;
+  [key: string]: unknown;
+}
+
 export interface User {
   user_id: string;
   username: string;
@@ -28,10 +49,11 @@ export interface AuthToken {
 export class AuthService {
   private db = getDatabase();
   private jwtSecret: string;
-  private tokenExpiry: string = '24h';
+  private tokenExpiry: string;
 
   constructor() {
     this.jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+    this.tokenExpiry = '24h';
   }
 
   async initialize(): Promise<void> {
@@ -60,7 +82,7 @@ export class AuthService {
   }
 
   private async createDefaultAdmin(): Promise<void> {
-    const existingAdmin = await this.db.query('SELECT * FROM users WHERE role = $1', ['admin']) as any[];
+    const existingAdmin = await this.db.query('SELECT * FROM users WHERE role = $1', ['admin']) as DatabaseRow[];
     
     if (existingAdmin.length === 0) {
       const defaultPassword = 'admin123'; // Should be changed on first login
@@ -92,7 +114,7 @@ export class AuthService {
       const users = await this.db.query(
         'SELECT * FROM users WHERE username = $1 AND active = TRUE',
         [username]
-      ) as any[];
+      ) as DatabaseRow[];
       
       if (users.length === 0) {
         return null;
@@ -112,18 +134,16 @@ export class AuthService {
       );
       
       // Generate JWT token
-      // @ts-ignore - JWT types are complex, this works at runtime
-      const token = jwt.sign(
-        { 
-          user_id: user.user_id,
-          username: user.username,
-          role: user.role
-        },
-        this.jwtSecret,
-        { expiresIn: this.tokenExpiry }
-      );
+      const payload: JWTPayload = {
+        user_id: user.user_id,
+        username: user.username,
+        role: user.role
+      };
       
-      const decoded = jwt.decode(token) as any;
+      // @ts-expect-error - JWT types are complex, this works at runtime
+      const token = jwt.sign(payload, this.jwtSecret, { expiresIn: this.tokenExpiry });
+      
+      const decoded = jwt.decode(token) as JWTPayload;
       
       return {
         token,
@@ -137,7 +157,7 @@ export class AuthService {
           active: user.active
         },
         permissions: user.permissions,
-        expiresAt: new Date(decoded.exp * 1000)
+        expiresAt: new Date(decoded.exp! * 1000)
       };
       
     } catch (error) {
@@ -148,12 +168,12 @@ export class AuthService {
 
   async verifyToken(token: string): Promise<AuthToken | null> {
     try {
-      const decoded = jwt.verify(token, this.jwtSecret) as any;
+      const decoded = jwt.verify(token, this.jwtSecret) as JWTPayload;
       
       const users = await this.db.query(
         'SELECT * FROM users WHERE user_id = $1 AND active = TRUE',
         [decoded.user_id]
-      ) as any[];
+      ) as DatabaseRow[];
       
       if (users.length === 0) {
         return null;
@@ -173,7 +193,7 @@ export class AuthService {
           active: user.active
         },
         permissions: user.permissions,
-        expiresAt: new Date(decoded.exp * 1000)
+        expiresAt: new Date(decoded.exp! * 1000)
       };
       
     } catch (error) {
@@ -193,7 +213,7 @@ export class AuthService {
       const existingUser = await this.db.query(
         'SELECT user_id FROM users WHERE username = $1 OR email = $2',
         [userData.username, userData.email]
-      ) as any[];
+      ) as DatabaseRow[];
       
       if (existingUser.length > 0) {
         throw new Error('User with this username or email already exists');
@@ -205,9 +225,9 @@ export class AuthService {
       const result = await this.db.query(
         'INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [userData.username, userData.email, passwordHash, userData.role, JSON.stringify(permissions)]
-      ) as any[];
+      ) as DatabaseRow[];
       
-      return result[0];
+      return result[0] as User;
       
     } catch (error) {
       console.error('User creation error:', error);
@@ -233,13 +253,13 @@ export class AuthService {
       const users = await this.db.query(
         'SELECT permissions FROM users WHERE user_id = $1 AND active = TRUE',
         [userId]
-      ) as any[];
+      ) as DatabaseRow[];
       
       if (users.length === 0) {
         return false;
       }
       
-      const permissions = users[0].permissions;
+      const permissions = users[0].permissions || [];
       
       // Wildcard permission
       if (permissions.includes('*')) {
@@ -270,13 +290,13 @@ export class AuthService {
       const users = await this.db.query(
         'SELECT password_hash FROM users WHERE user_id = $1 AND active = TRUE',
         [userId]
-      ) as any[];
+      ) as DatabaseRow[];
       
       if (users.length === 0) {
         return false;
       }
       
-      const isValidOldPassword = await this.verifyPassword(oldPassword, users[0].password_hash);
+      const isValidOldPassword = await this.verifyPassword(oldPassword, users[0].password_hash!);
       
       if (!isValidOldPassword) {
         return false;
@@ -310,7 +330,7 @@ export class AuthService {
     }
   }
 
-  generateApiKey(userId: string): string {
+  generateApiKey(_userId: string): string {
     return crypto.randomBytes(32).toString('hex');
   }
 
