@@ -1,7 +1,9 @@
 /**
  * Production Service Interface Definitions
- * Complete type definitions for production foundation services
- */
+ * Complete type definitions for production foundation services */
+
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../database/supabase.types.js';
 
 // JWT Management Interface
 export interface JWTManager {
@@ -1036,4 +1038,223 @@ export interface PerformanceMetrics {
   throughput: number;
   errorRate: number;
   uptime: number;
+}
+
+// Supabase Service Interface
+export interface SupabaseService {
+  configure(config: SupabaseConfig): Promise<void>;
+  connect(connectionConfig: SupabaseConnectionConfig): Promise<void>;
+  disconnect(): Promise<void>;
+  configurePool(config: SupabasePoolConfig): Promise<void>;
+  healthCheck(): Promise<SupabaseHealthCheckResult>;
+  checkMigrations(): Promise<MigrationStatus>;
+  optimizeIndexes(): Promise<IndexOptimizationResult>;
+  getClient(): SupabaseClient<Database>;
+  getRealtimeClient(): SupabaseRealtimeClient;
+  executeQuery<T>(query: SupabaseQuery): Promise<SupabaseQueryResult<T>>;
+  executeTransaction<T>(operations: SupabaseOperation[]): Promise<SupabaseTransactionResult<T>>;
+  subscribeToChanges(subscription: SupabaseSubscription): Promise<SupabaseSubscriptionHandle>;
+  unsubscribe(subscriptionId: string): Promise<void>;
+  getMetrics(): Promise<SupabaseMetrics>;
+  getStatistics(): Promise<SupabaseStatistics>;
+}
+
+export interface SupabaseConfig {
+  url: string;
+  anonKey: string;
+  serviceKey: string;
+  schema?: string;
+  realtime?: {
+    enabled: boolean;
+    reconnectInterval: number;
+    maxRetries: number;
+  };
+  auth?: {
+    autoRefreshTokens: boolean;
+    persistSession: boolean;
+    detectSessionInUrl: boolean;
+  };
+  storage?: {
+    buckets: string[];
+    defaultBucket: string;
+  };
+}
+
+export interface SupabaseConnectionConfig {
+  url: string;
+  anonKey: string;
+  serviceKey: string;
+  poolSize: number;
+  timeout: number;
+  ssl?: boolean;
+  maxConnections?: number;
+  connectionTimeout?: number;
+  idleTimeout?: number;
+}
+
+export interface SupabasePoolConfig {
+  min: number;
+  max: number;
+  idleTimeoutMillis: number;
+  connectionTimeoutMillis: number;
+  acquireTimeoutMillis?: number;
+  createTimeoutMillis?: number;
+  destroyTimeoutMillis?: number;
+  reapIntervalMillis?: number;
+}
+
+export interface SupabaseHealthCheckResult {
+  status: 'healthy' | 'unhealthy' | 'degraded';
+  connection: boolean;
+  database: boolean;
+  realtime: boolean;
+  storage: boolean;
+  auth: boolean;
+  latency: number;
+  lastChecked: number;
+  details?: Record<string, unknown>;
+}
+
+export interface MigrationStatus {
+  current: string;
+  latest: string;
+  pending: string[];
+  completed: string[];
+  status: 'up-to-date' | 'pending' | 'error';
+  lastMigration?: string;
+  lastMigrationTime?: number;
+}
+
+export interface IndexOptimizationResult {
+  optimized: boolean;
+  indexesOptimized: string[];
+  improvements: IndexImprovement[];
+  performanceGain: number;
+  duration: number;
+}
+
+export interface IndexImprovement {
+  indexName: string;
+  tableName: string;
+  beforeSize: number;
+  afterSize: number;
+  improvement: number;
+}
+
+export interface SupabaseQuery {
+  table: string;
+  operation: 'select' | 'insert' | 'update' | 'delete' | 'upsert';
+  columns?: string[];
+  filters?: SupabaseFilter[];
+  orderBy?: SupabaseOrderBy[];
+  limit?: number;
+  offset?: number;
+  data?: Record<string, unknown>;
+  returning?: string[];
+}
+
+export interface SupabaseFilter {
+  column: string;
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in' | 'is';
+  value: unknown;
+}
+
+export interface SupabaseOrderBy {
+  column: string;
+  ascending: boolean;
+}
+
+export interface SupabaseQueryResult<T> {
+  success: boolean;
+  data: T[];
+  count?: number;
+  error?: string;
+  executionTime: number;
+  cached: boolean;
+}
+
+export interface SupabaseOperation {
+  type: 'insert' | 'update' | 'delete';
+  table: string;
+  data?: Record<string, unknown>;
+  filters?: SupabaseFilter[];
+}
+
+export interface SupabaseTransactionResult<T> {
+  success: boolean;
+  data: T;
+  rollback: boolean;
+  error?: string;
+  executionTime: number;
+}
+
+export interface SupabaseSubscription {
+  id: string;
+  table: string;
+  events: ('INSERT' | 'UPDATE' | 'DELETE')[];
+  filter?: SupabaseFilter[];
+  callback: (payload: SupabaseChangePayload) => Promise<void>;
+}
+
+export interface SupabaseChangePayload {
+  type: 'INSERT' | 'UPDATE' | 'DELETE';
+  table: string;
+  schema: string;
+  record: Record<string, unknown>;
+  oldRecord?: Record<string, unknown>;
+  timestamp: number;
+  eventId: string;
+}
+
+export interface SupabaseSubscriptionHandle {
+  id: string;
+  status: 'active' | 'paused' | 'error';
+  createdAt: number;
+  lastEvent?: number;
+  eventCount: number;
+  unsubscribe: () => Promise<void>;
+}
+
+export interface SupabaseMetrics {
+  connections: {
+    active: number;
+    idle: number;
+    total: number;
+  };
+  queries: {
+    total: number;
+    successful: number;
+    failed: number;
+    averageExecutionTime: number;
+  };
+  realtime: {
+    subscriptions: number;
+    messages: number;
+    errors: number;
+  };
+  storage: {
+    uploads: number;
+    downloads: number;
+    bytesTransferred: number;
+  };
+}
+
+export interface SupabaseStatistics {
+  uptime: number;
+  totalQueries: number;
+  totalTransactions: number;
+  totalSubscriptions: number;
+  averageResponseTime: number;
+  errorRate: number;
+  throughput: number;
+  lastReset: number;
+}
+
+export interface SupabaseRealtimeClient {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  subscribe(channel: string, events: string[], callback: (payload: unknown) => void): Promise<string>;
+  unsubscribe(channel: string): Promise<void>;
+  isConnected(): boolean;
+  getConnectionStatus(): 'connected' | 'connecting' | 'disconnected' | 'error';
 }

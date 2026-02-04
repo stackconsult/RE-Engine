@@ -3,6 +3,12 @@
  * Comprehensive system initialization for production deployment
  */
 
+import { 
+  HealthMonitor, CircuitBreaker, RateLimiter, SecurityManager, SelfHealingManager,
+  EventBus, ServiceRegistry, OllamaService, OpenClawService, SupabaseService, RedisService,
+  MessageQueue, AIOrchestrator, PerformanceOptimizer
+} from './types.js';
+
 export interface ProductionBootstrapDependencies {
   healthMonitor: HealthMonitor;
   circuitBreaker: CircuitBreaker;
