@@ -1,9 +1,11 @@
 /**
  * Ollama AI Service Integration
  * High-level service for AI operations within RE Engine
+ * Supports both direct Ollama access and LiteLLM proxy for Claude Code compatibility
  */
 
 import { OllamaClient, OllamaConfig, OllamaMessage, OllamaRequest } from './ollama.client.js';
+import { LiteLLMProxyService, LiteLLMConfig } from '../ai/litellm-proxy.service.js';
 import { logPerformance, logError, logSystemEvent } from '../observability/logger.js';
 
 export interface AIRequest {
@@ -12,6 +14,7 @@ export interface AIRequest {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  claudeModel?: string; // For Claude Code compatibility
 }
 
 export interface AIResponse {
@@ -21,6 +24,16 @@ export interface AIResponse {
   processingTime: number;
   success: boolean;
   error?: string;
+  provider: 'direct' | 'proxy';
+}
+
+export interface OllamaServiceConfig {
+  useProxy: boolean;
+  proxyConfig?: LiteLLMConfig;
+  directConfig?: OllamaConfig;
+  defaultModel: string;
+  claudeModelMappings?: Record<string, string>;
+  fallbackToDirect: boolean;
 }
 
 export interface LeadAnalysisRequest {
@@ -47,351 +60,346 @@ export interface LeadAnalysisResponse {
 
 export class OllamaService {
   private client: OllamaClient;
+  private proxyService?: LiteLLMProxyService;
+  private config: OllamaServiceConfig;
   private defaultModel: string;
+  private useProxy: boolean;
 
-  constructor(config?: OllamaConfig) {
-    this.client = config ? new OllamaClient(config) : OllamaClient.fromEnvironment();
-    this.defaultModel = this.client['config'].model;
+  constructor(config: OllamaServiceConfig) {
+    this.config = config;
+    this.useProxy = config.useProxy;
+    this.defaultModel = config.defaultModel;
+
+    // Initialize direct client
+    if (config.directConfig) {
+      this.client = new OllamaClient(config.directConfig);
+    }
+
+    // Initialize proxy service
+    if (config.useProxy && config.proxyConfig) {
+      this.proxyService = new LiteLLMProxyService(config.proxyConfig);
+    }
   }
 
-  /**
-   * Initialize the Ollama service
-   */
   async initialize(): Promise<void> {
     try {
-      const isHealthy = await this.client.healthCheck();
-      
-      if (!isHealthy) {
-        throw new Error('Ollama service is not available');
-      }
-
-      // Verify default model is available
-      const models = await this.client.listModels();
-      const hasDefaultModel = models.some(model => model.name === this.defaultModel);
-      
-      if (!hasDefaultModel) {
-        logSystemEvent('Default model not found, pulling model...', 'warn', { 
-          model: this.defaultModel 
-        });
-        await this.client.pullModel(this.defaultModel);
-      }
-
-      logSystemEvent('Ollama service initialized successfully', 'info', {
-        model: this.defaultModel,
-        availableModels: models.length
+      logSystemEvent('ollama-service-init', 'info', {
+        useProxy: this.useProxy,
+        defaultModel: this.defaultModel
       });
 
+      // Initialize proxy if enabled
+      if (this.proxyService) {
+        await this.proxyService.initialize();
+      }
+
+      // Initialize direct client
+      if (this.client) {
+        await this.client.healthCheck();
+      }
+
+      logSystemEvent('ollama-service-init-success', 'info');
+
     } catch (error) {
-      logError(error as Error, 'Failed to initialize Ollama service');
+      logError(error as Error, 'ollama-service-init-failed');
       throw error;
     }
   }
 
-  /**
-   * Generate AI completion
-   */
   async generateCompletion(request: AIRequest): Promise<AIResponse> {
     const startTime = Date.now();
-    
+
     try {
-      const messages: OllamaMessage[] = [];
-      
-      // Add system context if provided
-      if (request.context) {
-        messages.push({
-          role: 'system',
-          content: request.context
-        });
+      logSystemEvent('ollama-completion-start', 'info', {
+        model: request.model || this.defaultModel,
+        useProxy: this.useProxy,
+        claudeModel: request.claudeModel
+      });
+
+      let response: AIResponse;
+
+      if (this.useProxy && this.proxyService) {
+        response = await this.generateViaProxy(request);
+      } else {
+        response = await this.generateDirectly(request);
       }
-      
-      // Add user prompt
-      messages.push({
-        role: 'user',
-        content: request.prompt
+
+      response.processingTime = Date.now() - startTime;
+
+      logSystemEvent('ollama-completion-success', 'info', {
+        model: response.model,
+        provider: response.provider,
+        processingTime: response.processingTime,
+        tokensUsed: response.tokensUsed
       });
 
-      const ollamaRequest: OllamaRequest = {
-        model: request.model || this.defaultModel,
-        messages,
-        options: {
-          temperature: request.temperature || 0.7,
-          max_tokens: request.maxTokens || 1000
-        }
-      };
-
-      const response = await this.client.generateCompletion(ollamaRequest);
-      const processingTime = Date.now() - startTime;
-
-      logPerformance('ollama_completion', processingTime, {
-        model: response.message?.role || 'unknown',
-        messageCount: messages.length
-      });
-
-      return {
-        content: response.message?.content || '',
-        model: request.model || this.defaultModel,
-        tokensUsed: response.eval_count,
-        processingTime,
-        success: true
-      };
+      return response;
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      logError(error as Error, 'AI completion failed', {
+      
+      logError(error as Error, 'ollama-completion-failed', {
         model: request.model || this.defaultModel,
+        useProxy: this.useProxy,
         processingTime
       });
+
+      // Fallback to direct if proxy fails
+      if (this.useProxy && this.config.fallbackToDirect && this.client) {
+        logSystemEvent('ollama-completion-fallback', 'warn', {
+          fromProvider: 'proxy',
+          toProvider: 'direct'
+        });
+        
+        return await this.generateDirectly(request);
+      }
 
       return {
         content: '',
         model: request.model || this.defaultModel,
         processingTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: (error as Error).message,
+        provider: this.useProxy ? 'proxy' : 'direct'
       };
     }
   }
 
-  /**
-   * Analyze lead data using AI
-   */
-  async analyzeLead(request: LeadAnalysisRequest): Promise<LeadAnalysisResponse> {
-    const startTime = Date.now();
-    
-    try {
-      const prompt = this.buildLeadAnalysisPrompt(request);
-      
-      const aiResponse = await this.generateCompletion({
-        prompt,
-        context: this.getLeadAnalysisContext(request.analysisType),
-        temperature: 0.3, // Lower temperature for more consistent analysis
-        maxTokens: 2000
-      });
+  private async generateViaProxy(request: AIRequest): Promise<AIResponse> {
+    if (!this.proxyService) {
+      throw new Error('Proxy service not initialized');
+    }
 
-      if (!aiResponse.success) {
-        throw new Error(aiResponse.error || 'AI analysis failed');
+    // Map Claude model to Ollama model if specified
+    let ollamaModel = request.model;
+    if (request.claudeModel) {
+      ollamaModel = await this.proxyService.getModelMapping(request.claudeModel);
+    }
+
+    // Create request for LiteLLM proxy (Claude API compatible)
+    const claudeRequest = {
+      model: request.claudeModel || 'claude-sonnet-4-5',
+      messages: [
+        {
+          role: 'user',
+          content: request.context ? `${request.context}\n\n${request.prompt}` : request.prompt
+        }
+      ],
+      max_tokens: request.maxTokens || 1000,
+      temperature: request.temperature || 0.7
+    };
+
+    const response = await fetch(`${this.proxyService.getStatus().proxyUrl}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.proxyConfig?.masterKey}`
+      },
+      body: JSON.stringify(claudeRequest)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      content: data.content?.[0]?.text || '',
+      model: data.model || ollamaModel || this.defaultModel,
+      tokensUsed: data.usage?.total_tokens,
+      processingTime: 0, // Will be set by caller
+      success: true,
+      provider: 'proxy'
+    };
+  }
+
+  private async generateDirectly(request: AIRequest): Promise<AIResponse> {
+    if (!this.client) {
+      throw new Error('Direct Ollama client not initialized');
+    }
+
+    const ollamaRequest: OllamaRequest = {
+      model: request.model || this.defaultModel,
+      messages: [
+        {
+          role: 'user',
+          content: request.context ? `${request.context}\n\n${request.prompt}` : request.prompt
+        }
+      ],
+      options: {
+        temperature: request.temperature || 0.7,
+        max_tokens: request.maxTokens || 1000
+      }
+    };
+
+    const response = await this.client.generateCompletion(ollamaRequest);
+
+    return {
+      content: response.message?.content || '',
+      model: response.model || this.defaultModel,
+      tokensUsed: response.eval_count,
+      processingTime: 0, // Will be set by caller
+      success: true,
+      provider: 'direct'
+    };
+  }
+
+  async analyzeLead(request: LeadAnalysisRequest): Promise<LeadAnalysisResponse> {
+    const prompt = this.buildLeadAnalysisPrompt(request);
+    
+    const aiRequest: AIRequest = {
+      prompt,
+      model: this.defaultModel,
+      temperature: 0.3, // Lower temperature for consistent analysis
+      maxTokens: 500
+    };
+
+    const response = await this.generateCompletion(aiRequest);
+
+    if (!response.success) {
+      throw new Error(`Lead analysis failed: ${response.error}`);
+    }
+
+    return this.parseLeadAnalysisResponse(response.content, response.model, response.processingTime);
+  }
+
+  async healthCheck(): Promise<boolean> {
+    try {
+      const checks = [];
+
+      // Check proxy health if enabled
+      if (this.proxyService) {
+        const proxyHealth = await this.proxyService.healthCheck();
+        checks.push(proxyHealth);
       }
 
-      const analysis = this.parseLeadAnalysisResponse(aiResponse.content, request.analysisType);
-      const processingTime = Date.now() - startTime;
+      // Check direct client health if available
+      if (this.client) {
+        const directHealth = await this.client.healthCheck();
+        checks.push(directHealth);
+      }
 
-      logPerformance('lead_analysis', processingTime, {
-        analysisType: request.analysisType,
-        model: aiResponse.model
-      });
-
-      return {
-        ...analysis,
-        model: aiResponse.model,
-        processingTime
-      };
+      return checks.length > 0 ? checks.every(check => check) : false;
 
     } catch (error) {
-      const processingTime = Date.now() - startTime;
-      logError(error as Error, 'Lead analysis failed', {
-        analysisType: request.analysisType,
-        processingTime
-      });
-
-      return {
-        insights: [],
-        recommendations: [],
-        confidence: 0,
-        model: this.defaultModel,
-        processingTime
-      };
+      logError(error as Error, 'ollama-health-check-failed');
+      return false;
     }
   }
 
-  /**
-   * Generate outreach message
-   */
-  async generateOutreachMessage(leadData: LeadAnalysisRequest['leadData']): Promise<string> {
-    const prompt = `
-Generate a personalized outreach message for the following lead:
-
-Company: ${leadData.company || 'Unknown'}
-Domain: ${leadData.domain || 'Unknown'}
-Industry: ${leadData.industry || 'Unknown'}
-Size: ${leadData.size || 'Unknown'}
-Location: ${leadData.location || 'Unknown'}
-Description: ${leadData.description || 'No description available'}
-
-Requirements:
-- Keep it under 150 words
-- Make it professional but friendly
-- Reference their industry or company when possible
-- Include a clear call-to-action
-- Avoid generic sales language
-
-Format the response as a complete email message.
-    `.trim();
-
-    const response = await this.generateCompletion({
-      prompt,
-      context: 'You are a professional sales development representative specializing in personalized outreach.',
-      temperature: 0.5,
-      maxTokens: 300
-    });
-
-    return response.content;
-  }
-
-  /**
-   * Generate lead qualification score
-   */
-  async generateQualificationScore(leadData: LeadAnalysisRequest['leadData']): Promise<number> {
-    const prompt = `
-Rate the lead quality on a scale of 0-100 based on:
-
-Company: ${leadData.company || 'Unknown'}
-Industry: ${leadData.industry || 'Unknown'}
-Size: ${leadData.size || 'Unknown'}
-Description: ${leadData.description || 'No description'}
-
-Consider:
-- Industry relevance
-- Company size (preferably 50-1000 employees)
-- Clear business description
-- Technology adoption likelihood
-
-Respond with only a number between 0-100.
-    `.trim();
-
-    const response = await this.generateCompletion({
-      prompt,
-      temperature: 0.1, // Very low temperature for consistent scoring
-      maxTokens: 10
-    });
-
-    const score = parseInt(response.content.replace(/\D/g, ''));
-    return Math.min(100, Math.max(0, isNaN(score) ? 50 : score));
-  }
-
-  /**
-   * Get available models
-   */
-  async getAvailableModels(): Promise<string[]> {
+  async listAvailableModels(): Promise<string[]> {
     try {
-      const models = await this.client.listModels();
-      return models.map(model => model.name);
+      if (this.useProxy && this.proxyService) {
+        return await this.proxyService.listAvailableModels();
+      }
+
+      if (this.client) {
+        const models = await this.client.listModels();
+        return models.map(model => model.name);
+      }
+
+      return [];
+
     } catch (error) {
-      logError(error as Error, 'Failed to get available models');
-      return [this.defaultModel];
+      logError(error as Error, 'ollama-list-models-failed');
+      return [];
     }
   }
 
-  /**
-   * Build lead analysis prompt based on analysis type
-   */
+  async switchProvider(useProxy: boolean): Promise<void> {
+    logSystemEvent('ollama-switch-provider', 'info', {
+      fromProvider: this.useProxy ? 'proxy' : 'direct',
+      toProvider: useProxy ? 'proxy' : 'direct'
+    });
+
+    this.useProxy = useProxy;
+
+    // Validate the switch
+    if (useProxy && !this.proxyService) {
+      throw new Error('Cannot switch to proxy: proxy service not initialized');
+    }
+
+    if (!useProxy && !this.client) {
+      throw new Error('Cannot switch to direct: direct client not initialized');
+    }
+
+    // Verify health of new provider
+    const isHealthy = await this.healthCheck();
+    if (!isHealthy) {
+      throw new Error(`Switch to ${useProxy ? 'proxy' : 'direct'} provider failed health check`);
+    }
+
+    logSystemEvent('ollama-switch-provider-success', 'info');
+  }
+
+  getStatus(): {
+    useProxy: boolean;
+    proxyStatus?: any;
+    directHealthy?: boolean;
+    availableModels: string[];
+  } {
+    return {
+      useProxy: this.useProxy,
+      proxyStatus: this.proxyService?.getStatus(),
+      directHealthy: this.client ? true : undefined,
+      availableModels: [] // Will be populated asynchronously
+    };
+  }
+
   private buildLeadAnalysisPrompt(request: LeadAnalysisRequest): string {
     const { leadData, analysisType } = request;
     
-    const baseInfo = `
-Company: ${leadData.company || 'Unknown'}
-Domain: ${leadData.domain || 'Unknown'}
-Industry: ${leadData.industry || 'Unknown'}
-Size: ${leadData.size || 'Unknown'}
-Location: ${leadData.location || 'Unknown'}
-Description: ${leadData.description || 'No description'}
-    `.trim();
+    let prompt = `Analyze the following lead data for ${analysisType}:\n\n`;
+    
+    if (leadData.company) prompt += `Company: ${leadData.company}\n`;
+    if (leadData.domain) prompt += `Domain: ${leadData.domain}\n`;
+    if (leadData.industry) prompt += `Industry: ${leadData.industry}\n`;
+    if (leadData.size) prompt += `Size: ${leadData.size}\n`;
+    if (leadData.location) prompt += `Location: ${leadData.location}\n`;
+    if (leadData.description) prompt += `Description: ${leadData.description}\n`;
 
     switch (analysisType) {
       case 'outreach':
-        return `
-${baseInfo}
-
-Analyze this lead for outreach strategy and provide:
-1. 3 key insights about the company
-2. 2-3 specific outreach recommendations
-3. A brief outreach strategy paragraph
-
-Focus on personalization angles and timing considerations.
-        `.trim();
-
+        prompt += '\nProvide specific outreach strategies and talking points.';
+        break;
       case 'qualification':
-        return `
-${baseInfo}
-
-Evaluate this lead's qualification and provide:
-1. 3 qualification insights (strengths/concerns)
-2. 2-3 recommendations for next steps
-3. A qualification score (0-100)
-
-Consider BANT criteria: Budget, Authority, Need, Timeline.
-        `.trim();
-
+        prompt += '\nProvide a qualification score (1-10) and reasoning.';
+        break;
       case 'enrichment':
-        return `
-${baseInfo}
-
-Enrich this lead data and provide:
-1. 3 insights about their business needs
-2. 2-3 data enrichment recommendations
-3. Potential technology stack or tools they might use
-
-Focus on actionable intelligence for sales.
-        `.trim();
-
-      default:
-        return baseInfo;
+        prompt += '\nProvide additional insights and recommendations.';
+        break;
     }
+
+    return prompt;
   }
 
-  /**
-   * Get context for lead analysis
-   */
-  private getLeadAnalysisContext(analysisType: string): string {
-    const contexts = {
-      outreach: 'You are an expert sales development strategist specializing in personalized outreach campaigns.',
-      qualification: 'You are a seasoned sales expert skilled at B2B lead qualification using frameworks like BANT and MEDDIC.',
-      enrichment: 'You are a business intelligence expert specializing in company research and data enrichment for sales teams.'
-    };
-
-    return contexts[analysisType as keyof typeof contexts] || 'You are a helpful AI assistant for business analysis.';
-  }
-
-  /**
-   * Parse lead analysis response
-   */
-  private parseLeadAnalysisResponse(content: string, analysisType: string): Omit<LeadAnalysisResponse, 'model' | 'processingTime'> {
-    // Basic parsing - in production, this would be more sophisticated
+  private parseLeadAnalysisResponse(content: string, model: string, processingTime: number): LeadAnalysisResponse {
+    // Simple parsing - in production, you'd want more sophisticated parsing
     const lines = content.split('\n').filter(line => line.trim());
     
-    const insights: string[] = [];
-    const recommendations: string[] = [];
-    let outreachStrategy: string | undefined;
-    let qualificationScore: number | undefined;
-    const confidence = 0.7; // Default confidence
-
-    // Simple parsing logic - would be enhanced with better NLP
-    lines.forEach(line => {
-      if (line.toLowerCase().includes('insight') || line.toLowerCase().includes('finding')) {
-        insights.push(line.trim());
-      } else if (line.toLowerCase().includes('recommend') || line.toLowerCase().includes('suggest')) {
-        recommendations.push(line.trim());
-      } else if (analysisType === 'outreach' && line.toLowerCase().includes('strategy')) {
-        outreachStrategy = line.trim();
-      } else if (analysisType === 'qualification' && line.includes('score:')) {
-        const score = parseInt(line.replace(/\D/g, ''));
-        if (!isNaN(score)) qualificationScore = score;
-      }
-    });
-
     return {
-      insights: insights.slice(0, 3), // Limit to 3 insights
-      recommendations: recommendations.slice(0, 3), // Limit to 3 recommendations
-      outreachStrategy,
-      qualificationScore,
-      confidence
+      insights: lines.filter(line => line.includes('insight') || line.includes('finding')),
+      recommendations: lines.filter(line => line.includes('recommend') || line.includes('suggest')),
+      outreachStrategy: lines.find(line => line.includes('strategy')) || '',
+      qualificationScore: this.extractScore(content),
+      confidence: 0.8, // Would be calculated based on response quality
+      model,
+      processingTime
     };
   }
 
-  /**
-   * Close the service
-   */
-  async close(): Promise<void> {
-    // No explicit cleanup needed for HTTP client
-    logSystemEvent('Ollama service closed', 'info');
+  private extractScore(content: string): number {
+    const scoreMatch = content.match(/(\d+)\/10|score[^\d]*(\d+)/i);
+    if (scoreMatch) {
+      return Math.min(10, Math.max(1, parseInt(scoreMatch[1] || scoreMatch[2])));
+    }
+    return 5; // Default middle score
+  }
+
+  async cleanup(): Promise<void> {
+    if (this.proxyService) {
+      await this.proxyService.cleanup();
+    }
   }
 }
