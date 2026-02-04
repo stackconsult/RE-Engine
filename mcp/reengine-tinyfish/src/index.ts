@@ -5,6 +5,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { scrape } from "./tools/scrape.js";
 
 const server = new Server(
   {
@@ -13,31 +14,9 @@ const server = new Server(
   }
 );
 
+// Add modular tool
 const tools: Tool[] = [
-  {
-    name: "scrape_url",
-    description: "Scrape data from a URL using TinyFish API",
-    inputSchema: {
-      type: "object",
-      properties: {
-        url: {
-          type: "string",
-          description: "URL to scrape",
-        },
-        extract: {
-          type: "string",
-          enum: ["text", "links", "images", "metadata"],
-          description: "Type of data to extract",
-          default: "text",
-        },
-        selector: {
-          type: "string",
-          description: "CSS selector for targeted extraction",
-        },
-      },
-      required: ["url"],
-    },
-  },
+  scrape.tool,
   {
     name: "scrape_real_estate_listings",
     description: "Scrape real estate listings from Zillow, Realtor.com, or other real estate websites",
@@ -177,113 +156,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
   try {
     switch (name) {
       case "scrape_url": {
-        // Basic validation without zod dependency
-        if (!args.url || typeof args.url !== 'string') {
-          throw new Error('URL is required and must be a string');
-        }
-        
-        const extract = args.extract || 'text';
-        const validExtractTypes = ['text', 'links', 'images', 'metadata'];
-        if (!validExtractTypes.includes(extract)) {
-          throw new Error(`extract must be one of: ${validExtractTypes.join(', ')}`);
-        }
-        
-        // Real TinyFish API implementation
-        try {
-          const tinyFishUrl = process.env.TINYFISH_API_URL || 'https://api.tinyfish.io/v1/scrape';
-          
-          const requestBody = {
-            url: args.url,
-            extract: extract,
-            selector: args.selector
-          };
-
-          const response = await fetch(tinyFishUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.TINYFISH_API_KEY || 'demo-key'}`,
-              'User-Agent': 'RE-Engine/1.0'
-            },
-            body: JSON.stringify(requestBody)
-          });
-
-          if (!response.ok) {
-            throw new Error(`TinyFish API error: ${response.status} ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          
-          // Validate response structure
-          if (!data.success) {
-            throw new Error(`TinyFish API failed: ${data.error || 'Unknown error'}`);
-          }
-
-          let result: any;
-          
-          switch (extract) {
-            case "text":
-              result = { content: data.data.text || data.data.content };
-              break;
-            case "links":
-              result = { links: data.data.links || [] };
-              break;
-            case "images":
-              result = { images: data.data.images || [] };
-              break;
-            case "metadata":
-              result = data.data.metadata || {};
-              break;
-            default:
-              result = data.data;
-          }
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          console.error('TinyFish API error:', error);
-          
-          // Fallback to mock data for testing
-          const fallbackData = {
-            text: "Fallback content - TinyFish API unavailable. This is mock data for testing.",
-            links: ["https://fallback.com/page1", "https://fallback.com/page2"],
-            images: ["https://fallback.com/image1.jpg"],
-            metadata: { title: "Fallback Title", description: "Fallback description" }
-          };
-
-          let result: any;
-          switch (extract) {
-            case "text":
-              result = { content: fallbackData.text };
-              break;
-            case "links":
-              result = { links: fallbackData.links };
-              break;
-            case "images":
-              result = { images: fallbackData.images };
-              break;
-            case "metadata":
-              result = fallbackData.metadata;
-              break;
-            default:
-              result = fallbackData;
-          }
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
-          };
-        }
+        // Use the modular scrape handler
+        return await scrape.handler(args);
       }
 
       case "extract_links": {
