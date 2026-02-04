@@ -23,7 +23,10 @@ async function testVertexAI() {
       region: process.env.VERTEX_AI_REGION,
       serviceAccountEmail: process.env.VERTEX_AI_SERVICE_ACCOUNT_EMAIL,
       apiKey: process.env.VERTEX_AI_API_KEY,
-      modelId: process.env.VERTEX_AI_MODEL_ID || 'text-bison'
+      modelId: process.env.VERTEX_AI_MODEL_ID || 'gemini-1.0-pro',
+      oauthClientId: process.env.VERTEX_AI_OAUTH_CLIENT_ID,
+      oauthClientSecret: process.env.VERTEX_AI_OAUTH_CLIENT_SECRET,
+      oauthRedirectUri: process.env.VERTEX_AI_OAUTH_REDIRECT_URI
     });
 
     await vertexAI.initialize();
@@ -83,7 +86,10 @@ async function testAIServiceManager() {
         projectId: process.env.VERTEX_AI_PROJECT_ID,
         region: process.env.VERTEX_AI_REGION,
         serviceAccountEmail: process.env.VERTEX_AI_SERVICE_ACCOUNT_EMAIL,
-        apiKey: process.env.VERTEX_AI_API_KEY
+        apiKey: process.env.VERTEX_AI_API_KEY,
+        oauthClientId: process.env.VERTEX_AI_OAUTH_CLIENT_ID,
+        oauthClientSecret: process.env.VERTEX_AI_OAUTH_CLIENT_SECRET,
+        oauthRedirectUri: process.env.VERTEX_AI_OAUTH_REDIRECT_URI
       }
     });
 
@@ -125,7 +131,10 @@ async function testRealEstateUseCases() {
       projectId: process.env.VERTEX_AI_PROJECT_ID,
       region: process.env.VERTEX_AI_REGION,
       serviceAccountEmail: process.env.VERTEX_AI_SERVICE_ACCOUNT_EMAIL,
-      apiKey: process.env.VERTEX_AI_API_KEY
+      apiKey: process.env.VERTEX_AI_API_KEY,
+      oauthClientId: process.env.VERTEX_AI_OAUTH_CLIENT_ID,
+      oauthClientSecret: process.env.VERTEX_AI_OAUTH_CLIENT_SECRET,
+      oauthRedirectUri: process.env.VERTEX_AI_OAUTH_REDIRECT_URI
     });
 
     await vertexAI.initialize();
@@ -199,8 +208,8 @@ async function main() {
   const requiredEnvVars = [
     'VERTEX_AI_PROJECT_ID',
     'VERTEX_AI_REGION',
-    'VERTEX_AI_SERVICE_ACCOUNT_EMAIL',
-    'VERTEX_AI_API_KEY'
+    'VERTEX_AI_OAUTH_CLIENT_ID',
+    'VERTEX_AI_OAUTH_CLIENT_SECRET'
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);

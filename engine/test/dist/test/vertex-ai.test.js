@@ -52,7 +52,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(true, 'Authentication successful');
             }
             catch (error) {
-                console.log('Authentication test failed:', error.message);
+                console.log('Authentication test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });
@@ -77,7 +77,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(typeof response.usage.totalTokens === 'number');
             }
             catch (error) {
-                console.log('Text generation test failed:', error.message);
+                console.log('Text generation test failed:', error instanceof Error ? error.message : String(error));
                 // Don't fail the test if API is unavailable
             }
         });
@@ -99,7 +99,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(response.candidates.length <= 2);
             }
             catch (error) {
-                console.log('Parameter test failed:', error.message);
+                console.log('Parameter test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });
@@ -119,7 +119,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(typeof response.embeddings.statistics.tokenCount === 'number');
             }
             catch (error) {
-                console.log('Embedding test failed:', error.message);
+                console.log('Embedding test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });
@@ -136,7 +136,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(models.includes('text-bison'));
             }
             catch (error) {
-                console.log('Model listing test failed:', error.message);
+                console.log('Model listing test failed:', error instanceof Error ? error.message : String(error));
             }
         });
         it('should get model information', async () => {
@@ -150,7 +150,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(modelInfo.name);
             }
             catch (error) {
-                console.log('Model info test failed:', error.message);
+                console.log('Model info test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });
@@ -165,7 +165,7 @@ describe('Vertex AI Service', () => {
                 assert.ok(typeof isHealthy === 'boolean');
             }
             catch (error) {
-                console.log('Health check test failed:', error.message);
+                console.log('Health check test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });
@@ -182,7 +182,8 @@ describe('Vertex AI Service', () => {
                 assert.fail('Should have thrown an error');
             }
             catch (error) {
-                assert.ok(error.message.includes('error') || error.message.includes('unauthorized'));
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                assert.ok(errorMessage.includes('error') || errorMessage.includes('unauthorized'));
             }
         });
         it('should handle network timeouts', async () => {
@@ -223,7 +224,7 @@ Focus on lifestyle benefits and keep it under 150 words.`,
                 console.log('Generated property description:', response.candidates[0].content);
             }
             catch (error) {
-                console.log('Property description test failed:', error.message);
+                console.log('Property description test failed:', error instanceof Error ? error.message : String(error));
             }
         });
         it('should generate market analysis', async () => {
@@ -253,7 +254,7 @@ Provide a concise analysis with key insights.`,
                 console.log('Generated market analysis:', response.candidates[0].content);
             }
             catch (error) {
-                console.log('Market analysis test failed:', error.message);
+                console.log('Market analysis test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });
@@ -287,7 +288,7 @@ Requirements:
                 console.log('Generated email response:', response.candidates[0].content);
             }
             catch (error) {
-                console.log('Email response test failed:', error.message);
+                console.log('Email response test failed:', error instanceof Error ? error.message : String(error));
             }
         });
     });

@@ -8,9 +8,12 @@ import { logger, logSystemEvent, logError } from '../observability/logger.js';
 export interface VertexAIConfig {
   projectId: string;
   region: string;
-  serviceAccountEmail: string;
+  serviceAccountEmail?: string;
   apiKey?: string;
   modelId?: string;
+  oauthClientId?: string;
+  oauthClientSecret?: string;
+  oauthRedirectUri?: string;
 }
 
 export interface CompletionRequest {
@@ -71,8 +74,13 @@ export class VertexAIService {
     this.baseUrl = `https://${config.region}-aiplatform.googleapis.com/v1`;
     
     // Validate configuration
-    if (!config.projectId || !config.region || !config.serviceAccountEmail) {
-      throw new Error('Missing required Vertex AI configuration');
+    if (!config.projectId || !config.region) {
+      throw new Error('Missing required Vertex AI configuration: projectId and region are required');
+    }
+    
+    // Check for authentication method
+    if (!config.oauthClientId && !config.apiKey) {
+      throw new Error('Missing authentication: either OAuth credentials or API key required');
     }
   }
 
@@ -220,10 +228,17 @@ export class VertexAIService {
 
   private async authenticate(): Promise<void> {
     try {
-      // For Vertex AI, we use the API key directly in the x-goog-api-key header
-      // No need for OAuth flow when using API keys
-      this.accessToken = this.config.apiKey || null;
-      this.tokenExpiry = Date.now() + (3600 * 1000); // 1 hour expiry
+      // For now, prioritize API key authentication since it's working
+      // OAuth setup for server-to-server requires service account keys, not OAuth clients
+      if (this.config.apiKey) {
+        await this.authenticateWithApiKey();
+      } else if (this.config.oauthClientId && this.config.oauthClientSecret) {
+        // OAuth authentication would require service account JSON keys
+        // For now, throw an error to guide user to use API key
+        throw new Error('OAuth authentication requires service account JSON keys. Please use API key authentication for now.');
+      } else {
+        throw new Error('No authentication method available');
+      }
 
       logSystemEvent('vertex-ai-auth-success', 'info');
 
@@ -233,14 +248,99 @@ export class VertexAIService {
     }
   }
 
+  private async authenticateWithOAuth(): Promise<void> {
+    try {
+      // For Vertex AI, we need to use JWT assertion with service account
+      // The OAuth client credentials flow may not work for server-to-server applications
+      // Let's try a different approach using the service account email and OAuth client
+      
+      const tokenEndpoint = 'https://oauth2.googleapis.com/token';
+      
+      // First try to get a token using the OAuth client
+      const response = await fetch(tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: await this.createJWTAssertion()
+        })
+      });
+
+      if (!response.ok) {
+        // If OAuth fails, fallback to API key authentication
+        console.log('OAuth authentication failed, falling back to API key');
+        await this.authenticateWithApiKey();
+        return;
+      }
+
+      const tokenData = await response.json();
+      this.accessToken = tokenData.access_token;
+      this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
+
+      logSystemEvent('vertex-ai-oauth-auth-success', 'info', {
+        expiresIn: tokenData.expires_in
+      });
+
+    } catch (error) {
+      logError(error as Error, 'vertex-ai-oauth-auth-failed');
+      // Fallback to API key authentication
+      console.log('OAuth authentication failed, falling back to API key');
+      await this.authenticateWithApiKey();
+    }
+  }
+
+  private async createJWTAssertion(): Promise<string> {
+    // For server-to-server authentication, we need to create a JWT assertion
+    // This is a simplified version - in production, you'd use proper JWT libraries
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT'
+    };
+
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      iss: this.config.oauthClientId,
+      scope: 'https://www.googleapis.com/auth/cloud-platform',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now
+    };
+
+    // This would require proper JWT signing with the client secret
+    // For now, let's fallback to a simpler approach
+    throw new Error('JWT assertion creation not implemented - using API key fallback');
+  }
+
+  private async authenticateWithApiKey(): Promise<void> {
+    try {
+      // Fallback to API key authentication
+      this.accessToken = this.config.apiKey || null;
+      this.tokenExpiry = Date.now() + (3600 * 1000); // 1 hour expiry
+
+      logSystemEvent('vertex-ai-apikey-auth-success', 'info');
+
+    } catch (error) {
+      logError(error as Error, 'vertex-ai-apikey-auth-failed');
+      throw error;
+    }
+  }
+
   private async makeRequest(endpoint: string, body: any = {}, method: string = 'POST'): Promise<any> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json'
     };
 
-    // Add API key header if available
+    // Use OAuth Bearer token if available, otherwise fallback to API key
     if (this.accessToken) {
-      headers['x-goog-api-key'] = this.accessToken;
+      if (this.config.oauthClientId) {
+        // OAuth authentication uses Bearer token
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+      } else {
+        // API key authentication uses x-goog-api-key header
+        headers['x-goog-api-key'] = this.accessToken;
+      }
     }
 
     const options: RequestInit = {

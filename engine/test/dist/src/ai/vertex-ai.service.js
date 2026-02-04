@@ -12,8 +12,12 @@ export class VertexAIService {
         this.config = config;
         this.baseUrl = `https://${config.region}-aiplatform.googleapis.com/v1`;
         // Validate configuration
-        if (!config.projectId || !config.region || !config.serviceAccountEmail) {
-            throw new Error('Missing required Vertex AI configuration');
+        if (!config.projectId || !config.region) {
+            throw new Error('Missing required Vertex AI configuration: projectId and region are required');
+        }
+        // Check for authentication method
+        if (!config.oauthClientId && !config.apiKey) {
+            throw new Error('Missing authentication: either OAuth credentials or API key required');
         }
     }
     async initialize() {
@@ -37,8 +41,8 @@ export class VertexAIService {
             await this.authenticate();
         }
         try {
-            const modelId = request.modelId || this.config.modelId || 'text-bison';
-            const endpoint = `${this.baseUrl}/projects/${this.config.projectId}/locations/${this.config.region}/publishers/google/models/${modelId}:generateText`;
+            const modelId = request.modelId || this.config.modelId || 'gemini-1.0-pro';
+            const endpoint = `${this.baseUrl}/projects/${this.config.projectId}/locations/${this.config.region}/publishers/google/models/${modelId}:predict`;
             const requestBody = {
                 instances: [
                     {
@@ -135,21 +139,10 @@ export class VertexAIService {
     }
     async authenticate() {
         try {
-            // Use API key authentication (simplified approach)
-            if (this.config.apiKey) {
-                this.accessToken = this.config.apiKey;
-                this.tokenExpiry = Date.now() + (3600 * 1000); // 1 hour expiry
-            }
-            else {
-                // Use environment variable or service account authentication
-                // For now, we'll use the API key from environment
-                const apiKey = process.env.VERTEX_AI_API_KEY;
-                if (!apiKey) {
-                    throw new Error('Vertex AI API key not found in environment variables');
-                }
-                this.accessToken = apiKey;
-                this.tokenExpiry = Date.now() + (3600 * 1000);
-            }
+            // For Vertex AI, we use the API key directly in the x-goog-api-key header
+            // No need for OAuth flow when using API keys
+            this.accessToken = this.config.apiKey || null;
+            this.tokenExpiry = Date.now() + (3600 * 1000); // 1 hour expiry
             logSystemEvent('vertex-ai-auth-success', 'info');
         }
         catch (error) {
@@ -159,9 +152,12 @@ export class VertexAIService {
     }
     async makeRequest(endpoint, body = {}, method = 'POST') {
         const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.accessToken}`
+            'Content-Type': 'application/json'
         };
+        // Add API key header if available
+        if (this.accessToken) {
+            headers['x-goog-api-key'] = this.accessToken;
+        }
         const options = {
             method,
             headers
