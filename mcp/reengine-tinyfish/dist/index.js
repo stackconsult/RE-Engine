@@ -1,12 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
-const TinyFishSchema = z.object({
-    url: z.string().url(),
-    extract: z.enum(["text", "links", "images", "metadata"]).default("text"),
-    selector: z.string().optional(),
-});
 const server = new Server({
     name: "reengine-tinyfish",
     version: "0.1.0",
@@ -81,7 +75,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
         switch (name) {
             case "scrape_url": {
-                const parsed = TinyFishSchema.parse(args);
+                // Basic validation without zod dependency
+                if (!args.url || typeof args.url !== 'string') {
+                    throw new Error('URL is required and must be a string');
+                }
+                const extract = args.extract || 'text';
+                const validExtractTypes = ['text', 'links', 'images', 'metadata'];
+                if (!validExtractTypes.includes(extract)) {
+                    throw new Error(`extract must be one of: ${validExtractTypes.join(', ')}`);
+                }
                 // Mock TinyFish API implementation
                 // In production, this would call the actual TinyFish API
                 const mockData = {
@@ -103,7 +105,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     },
                 };
                 let result;
-                switch (parsed.extract) {
+                switch (extract) {
                     case "text":
                         result = { content: mockData.text };
                         break;
