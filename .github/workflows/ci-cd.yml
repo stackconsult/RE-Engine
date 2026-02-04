@@ -203,9 +203,9 @@ jobs:
         name: integration-test-results
         path: test-results/
 
-  # Deploy to Staging
-  deploy-staging:
-    name: Deploy to Staging
+  # Deploy to Google Cloud Platform
+  deploy-gcp:
+    name: Deploy to GCP
     runs-on: ubuntu-latest
     needs: [integration-test]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
@@ -217,20 +217,72 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy to staging
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '555.0.0'
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker
+
+    - name: Build and push Docker images to GCR
       run: |
-        echo "Deploying to staging environment..."
-        # Add your staging deployment logic here
-        # For example, using kubectl, helm, or other deployment tools
+        # Build and push engine image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-engine:${{ github.sha }} ./engine
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-engine:${{ github.sha }}
+        
+        # Build and push dashboard image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-dashboard:${{ github.sha }} ./web-dashboard
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-dashboard:${{ github.sha }}
+
+    - name: Deploy to Cloud Run
+      run: |
+        # Deploy engine service
+        gcloud run deploy reengine-engine \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-engine:${{ github.sha }} \
+          --region=${{ secrets.GCP_REGION }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=512Mi \
+          --cpu=1 \
+          --timeout=300 \
+          --set-env-vars=DB_HOST=${{ secrets.DB_HOST }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+        # Deploy dashboard service
+        gcloud run deploy reengine-dashboard \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-dashboard:${{ github.sha }} \
+          --region=${{ secrets.GCP_REGION }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=256Mi \
+          --cpu=1 \
+          --timeout=300 \
+          --set-env-vars=ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION }} --format='value(status.url)')
+
+    - name: Get service URLs
+      id: services
+      run: |
+        ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION }} --format='value(status.url)')
+        DASHBOARD_URL=$(gcloud run services describe reengine-dashboard --region=${{ secrets.GCP_REGION }} --format='value(status.url)')
+        echo "engine_url=$ENGINE_URL" >> $GITHUB_OUTPUT
+        echo "dashboard_url=$DASHBOARD_URL" >> $GITHUB_OUTPUT
 
     - name: Run smoke tests
       run: |
-        echo "Running smoke tests..."
-        # Add smoke test commands here
+        curl -f ${{ steps.services.outputs.engine_url }}/health || exit 1
+        curl -f ${{ steps.services.outputs.dashboard_url }}/api/status || exit 1
 
-  # Deploy to Production
-  deploy-production:
-    name: Deploy to Production
+    - name: Update deployment status
+      run: |
+        echo "🚀 RE Engine deployed to staging!"
+        echo "Engine: ${{ steps.services.outputs.engine_url }}"
+        echo "Dashboard: ${{ steps.services.outputs.dashboard_url }}"
+
+  # Deploy to Production GCP
+  deploy-gcp-production:
+    name: Deploy to Production GCP
     runs-on: ubuntu-latest
     needs: [integration-test]
     if: github.event_name == 'release'
@@ -242,17 +294,73 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy to production
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '555.0.0'
+        service_account_key: ${{ secrets.GCP_SA_KEY_PROD }}
+        project_id: ${{ secrets.GCP_PROJECT_ID_PROD }}
+
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker
+
+    - name: Build and push production Docker images
       run: |
-        echo "Deploying to production environment..."
-        # Add your production deployment logic here
+        # Tag with release version
+        VERSION=${{ github.event.release.tag_name }}
+        
+        # Build and push engine image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-engine:$VERSION ./engine
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-engine:$VERSION
+        
+        # Build and push dashboard image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-dashboard:$VERSION ./web-dashboard
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-dashboard:$VERSION
+
+    - name: Deploy to production Cloud Run
+      run: |
+        VERSION=${{ github.event.release.tag_name }}
+        
+        # Deploy engine service with production settings
+        gcloud run deploy reengine-engine \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-engine:$VERSION \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=1Gi \
+          --cpu=2 \
+          --timeout=300 \
+          --min-instances=1 \
+          --max-instances=10 \
+          --set-env-vars=DB_HOST=${{ secrets.DB_HOST_PROD }},DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }},JWT_SECRET=${{ secrets.JWT_SECRET_PROD }}
+
+        # Deploy dashboard service with production settings
+        gcloud run deploy reengine-dashboard \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-dashboard:$VERSION \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=512Mi \
+          --cpu=1 \
+          --timeout=300 \
+          --min-instances=1 \
+          --max-instances=5 \
+          --set-env-vars=ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.url)')
+
+    - name: Get production service URLs
+      id: prod-services
+      run: |
+        ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.url)')
+        DASHBOARD_URL=$(gcloud run services describe reengine-dashboard --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.url)')
+        echo "engine_url=$ENGINE_URL" >> $GITHUB_OUTPUT
+        echo "dashboard_url=$DASHBOARD_URL" >> $GITHUB_OUTPUT
 
     - name: Run production smoke tests
       run: |
-        echo "Running production smoke tests..."
-        # Add production smoke test commands here
+        curl -f ${{ steps.prod-services.outputs.engine_url }}/health || exit 1
+        curl -f ${{ steps.prod-services.outputs.dashboard_url }}/api/status || exit 1
 
-    - name: Notify deployment
+    - name: Notify production deployment
       uses: 8398a7/action-slack@v3
       if: always()
       with:

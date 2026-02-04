@@ -153,7 +153,7 @@ export class AutomationService {
         if (!this.config.discoverySchedule?.enabled) {
             return;
         }
-        const { frequency, timeOfDay } = this.config.discoverySchedule;
+        const { frequency } = this.config.discoverySchedule;
         // Set up interval based on frequency
         const intervalMs = this.getIntervalFromFrequency(frequency);
         setInterval(async () => {
@@ -199,7 +199,7 @@ export class AutomationService {
     /**
      * Create new automation job
      */
-    createJob(type, description) {
+    createJob(type, _description) {
         const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const job = {
             id: jobId,
@@ -246,10 +246,10 @@ export class AutomationService {
         };
         for (const job of jobs) {
             if (job.result) {
-                if (job.type === 'discovery' && job.result.results) {
+                if (job.type === 'discovery' && Array.isArray(job.result.results)) {
                     summary.leadsDiscovered += job.result.results.reduce((sum, r) => sum + r.leads.length, 0);
                 }
-                if (job.type === 'enrichment' && job.result.enrichedCount) {
+                if (job.type === 'enrichment' && typeof job.result.enrichedCount === 'number') {
                     summary.leadsEnriched += job.result.enrichedCount;
                 }
             }
