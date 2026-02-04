@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RE Engine - Intelligent Lead Discovery</title>
+    <title>RE Engine - Intelligent Lead Discovery Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Custom animations and transitions */
+        /* Modern animations and transitions */
         @keyframes slideIn {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
@@ -19,40 +19,13 @@
             50% { opacity: 0.5; }
         }
         
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         .animate-slide-in {
             animation: slideIn 0.3s ease-out;
-        }
-        
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .glass-effect h1,
-        .glass-effect h3,
-        .glass-effect h4 {
-            color: #1f2937;
-        }
-        
-        .glass-effect p {
-            color: #6b7280;
-        }
-        
-        .glass-effect label {
-            color: #374151;
-            font-weight: 500;
-        }
-        
-        .glass-effect a {
-            color: #3b82f6;
-            text-decoration: none;
-        }
-        
-        .glass-effect a:hover {
-            color: #2563eb;
-            text-decoration: underline;
         }
         
         .gradient-bg {
@@ -105,6 +78,9 @@
             cursor: pointer;
             border: none;
             font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .modern-button-primary {
@@ -125,6 +101,15 @@
             background-color: #e5e7eb;
         }
         
+        .modern-button-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .modern-button-danger:hover {
+            background-color: #dc2626;
+        }
+        
         /* Sidebar styles */
         .sidebar-item {
             padding: 12px 16px;
@@ -132,6 +117,8 @@
             cursor: pointer;
             transition: all 0.2s ease;
             color: #4b5563;
+            display: flex;
+            align-items: center;
         }
         
         .sidebar-item:hover {
@@ -151,11 +138,7 @@
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            display: inline-block;
         }
         
         /* Modal styles */
@@ -213,76 +196,132 @@
             font-weight: 500;
         }
         
-        .platform-linkedin { 
-            background-color: #dbeafe; 
-            color: #1e40af; 
+        .platform-linkedin { background-color: #dbeafe; color: #1e40af; }
+        .platform-zillow { background-color: #d1fae5; color: #065f46; }
+        .platform-realtor { background-color: #e9d5ff; color: #6b21a8; }
+        .platform-facebook { background-color: #dbeafe; color: #1e40af; }
+        .platform-craigslist { background-color: #fed7aa; color: #9a3412; }
+        
+        /* Skills Panel */
+        .skills-panel {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            margin-bottom: 16px;
         }
         
-        .platform-zillow { 
-            background-color: #d1fae5; 
-            color: #065f46; 
+        .skill-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
         
-        .platform-realtor { 
-            background-color: #e9d5ff; 
-            color: #6b21a8; 
+        .skill-item:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
         
-        .platform-facebook { 
-            background-color: #dbeafe; 
-            color: #1e40af; 
+        .skill-item.active {
+            background: rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.5);
         }
         
-        .platform-craigslist { 
-            background-color: #fed7aa; 
-            color: #9a3412; 
+        .skill-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
+        
+        .skill-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .skill-info {
+            flex: 1;
+        }
+        
+        .skill-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 2px;
+        }
+        
+        .skill-description {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .skill-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .skill-status.connected { background-color: #10b981; }
+        .skill-status.disconnected { background-color: #ef4444; }
+        .skill-status.connecting { background-color: #f59e0b; }
+        
+        /* MCP Status */
+        .mcp-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .mcp-connected { background-color: #10b981; color: white; }
+        .mcp-disconnected { background-color: #ef4444; color: white; }
+        .mcp-connecting { background-color: #f59e0b; color: white; }
+        
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification.success { background-color: #10b981; color: white; }
+        .notification.error { background-color: #ef4444; color: white; }
+        .notification.warning { background-color: #f59e0b; color: white; }
+        .notification.info { background-color: #3b82f6; color: white; }
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Login Screen -->
-    <div id="login-screen" class="min-h-screen flex items-center justify-center gradient-bg">
-        <div class="glass-effect rounded-2xl p-8 w-full max-w-md animate-slide-in">
-            <div class="text-center mb-8">
-                <div class="flex justify-center mb-4">
-                    <i class="fas fa-rocket text-white text-4xl"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-white mb-2">RE Engine</h1>
-                <p class="text-white/80">Intelligent Lead Discovery Platform</p>
-            </div>
-            
-            <form id="login-form" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-white mb-2">Email</label>
-                    <input type="email" id="login-email" class="modern-input" placeholder="Enter your email" required>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-white mb-2">Password</label>
-                    <input type="password" id="login-password" class="modern-input" placeholder="Enter your password" required>
-                </div>
-                
-                <div class="flex items-center justify-between">
-                    <label class="flex items-center text-white/80 text-sm">
-                        <input type="checkbox" id="remember-me" class="mr-2">
-                        Remember me
-                    </label>
-                    <a href="#" class="text-white/80 text-sm hover:text-white">Forgot password?</a>
-                </div>
-                
-                <button type="submit" class="modern-button modern-button-primary w-full">
-                    Sign In
-                </button>
-                
-                <div class="text-center text-white/60 text-sm">
-                    Don't have an account? <a href="#" class="text-white hover:text-white">Sign up</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Main Dashboard -->
-    <div id="main-dashboard" class="min-h-screen hidden">
+    <div id="main-dashboard" class="min-h-screen">
         <!-- Header -->
         <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
             <div class="px-6 py-4">
@@ -294,34 +333,28 @@
                         </div>
                         <div class="flex items-center space-x-2">
                             <div class="status-dot status-online"></div>
-                            <span class="text-sm text-gray-600">Connected</span>
+                            <span class="text-sm text-gray-600">System Operational</span>
                         </div>
                     </div>
                     
                     <div class="flex items-center space-x-4">
-                        <!-- User Menu -->
-                        <div class="relative">
-                            <button id="user-menu-button" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-white text-sm"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700">John Doe</span>
-                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                            </button>
-                            
-                            <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
-                                <hr class="my-1">
-                                <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Sign Out</a>
+                        <!-- MCP Status -->
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-600">MCP Servers:</span>
+                            <div id="mcp-status" class="flex space-x-2">
+                                <!-- MCP status indicators will be populated here -->
                             </div>
                         </div>
                         
-                        <!-- Notifications -->
-                        <button class="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                            <i class="fas fa-bell text-gray-600"></i>
-                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        <!-- Refresh -->
+                        <button onclick="refreshData()" class="modern-button modern-button-secondary">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh
                         </button>
+                        
+                        <!-- Time -->
+                        <div class="text-sm text-gray-600">
+                            <span id="current-time"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -329,7 +362,18 @@
 
         <div class="flex h-screen pt-16">
             <!-- Sidebar -->
-            <aside class="w-64 bg-white border-r border-gray-200 fixed h-full pt-16">
+            <aside class="w-80 bg-white border-r border-gray-200 fixed h-full pt-16">
+                <!-- Skills Panel -->
+                <div class="p-4">
+                    <div class="skills-panel">
+                        <h3 class="text-sm font-semibold text-white mb-3">OpenCLAW Skills</h3>
+                        <div id="skills-panel">
+                            <!-- Skills will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
                 <nav class="p-4 space-y-2">
                     <div class="sidebar-item active" onclick="showSection('overview')">
                         <i class="fas fa-home mr-3"></i>Overview
@@ -349,14 +393,20 @@
                     <div class="sidebar-item" onclick="showSection('channels')">
                         <i class="fas fa-share-alt mr-3"></i>Channels
                     </div>
+                    <div class="sidebar-item" onclick="showSection('automation')">
+                        <i class="fas fa-robot mr-3"></i>Automation
+                    </div>
                     <div class="sidebar-item" onclick="showSection('analytics')">
                         <i class="fas fa-chart-line mr-3"></i>Analytics
+                    </div>
+                    <div class="sidebar-item" onclick="showSection('settings')">
+                        <i class="fas fa-cog mr-3"></i>Settings
                     </div>
                 </nav>
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 ml-64 p-6">
+            <main class="flex-1 ml-80 p-6">
                 <!-- Overview Section -->
                 <section id="overview-section" class="space-y-6">
                     <!-- Quick Stats -->
@@ -549,6 +599,47 @@
                         
                         <div class="space-y-4" id="approvals-list">
                             <!-- Approvals will be populated here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Automation Section -->
+                <section id="automation-section" class="space-y-6 hidden">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h2 class="text-xl font-semibold mb-6">Automation Center</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Active Skills -->
+                            <div>
+                                <h3 class="text-lg font-medium mb-4">Active Skills</h3>
+                                <div class="space-y-3" id="active-skills">
+                                    <!-- Active skills will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Running Jobs -->
+                            <div>
+                                <h3 class="text-lg font-medium mb-4">Running Jobs</h3>
+                                <div class="space-y-3" id="running-jobs">
+                                    <!-- Running jobs will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Automation Controls -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h3 class="text-lg font-medium mb-4">Automation Controls</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <button onclick="runFullAutomation()" class="modern-button modern-button-primary">
+                                    <i class="fas fa-play mr-2"></i>Run Full Automation
+                                </button>
+                                <button onclick="stopAllAutomation()" class="modern-button modern-button-danger">
+                                    <i class="fas fa-stop mr-2"></i>Stop All
+                                </button>
+                                <button onclick="scheduleAutomation()" class="modern-button modern-button-secondary">
+                                    <i class="fas fa-clock mr-2"></i>Schedule
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>

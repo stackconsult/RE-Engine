@@ -1096,89 +1096,240 @@ app.get('/api/analytics/performance', async (req, res) => {
     }
 });
 
-// Authentication endpoints
-app.post('/api/auth/login', async (req, res) => {
+// MCP Server Integration
+app.get('/api/mcp/servers', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        
-        // Mock authentication - in production would validate against database
-        if (email && password) {
-            const user = {
-                id: 'user_1',
-                email: email,
-                name: 'John Doe',
-                role: 'admin'
-            };
-            
-            const token = 'mock_token_' + Date.now();
-            
-            res.json({
-                success: true,
-                user,
-                token
-            });
-        } else {
-            res.status(401).json({ success: false, error: 'Invalid credentials' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Login failed' });
-    }
-});
-
-app.post('/api/auth/logout', async (req, res) => {
-    try {
-        // Mock logout - in production would invalidate token
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: 'Logout failed' });
-    }
-});
-
-app.get('/api/auth/me', async (req, res) => {
-    try {
-        // Mock user validation - in production would validate token
-        const user = {
-            id: 'user_1',
-            email: 'john@example.com',
-            name: 'John Doe',
-            role: 'admin'
-        };
-        
-        res.json({ success: true, user });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to get user info' });
-    }
-});
-
-// Settings endpoints
-app.get('/api/settings', async (req, res) => {
-    try {
-        // Mock settings - in real system, this would come from config files
-        const settings = {
-            rate_limits: {
-                email: { per_hour: 50, per_day: 500, min_delay_seconds: 30 },
-                whatsapp: { per_hour: 20, per_day: 150, min_delay_seconds: 180 },
-                telegram: { per_hour: 30, per_day: 200, min_delay_seconds: 120 },
-                linkedin: { per_hour: 5, per_day: 25, min_delay_seconds: 600 },
-                facebook: { per_hour: 5, per_day: 25, min_delay_seconds: 600 }
+        // Return MCP server status
+        const servers = [
+            {
+                id: 'reengine-core',
+                name: 'RE Engine Core',
+                status: 'connected',
+                tools: ['approvals_list', 'approvals_approve', 'approvals_reject', 'leads_import_csv', 'events_query'],
+                lastPing: new Date()
             },
-            channels: {
-                email: { enabled: true, smtp_host: 'mail.spacemail.com' },
-                whatsapp: { enabled: true, pairing_mode: 'pairing' },
-                telegram: { enabled: true, bot_token_configured: true },
-                linkedin: { enabled: true, browser_automation: true },
-                facebook: { enabled: true, browser_automation: true }
+            {
+                id: 'reengine-browser',
+                name: 'Browser Automation',
+                status: 'connected',
+                tools: ['browser_automate', 'browser_screenshot', 'browser_extract'],
+                lastPing: new Date()
             },
-            automation: {
-                daily_draft_limit: 150,
-                approval_processing_interval: 300, // seconds
-                imap_poll_interval: 900, // seconds
-                social_ingest_times: ['08:30', '16:30']
+            {
+                id: 'reengine-tinyfish',
+                name: 'TinyFish Scraper',
+                status: 'connected',
+                tools: ['scrape_url', 'extract_links', 'extract_images'],
+                lastPing: new Date()
+            },
+            {
+                id: 'reengine-integrations',
+                name: 'External Integrations',
+                status: 'connected',
+                tools: ['linkedin_connect', 'email_send', 'whatsapp_send', 'telegram_send'],
+                lastPing: new Date()
             }
-        };
-        res.json(settings);
+        ];
+        
+        res.json({ success: true, servers });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to load settings' });
+        res.status(500).json({ error: 'Failed to get MCP servers' });
+    }
+});
+
+app.post('/api/mcp/:serverId/call', async (req, res) => {
+    try {
+        const { serverId } = req.params;
+        const { tool, parameters } = req.body;
+        
+        // Simulate MCP tool call
+        const result = {
+            success: true,
+            serverId,
+            tool,
+            result: `Mock result for ${tool} with parameters: ${JSON.stringify(parameters)}`,
+            timestamp: new Date().toISOString()
+        };
+        
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'MCP tool call failed' });
+    }
+});
+
+// Skills Integration
+app.get('/api/skills', async (req, res) => {
+    try {
+        const skills = [
+            {
+                id: 'reengine-builder',
+                name: 'RE Engine Builder',
+                description: 'Build and scaffold RE Engine modules',
+                icon: 'fas fa-hammer',
+                category: 'development',
+                status: 'connected',
+                tools: ['build_module', 'scaffold_component', 'run_tests']
+            },
+            {
+                id: 'reengine-coding-agent',
+                name: 'Coding Agent',
+                description: 'Write and refactor RE Engine code',
+                icon: 'fas fa-code',
+                category: 'development',
+                status: 'connected',
+                tools: ['write_code', 'refactor', 'add_tests']
+            },
+            {
+                id: 'reengine-operator',
+                name: 'Operator',
+                description: 'Monitor approvals and process sends',
+                icon: 'fas fa-user-shield',
+                category: 'operations',
+                status: 'connected',
+                tools: ['show_approvals', 'approve', 'reject', 'run_router']
+            },
+            {
+                id: 'reengine-playwright-agent',
+                name: 'Playwright Agent',
+                description: 'Browser automation with human-in-the-loop',
+                icon: 'fas fa-browser',
+                category: 'automation',
+                status: 'connected',
+                tools: ['browser_automate', 'screenshot', 'extract_data']
+            },
+            {
+                id: 'reengine-tinyfish-scraper',
+                name: 'TinyFish Scraper',
+                description: 'Scrape data from any website',
+                icon: 'fas fa-fish',
+                category: 'scraping',
+                status: 'connected',
+                tools: ['scrape_url', 'extract_links', 'extract_images']
+            },
+            {
+                id: 'reengine-mcp-setup',
+                name: 'MCP Setup',
+                description: 'Configure MCP servers and tools',
+                icon: 'fas fa-server',
+                category: 'infrastructure',
+                status: 'connected',
+                tools: ['setup_mcp', 'configure_tools', 'validate_config']
+            },
+            {
+                id: 'reengine-self-healing',
+                name: 'Self Healing',
+                description: 'Auto-repair system issues',
+                icon: 'fas fa-heart-pulse',
+                category: 'maintenance',
+                status: 'connected',
+                tools: ['diagnose', 'auto_repair', 'health_check']
+            },
+            {
+                id: 'reengine-release-and-pr',
+                name: 'Release & PR',
+                description: 'Manage releases and pull requests',
+                icon: 'fas fa-code-branch',
+                category: 'deployment',
+                status: 'connected',
+                tools: ['create_pr', 'merge_release', 'deploy']
+            }
+        ];
+        
+        res.json({ success: true, skills });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get skills' });
+    }
+});
+
+app.post('/api/skills/:skillId/activate', async (req, res) => {
+    try {
+        const { skillId } = req.params;
+        
+        // Simulate skill activation
+        const result = {
+            success: true,
+            skillId,
+            status: 'activated',
+            timestamp: new Date().toISOString()
+        };
+        
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Skill activation failed' });
+    }
+});
+
+app.post('/api/skills/:skillId/deactivate', async (req, res) => {
+    try {
+        const { skillId } = req.params;
+        
+        // Simulate skill deactivation
+        const result = {
+            success: true,
+            skillId,
+            status: 'deactivated',
+            timestamp: new Date().toISOString()
+        };
+        
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Skill deactivation failed' });
+    }
+});
+
+// Automation endpoints
+app.post('/api/automation/full', async (req, res) => {
+    try {
+        // Simulate full automation workflow
+        const result = {
+            success: true,
+            workflow: 'full_automation',
+            steps: [
+                { step: 'activate_skills', status: 'completed', duration: 2.1 },
+                { step: 'run_discovery', status: 'completed', duration: 15.3 },
+                { step: 'process_leads', status: 'completed', duration: 3.7 },
+                { step: 'enrich_data', status: 'completed', duration: 8.2 },
+                { step: 'generate_approvals', status: 'completed', duration: 1.5 }
+            ],
+            totalDuration: 30.8,
+            leadsProcessed: 47,
+            approvalsGenerated: 12,
+            timestamp: new Date().toISOString()
+        };
+        
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Full automation failed' });
+    }
+});
+
+app.get('/api/automation/jobs', async (req, res) => {
+    try {
+        // Return running automation jobs
+        const jobs = [
+            {
+                id: 'job_1',
+                name: 'LinkedIn Profile Scraping',
+                skill: 'Playwright Agent',
+                progress: 75,
+                status: 'running',
+                startTime: new Date(Date.now() - 120000),
+                estimatedCompletion: new Date(Date.now() + 40000)
+            },
+            {
+                id: 'job_2',
+                name: 'Zillow Data Extraction',
+                skill: 'TinyFish Scraper',
+                progress: 45,
+                status: 'running',
+                startTime: new Date(Date.now() - 180000),
+                estimatedCompletion: new Date(Date.now() + 120000)
+            }
+        ];
+        
+        res.json({ success: true, jobs });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get jobs' });
     }
 });
 

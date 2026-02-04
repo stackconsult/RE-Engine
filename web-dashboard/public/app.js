@@ -1,166 +1,206 @@
-// RE Engine Modern UI JavaScript
+// RE Engine - Integrated OpenCLAW Skills Platform
 class REEngine {
     constructor() {
-        this.currentUser = null;
         this.currentSection = 'overview';
         this.icps = [];
         this.leads = [];
         this.approvals = [];
         this.discoveryResults = [];
+        this.activeSkills = new Map();
+        this.mcpServers = new Map();
+        this.runningJobs = new Map();
+        
+        // Define all OpenCLAW skills
+        this.skills = [
+            {
+                id: 'reengine-builder',
+                name: 'RE Engine Builder',
+                description: 'Build and scaffold RE Engine modules',
+                icon: 'fas fa-hammer',
+                category: 'development',
+                status: 'connected',
+                tools: ['build_module', 'scaffold_component', 'run_tests']
+            },
+            {
+                id: 'reengine-coding-agent',
+                name: 'Coding Agent',
+                description: 'Write and refactor RE Engine code',
+                icon: 'fas fa-code',
+                category: 'development',
+                status: 'connected',
+                tools: ['write_code', 'refactor', 'add_tests']
+            },
+            {
+                id: 'reengine-operator',
+                name: 'Operator',
+                description: 'Monitor approvals and process sends',
+                icon: 'fas fa-user-shield',
+                category: 'operations',
+                status: 'connected',
+                tools: ['show_approvals', 'approve', 'reject', 'run_router']
+            },
+            {
+                id: 'reengine-playwright-agent',
+                name: 'Playwright Agent',
+                description: 'Browser automation with human-in-the-loop',
+                icon: 'fas fa-browser',
+                category: 'automation',
+                status: 'connected',
+                tools: ['browser_automate', 'screenshot', 'extract_data']
+            },
+            {
+                id: 'reengine-tinyfish-scraper',
+                name: 'TinyFish Scraper',
+                description: 'Scrape data from any website',
+                icon: 'fas fa-fish',
+                category: 'scraping',
+                status: 'connected',
+                tools: ['scrape_url', 'extract_links', 'extract_images']
+            },
+            {
+                id: 'reengine-mcp-setup',
+                name: 'MCP Setup',
+                description: 'Configure MCP servers and tools',
+                icon: 'fas fa-server',
+                category: 'infrastructure',
+                status: 'connected',
+                tools: ['setup_mcp', 'configure_tools', 'validate_config']
+            },
+            {
+                id: 'reengine-self-healing',
+                name: 'Self Healing',
+                description: 'Auto-repair system issues',
+                icon: 'fas fa-heart-pulse',
+                category: 'maintenance',
+                status: 'connected',
+                tools: ['diagnose', 'auto_repair', 'health_check']
+            },
+            {
+                id: 'reengine-release-and-pr',
+                name: 'Release & PR',
+                description: 'Manage releases and pull requests',
+                icon: 'fas fa-code-branch',
+                category: 'deployment',
+                status: 'connected',
+                tools: ['create_pr', 'merge_release', 'deploy']
+            }
+        ];
+        
+        // Define MCP servers
+        this.mcpServerDefinitions = [
+            {
+                id: 'reengine-core',
+                name: 'RE Engine Core',
+                status: 'connected',
+                tools: ['approvals_list', 'approvals_approve', 'approvals_reject', 'leads_import_csv', 'events_query']
+            },
+            {
+                id: 'reengine-browser',
+                name: 'Browser Automation',
+                status: 'connected',
+                tools: ['browser_automate', 'browser_screenshot', 'browser_extract']
+            },
+            {
+                id: 'reengine-tinyfish',
+                name: 'TinyFish Scraper',
+                status: 'connected',
+                tools: ['scrape_url', 'extract_links', 'extract_images']
+            },
+            {
+                id: 'reengine-integrations',
+                name: 'External Integrations',
+                status: 'connected',
+                tools: ['linkedin_connect', 'email_send', 'whatsapp_send', 'telegram_send']
+            }
+        ];
         
         this.init();
     }
 
     init() {
-        // Check if user is logged in
-        this.checkAuth();
+        // Initialize skills and MCP servers
+        this.initializeSkills();
+        this.initializeMCPServers();
         
         // Setup event listeners
         this.setupEventListeners();
         
         // Load initial data
         this.loadData();
+        
+        // Start real-time updates
+        this.startRealTimeUpdates();
     }
 
-    checkAuth() {
-        const token = localStorage.getItem('reengine_token');
-        const user = localStorage.getItem('reengine_user');
-        
-        if (token && user) {
-            this.currentUser = JSON.parse(user);
-            this.showDashboard();
-        } else {
-            this.showLogin();
-        }
+    initializeSkills() {
+        this.skills.forEach(skill => {
+            this.activeSkills.set(skill.id, {
+                ...skill,
+                active: false,
+                lastUsed: null,
+                jobCount: 0
+            });
+        });
+    }
+
+    initializeMCPServers() {
+        this.mcpServerDefinitions.forEach(server => {
+            this.mcpServers.set(server.id, {
+                ...server,
+                connected: true,
+                lastPing: new Date(),
+                toolCount: server.tools.length
+            });
+        });
     }
 
     setupEventListeners() {
-        // Login form
-        const loginForm = document.getElementById('login-form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', (e) => this.handleLogin(e));
-        }
-
-        // User menu
-        const userMenuButton = document.getElementById('user-menu-button');
-        const userMenuDropdown = document.getElementById('user-menu-dropdown');
-        
-        if (userMenuButton && userMenuDropdown) {
-            userMenuButton.addEventListener('click', () => {
-                userMenuDropdown.classList.toggle('hidden');
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!userMenuButton.contains(e.target) && !userMenuDropdown.contains(e.target)) {
-                    userMenuDropdown.classList.add('hidden');
-                }
-            });
-        }
-
         // Real-time updates
         setInterval(() => this.updateTime(), 1000);
         setInterval(() => this.refreshData(), 30000);
+        setInterval(() => this.checkSkillHealth(), 10000);
     }
 
-    handleLogin(e) {
-        e.preventDefault();
+    startRealTimeUpdates() {
+        // Update MCP server status
+        setInterval(() => {
+            this.updateMCPStatus();
+        }, 5000);
         
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        
-        // Show loading state
-        const submitButton = e.target.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<div class="loading-spinner inline-block mr-2"></div>Signing in...';
-        submitButton.disabled = true;
-        
-        // Simulate authentication with API call
-        this.authenticateUser(email, password)
-            .then(response => {
-                if (response.success) {
-                    const user = response.user;
-                    const token = response.token;
-                    
-                    localStorage.setItem('reengine_token', token);
-                    localStorage.setItem('reengine_user', JSON.stringify(user));
-                    
-                    this.currentUser = user;
-                    this.showDashboard();
-                    this.showNotification('Login successful!', 'success');
-                } else {
-                    this.showNotification('Invalid credentials', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Login error:', error);
-                this.showNotification('Login failed: ' + error.message, 'error');
-            })
-            .finally(() => {
-                // Reset button state
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
-            });
+        // Update running jobs
+        setInterval(() => {
+            this.updateRunningJobs();
+        }, 2000);
     }
 
-    async authenticateUser(email, password) {
+    async loadData() {
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password })
-            });
-            
-            return await response.json();
+            // Load all data in parallel
+            const [icps, leads, approvals] = await Promise.all([
+                this.fetchData('/api/icp'),
+                this.fetchData('/api/leads'),
+                this.fetchData('/api/approvals')
+            ]);
+
+            this.icps = icps.success ? icps.icps || [] : [];
+            this.leads = leads.success ? leads || [] : [];
+            this.approvals = approvals.success ? approvals || [];
+
+            // Update current section
+            this.loadSectionData(this.currentSection);
         } catch (error) {
-            // Fallback to mock authentication if server is not available
-            if (email && password) {
-                const user = {
-                    id: 'user_1',
-                    email: email,
-                    name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                    role: 'admin'
-                };
-                
-                const token = 'mock_token_' + Date.now();
-                
-                return {
-                    success: true,
-                    user,
-                    token
-                };
-            } else {
-                return { success: false, error: 'Invalid credentials' };
-            }
+            console.error('Error loading data:', error);
+            this.showNotification('Failed to load data', 'error');
         }
     }
 
-    logout() {
-        localStorage.removeItem('reengine_token');
-        localStorage.removeItem('reengine_user');
-        this.currentUser = null;
-        this.showLogin();
-    }
-
-    showLogin() {
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('main-dashboard').classList.add('hidden');
-    }
-
-    showDashboard() {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-dashboard').classList.remove('hidden');
-        this.updateUserDisplay();
-    }
-
-    updateUserDisplay() {
-        if (this.currentUser) {
-            const userNameElements = document.querySelectorAll('#user-menu-button span');
-            userNameElements.forEach(el => {
-                el.textContent = this.currentUser.name;
-            });
+    async fetchData(endpoint) {
+        try {
+            const response = await fetch(endpoint);
+            return await response.json();
+        } catch (error) {
+            console.error(`Error fetching ${endpoint}:`, error);
+            return { success: false };
         }
     }
 
@@ -207,39 +247,12 @@ class REEngine {
             case 'approvals':
                 this.loadApprovalsData();
                 break;
+            case 'automation':
+                this.loadAutomationData();
+                break;
             case 'analytics':
                 this.loadAnalyticsData();
                 break;
-        }
-    }
-
-    async loadData() {
-        try {
-            // Load all data in parallel
-            const [icps, leads, approvals] = await Promise.all([
-                this.fetchData('/api/icp'),
-                this.fetchData('/api/leads'),
-                this.fetchData('/api/approvals')
-            ]);
-
-            this.icps = icps.success ? icps.icps || [] : [];
-            this.leads = leads.success ? leads || [] : [];
-            this.approvals = approvals.success ? approvals || [];
-
-            // Update current section
-            this.loadSectionData(this.currentSection);
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
-    }
-
-    async fetchData(endpoint) {
-        try {
-            const response = await fetch(endpoint);
-            return await response.json();
-        } catch (error) {
-            console.error(`Error fetching ${endpoint}:`, error);
-            return { success: false };
         }
     }
 
@@ -264,25 +277,32 @@ class REEngine {
 
         const activities = [
             {
-                type: 'discovery',
-                message: 'ICP Discovery completed for "San Francisco Residential Investors"',
-                time: '2 hours ago',
-                icon: 'fa-search',
+                type: 'skill',
+                message: 'Playwright Agent completed LinkedIn scraping',
+                time: '2 minutes ago',
+                icon: 'fas fa-browser',
                 color: 'text-blue-600'
             },
             {
-                type: 'lead',
-                message: 'New lead discovered: John Investor from LinkedIn',
-                time: '4 hours ago',
-                icon: 'fa-user',
+                type: 'discovery',
+                message: 'ICP Discovery completed for "San Francisco Residential Investors"',
+                time: '1 hour ago',
+                icon: 'fas fa-search',
                 color: 'text-green-600'
             },
             {
                 type: 'approval',
-                message: '3 leads approved and ready for outreach',
-                time: '6 hours ago',
-                icon: 'fa-check',
+                message: 'Operator approved 3 leads for outreach',
+                time: '3 hours ago',
+                icon: 'fas fa-check',
                 color: 'text-purple-600'
+            },
+            {
+                type: 'mcp',
+                message: 'TinyFish MCP server connected and ready',
+                time: '5 hours ago',
+                icon: 'fas fa-server',
+                color: 'text-orange-600'
             }
         ];
 
@@ -474,6 +494,50 @@ class REEngine {
         `).join('');
     }
 
+    loadAutomationData() {
+        // Load active skills
+        const activeSkillsContainer = document.getElementById('active-skills');
+        if (activeSkillsContainer) {
+            const activeSkills = Array.from(this.activeSkills.values()).filter(skill => skill.active);
+            activeSkillsContainer.innerHTML = activeSkills.map(skill => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <i class="${skill.icon} text-gray-600"></i>
+                        <div>
+                            <div class="font-medium text-sm">${skill.name}</div>
+                            <div class="text-xs text-gray-500">${skill.jobCount} jobs running</div>
+                        </div>
+                    </div>
+                    <button onclick="toggleSkill('${skill.id}')" class="modern-button modern-button-secondary text-sm">
+                        Stop
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Load running jobs
+        const runningJobsContainer = document.getElementById('running-jobs');
+        if (runningJobsContainer) {
+            runningJobsContainer.innerHTML = Array.from(this.runningJobs.values()).map(job => `
+                <div class="border border-gray-200 rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-sm">${job.name}</span>
+                        <span class="text-xs text-gray-500">${job.progress}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${job.progress}%"></div>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs text-gray-500">${job.skill}</span>
+                        <button onclick="stopJob('${job.id}')" class="text-red-600 hover:text-red-800 text-xs">
+                            Stop
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
     loadAnalyticsData() {
         // Update analytics stats
         const totalDiscovered = this.leads.length;
@@ -498,6 +562,151 @@ class REEngine {
                 `;
             }).join('');
         }
+    }
+
+    // Skills Management
+    renderSkillsPanel() {
+        const skillsPanel = document.getElementById('skills-panel');
+        if (!skillsPanel) return;
+
+        skillsPanel.innerHTML = this.skills.map(skill => {
+            const skillData = this.activeSkills.get(skill.id);
+            return `
+                <div class="skill-item ${skillData.active ? 'active' : ''}" onclick="toggleSkill('${skill.id}')">
+                    <div class="skill-icon">
+                        <i class="${skill.icon}"></i>
+                    </div>
+                    <div class="skill-info">
+                        <div class="skill-name">${skill.name}</div>
+                        <div class="skill-description">${skill.description}</div>
+                    </div>
+                    <div class="skill-status ${skill.status}"></div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    toggleSkill(skillId) {
+        const skill = this.activeSkills.get(skillId);
+        if (!skill) return;
+
+        skill.active = !skill.active;
+        
+        if (skill.active) {
+            this.startSkill(skillId);
+        } else {
+            this.stopSkill(skillId);
+        }
+        
+        this.renderSkillsPanel();
+        this.showNotification(`${skill.name} ${skill.active ? 'activated' : 'deactivated'}`, 'info');
+    }
+
+    async startSkill(skillId) {
+        const skill = this.activeSkills.get(skillId);
+        if (!skill) return;
+
+        try {
+            // Simulate skill activation
+            skill.lastUsed = new Date();
+            
+            // Start a sample job for demonstration
+            const jobId = `job_${Date.now()}`;
+            this.runningJobs.set(jobId, {
+                id: jobId,
+                name: `${skill.name} Task`,
+                skill: skill.name,
+                progress: 0,
+                status: 'running',
+                startTime: new Date()
+            });
+
+            // Simulate job progress
+            this.simulateJobProgress(jobId);
+            
+        } catch (error) {
+            console.error('Failed to start skill:', error);
+            this.showNotification(`Failed to start ${skill.name}`, 'error');
+        }
+    }
+
+    stopSkill(skillId) {
+        const skill = this.activeSkills.get(skillId);
+        if (!skill) return;
+
+        // Stop all jobs for this skill
+        const jobsToStop = Array.from(this.runningJobs.values()).filter(job => job.skill === skill.name);
+        jobsToStop.forEach(job => this.stopJob(job.id));
+        
+        skill.active = false;
+    }
+
+    simulateJobProgress(jobId) {
+        const job = this.runningJobs.get(jobId);
+        if (!job) return;
+
+        const interval = setInterval(() => {
+            if (job.progress >= 100) {
+                clearInterval(interval);
+                job.status = 'completed';
+                this.runningJobs.delete(jobId);
+                this.loadAutomationData();
+                return;
+            }
+            
+            job.progress += Math.random() * 10;
+            if (job.progress > 100) job.progress = 100;
+            
+            this.loadAutomationData();
+        }, 1000);
+    }
+
+    stopJob(jobId) {
+        const job = this.runningJobs.get(jobId);
+        if (job) {
+            job.status = 'stopped';
+            this.runningJobs.delete(jobId);
+            this.loadAutomationData();
+        }
+    }
+
+    // MCP Server Management
+    updateMCPStatus() {
+        const mcpStatusContainer = document.getElementById('mcp-status');
+        if (!mcpStatusContainer) return;
+
+        mcpStatusContainer.innerHTML = Array.from(this.mcpServers.values()).map(server => `
+            <div class="mcp-status ${server.connected ? 'mcp-connected' : 'mcp-disconnected'}">
+                ${server.name}
+            </div>
+        `).join('');
+    }
+
+    checkSkillHealth() {
+        // Simulate health checks for skills
+        this.skills.forEach(skill => {
+            const skillData = this.activeSkills.get(skill.id);
+            if (skillData && skillData.active) {
+                // Random health check simulation
+                if (Math.random() > 0.95) {
+                    skillData.status = 'disconnected';
+                    setTimeout(() => {
+                        skillData.status = 'connected';
+                        this.renderSkillsPanel();
+                    }, 5000);
+                }
+            }
+        });
+    }
+
+    updateRunningJobs() {
+        // Update job progress and cleanup completed jobs
+        const now = new Date();
+        this.runningJobs.forEach((job, id) => {
+            if (job.status === 'completed' && (now - job.endTime) > 10000) {
+                this.runningJobs.delete(id);
+            }
+        });
     }
 
     // Modal functions
@@ -591,6 +800,9 @@ class REEngine {
             return;
         }
 
+        // Activate relevant skills for discovery
+        await this.activateSkillsForDiscovery(['reengine-tinyfish-scraper', 'reengine-playwright-agent']);
+
         try {
             const response = await fetch(`/api/icp/${icpId}/discover`, {
                 method: 'POST',
@@ -622,7 +834,18 @@ class REEngine {
         }
     }
 
+    async activateSkillsForDiscovery(skillIds) {
+        for (const skillId of skillIds) {
+            const skill = this.activeSkills.get(skillId);
+            if (skill && !skill.active) {
+                await this.startSkill(skillId);
+            }
+        }
+    }
+
     async runICPDiscovery(icpId) {
+        await this.activateSkillsForDiscovery(['reengine-tinyfish-scraper', 'reengine-playwright-agent']);
+        
         try {
             const response = await fetch(`/api/icp/${icpId}/discover`, { method: 'POST' });
             const result = await response.json();
@@ -638,6 +861,55 @@ class REEngine {
         }
     }
 
+    async runFullAutomation() {
+        this.showNotification('Starting full automation workflow...', 'info');
+        
+        // Activate all relevant skills
+        await this.activateSkillsForDiscovery([
+            'reengine-operator',
+            'reengine-tinyfish-scraper', 
+            'reengine-playwright-agent',
+            'reengine-self-healing'
+        ]);
+
+        // Run comprehensive automation
+        try {
+            const response = await fetch('/api/automation/full', { method: 'POST' });
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('Full automation completed successfully!', 'success');
+                this.loadData();
+            } else {
+                this.showNotification('Full automation failed', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error running full automation: ' + error.message, 'error');
+        }
+    }
+
+    stopAllAutomation() {
+        // Deactivate all skills
+        this.activeSkills.forEach((skill, id) => {
+            if (skill.active) {
+                this.stopSkill(id);
+            }
+        });
+        
+        // Stop all running jobs
+        this.runningJobs.forEach((job, id) => {
+            this.stopJob(id);
+        });
+        
+        this.renderSkillsPanel();
+        this.loadAutomationData();
+        this.showNotification('All automation stopped', 'info');
+    }
+
+    scheduleAutomation() {
+        this.showNotification('Automation scheduling feature coming soon', 'info');
+    }
+
     // Utility functions
     updateTime() {
         const now = new Date();
@@ -648,21 +920,20 @@ class REEngine {
 
     async refreshData() {
         await this.loadData();
+        this.renderSkillsPanel();
+        this.updateMCPStatus();
     }
 
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 animate-slide-in ${
-            type === 'success' ? 'bg-green-500 text-white' :
-            type === 'error' ? 'bg-red-500 text-white' :
-            'bg-blue-500 text-white'
-        }`;
+        notification.className = `notification ${type}`;
         notification.innerHTML = `
             <div class="flex items-center space-x-2">
                 <i class="fas ${
                     type === 'success' ? 'fa-check-circle' :
                     type === 'error' ? 'fa-exclamation-circle' :
+                    type === 'warning' ? 'fa-exclamation-triangle' :
                     'fa-info-circle'
                 }"></i>
                 <span>${message}</span>
@@ -699,7 +970,11 @@ window.hideCreateICPModal = () => app.hideCreateICPModal();
 window.createICP = () => app.createICP();
 window.runDiscovery = () => app.runDiscovery();
 window.runICPDiscovery = (id) => app.runICPDiscovery(id);
-window.logout = () => app.logout();
+window.runFullAutomation = () => app.runFullAutomation();
+window.stopAllAutomation = () => app.stopAllAutomation();
+window.scheduleAutomation = () => app.scheduleAutomation();
+window.toggleSkill = (skillId) => app.toggleSkill(skillId);
+window.stopJob = (jobId) => app.stopJob(jobId);
 window.editICP = (id) => app.editICP(id);
 window.deleteICP = (id) => app.deleteICP(id);
 window.viewLead = (id) => app.viewLead(id);
@@ -709,3 +984,4 @@ window.rejectLead = (id) => app.rejectLead(id);
 window.bulkApprove = () => app.bulkApprove();
 window.bulkReject = () => app.bulkReject();
 window.showApprovalsModal = () => app.showApprovalsModal();
+window.refreshData = () => app.refreshData();
