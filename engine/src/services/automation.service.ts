@@ -239,6 +239,11 @@ export class AutomationService {
    * Get automation status
    */
   getAutomationStatus(): {
+    activeJobs: number;
+    recentJobs: AutomationJob[];
+    config: AutomationConfig;
+    nextRun: string;
+  } {
     const jobs = Array.from(this.jobs.values());
     const recentJobs = jobs.sort((a, b) => 
       new Date(b.startTime).getTime() - new Date(a.startTime).getTime()

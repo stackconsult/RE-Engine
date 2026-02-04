@@ -69,16 +69,16 @@ export class REEngineClient {
       const leadsInit = await this.leads.initialize();
 
       if (!approvalsInit.success) {
-        return this.createResponse(requestId, startTime, false, undefined, approvalsInit.error);
+        return this.createResponse<boolean>(requestId, startTime, false, undefined, approvalsInit.error);
       }
 
       if (!leadsInit.success) {
-        return this.createResponse(requestId, startTime, false, undefined, leadsInit.error);
+        return this.createResponse<boolean>(requestId, startTime, false, undefined, leadsInit.error);
       }
 
       return this.createResponse(requestId, startTime, true, true);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<boolean>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -96,12 +96,12 @@ export class REEngineClient {
       const result = await this.approvals.create(data);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Approval>(requestId, startTime, false, undefined, result.error);
       }
 
       return this.createResponse(requestId, startTime, true, result.data);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<Approval>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -117,10 +117,10 @@ export class REEngineClient {
       const result = await this.approvals.query(filter);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Approval[]>(requestId, startTime, false, undefined, result.error) as PaginatedResponse<Approval>;
       }
 
-      const response = this.createResponse(requestId, startTime, true, result.data);
+      const response: PaginatedResponse<Approval> = this.createResponse(requestId, startTime, true, result.data);
       
       if (result.total !== undefined) {
         response.pagination = {
@@ -133,8 +133,8 @@ export class REEngineClient {
 
       return response;
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
-        error instanceof Error ? error.message : String(error));
+      return this.createResponse<Approval[]>(requestId, startTime, false, undefined, 
+        error instanceof Error ? error.message : String(error)) as PaginatedResponse<Approval>;
     }
   }
 
@@ -149,12 +149,12 @@ export class REEngineClient {
       const result = await this.approvals.getById(approvalId);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Approval>(requestId, startTime, false, undefined, result.error);
       }
 
       return this.createResponse(requestId, startTime, true, result.data);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<Approval>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -170,12 +170,12 @@ export class REEngineClient {
       const result = await this.approvals.update(approvalId, data);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Approval>(requestId, startTime, false, undefined, result.error);
       }
 
       return this.createResponse(requestId, startTime, true, result.data);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<Approval>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -228,12 +228,12 @@ export class REEngineClient {
       const result = await this.leads.create(data);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Lead>(requestId, startTime, false, undefined, result.error);
       }
 
       return this.createResponse(requestId, startTime, true, result.data);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<Lead>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -249,10 +249,10 @@ export class REEngineClient {
       const result = await this.leads.query(filter);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Lead[]>(requestId, startTime, false, undefined, result.error) as PaginatedResponse<Lead>;
       }
 
-      const response = this.createResponse(requestId, startTime, true, result.data);
+      const response: PaginatedResponse<Lead> = this.createResponse(requestId, startTime, true, result.data);
       
       if (result.total !== undefined) {
         response.pagination = {
@@ -265,8 +265,8 @@ export class REEngineClient {
 
       return response;
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
-        error instanceof Error ? error.message : String(error));
+      return this.createResponse<Lead[]>(requestId, startTime, false, undefined, 
+        error instanceof Error ? error.message : String(error)) as PaginatedResponse<Lead>;
     }
   }
 
@@ -281,12 +281,12 @@ export class REEngineClient {
       const result = await this.leads.getById(leadId);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Lead>(requestId, startTime, false, undefined, result.error);
       }
 
       return this.createResponse(requestId, startTime, true, result.data);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<Lead>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -302,12 +302,12 @@ export class REEngineClient {
       const result = await this.leads.update(leadId, data);
       
       if (!result.success) {
-        return this.createResponse(requestId, startTime, false, undefined, result.error);
+        return this.createResponse<Lead>(requestId, startTime, false, undefined, result.error);
       }
 
       return this.createResponse(requestId, startTime, true, result.data);
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<Lead>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -341,7 +341,7 @@ export class REEngineClient {
         }
       });
     } catch (error) {
-      return this.createResponse(requestId, startTime, false, undefined, 
+      return this.createResponse<{environment: string; dataDir: string; repositories: {approvals: boolean; leads: boolean;}}>(requestId, startTime, false, undefined, 
         error instanceof Error ? error.message : String(error));
     }
   }

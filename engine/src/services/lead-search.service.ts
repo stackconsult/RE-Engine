@@ -383,13 +383,13 @@ export class LeadSearchService {
   /**
    * Generate search facets
    */
-  private async generateFacets(leads: any[]): {
+  private async generateFacets(leads: any[]): Promise<{
     statuses: Record<string, number>;
     sources: Record<string, number>;
     cities: Record<string, number>;
     provinces: Record<string, number>;
     tags: Record<string, number>;
-  } {
+  }> {
     const facets = {
       statuses: {} as Record<string, number>,
       sources: {} as Record<string, number>,

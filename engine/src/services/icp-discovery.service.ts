@@ -208,9 +208,9 @@ export class ICPDiscoveryService {
         summary: {
           totalFound: leads.length,
           duplicatesRemoved: leads.length - processedLeads.length,
-          highConfidence: processedLeads.filter(l => l.confidence > 0.8).length,
+          highConfidence: processedLeads.filter(l => l.metadata.confidence > 0.8).length,
           platforms: platformCounts,
-          avgMatchScore: processedLeads.reduce((sum, l) => sum + l.icpMatch, 0) / processedLeads.length || 0
+          avgMatchScore: processedLeads.reduce((sum, l) => sum + l.metadata.icpMatch, 0) / processedLeads.length || 0
         },
         processingTime: Date.now() - startTime,
         errors
@@ -240,9 +240,9 @@ export class ICPDiscoveryService {
     const targets: DiscoveryTarget[] = [];
 
     // LinkedIn targets (professional profiles)
-    if (icp.platforms.linkedin) {
+    if (icp.criteria.platforms.linkedin) {
       for (const city of icp.criteria.locations.cities) {
-        for (const industry of icp.professional.industries) {
+        for (const industry of icp.criteria.professional.industries) {
           targets.push({
             platform: 'linkedin',
             url: `https://www.linkedin.com/search/results/people/`,
@@ -251,7 +251,7 @@ export class ICPDiscoveryService {
             filters: {
                 geoUrn: `urn:li:geo:${city}`,
                 industry: industry,
-                currentCompany: icp.professional.companySize
+                currentCompany: icp.criteria.professional.companySize
               },
             selectors: {
               container: '.search-result__item',
@@ -267,17 +267,17 @@ export class ICPDiscoveryService {
     }
 
     // Zillow targets (property listings)
-    if (icp.platforms.zillow) {
+    if (icp.criteria.platforms.zillow) {
       for (const city of icp.criteria.locations.cities) {
         targets.push({
           platform: 'zillow',
           url: `https://www.zillow.com/${city.toLowerCase()}/`,
           searchType: 'listing',
-          query: `${city} ${icp.investment.propertyTypes.join(' ')}`,
+          query: `${city} ${icp.criteria.investment.propertyTypes.join(' ')}`,
           filters: {
-            price_min: icp.investment.priceRange.min,
-            price_max: icp.investment.priceRange.max,
-            home_type: icp.investment.propertyTypes
+            price_min: icp.criteria.investment.priceRange.min,
+            price_max: icp.criteria.investment.priceRange.max,
+            home_type: icp.criteria.investment.propertyTypes
           },
           selectors: {
             container: 'article[data-test-id="property-card"]',
@@ -292,7 +292,7 @@ export class ICPDiscoveryService {
     }
 
     // Realtor.com targets
-    if (icp.platforms.realtor) {
+    if (icp.criteria.platforms.realtor) {
       for (const city of icp.criteria.locations.cities) {
         targets.push({
           platform: 'realtor',
@@ -300,9 +300,9 @@ export class ICPDiscoveryService {
           searchType: 'listing',
           query: `${city} real estate`,
           filters: {
-            price_min: icp.investment.priceRange.min,
-            price_max: icp.investment.priceRange.max,
-            property_type: icp.investment.propertyTypes
+            price_min: icp.criteria.investment.priceRange.min,
+            price_max: icp.criteria.investment.priceRange.max,
+            property_type: icp.criteria.investment.propertyTypes
           },
           selectors: {
             container: '.component-property-card',
@@ -317,16 +317,16 @@ export class ICPDiscoveryService {
     }
 
     // Craigslist targets
-    if (icp.platforms.craigslist) {
+    if (icp.criteria.platforms.craigslist) {
       for (const city of icp.criteria.locations.cities) {
         targets.push({
           platform: 'craigslist',
-          url: `https://www.craigslist.org/search/rea?query=${encodeURIComponent(city + ' ' + icp.investment.propertyTypes.join(' '))}`,
+          url: `https://www.craigslist.org/search/rea?query=${encodeURIComponent(city + ' ' + icp.criteria.investment.propertyTypes.join(' '))}`,
           searchType: 'listing',
           query: `${city} real estate`,
           filters: {
-            min_price: icp.investment.priceRange.min,
-            max_price: icp.investment.priceRange.max
+            min_price: icp.criteria.investment.priceRange.min,
+            max_price: icp.criteria.investment.priceRange.max
           },
           selectors: {
             container: '.result-row',
@@ -341,16 +341,16 @@ export class ICPDiscoveryService {
     }
 
     // Facebook Marketplace targets
-    if (icp.platforms.facebook) {
+    if (icp.criteria.platforms.facebook) {
       for (const city of icp.criteria.locations.cities) {
         targets.push({
           platform: 'facebook',
-          url: `https://www.facebook.com/marketplace/search?query=${encodeURIComponent(city + ' ' + icp.investment.propertyTypes.join(' '))}`,
+          url: `https://www.facebook.com/marketplace/search?query=${encodeURIComponent(city + ' ' + icp.criteria.investment.propertyTypes.join(' '))}`,
           searchType: 'listing',
           query: `${city} property`,
           filters: {
-            min_price: icp.investment.priceRange.min,
-            max_price: icp.investment.priceRange.max
+            min_price: icp.criteria.investment.priceRange.min,
+            max_price: icp.criteria.investment.priceRange.max
           },
           selectors: {
             container: '[data-testid="marketplace-search-result"]',
@@ -564,18 +564,18 @@ export class ICPDiscoveryService {
     }
 
     // Professional match
-    if (data.title && icp.professional.jobTitles.length > 0) {
+    if (data.title && icp.criteria.professional.jobTitles.length > 0) {
       factors++;
-      const titleMatch = icp.professional.jobTitles.some(title =>
+      const titleMatch = icp.criteria.professional.jobTitles.some(title =>
         data.title.toLowerCase().includes(title.toLowerCase())
       );
       if (titleMatch) score += 0.25;
     }
 
     // Investment match
-    if (data.price && icp.investment.priceRange) {
+    if (data.price && icp.criteria.investment.priceRange) {
       factors++;
-      if (data.price >= icp.investment.priceRange.min && data.price <= icp.investment.priceRange.max) {
+      if (data.price >= icp.criteria.investment.priceRange.min && data.price <= icp.criteria.investment.priceRange.max) {
         score += 0.25;
       }
     }
@@ -612,12 +612,12 @@ export class ICPDiscoveryService {
 
     // Filter by confidence threshold
     processedLeads = processedLeads.filter(lead => 
-      lead.confidence >= icp.settings.confidenceThreshold
+      lead.metadata.confidence >= icp.settings.confidenceThreshold
     );
 
     // Filter by ICP match score
     processedLeads = processedLeads.filter(lead => 
-      lead.icpMatch >= 0.3 // Minimum match score
+      lead.metadata.icpMatch >= 0.3 // Minimum match score
     );
 
     // Remove duplicates
@@ -627,8 +627,8 @@ export class ICPDiscoveryService {
 
     // Sort by ICP match score and confidence
     processedLeads.sort((a, b) => {
-      const scoreA = a.icpMatch * a.confidence;
-      const scoreB = b.icpMatch * b.confidence;
+      const scoreA = a.metadata.icpMatch * a.metadata.confidence;
+      const scoreB = b.metadata.icpMatch * b.metadata.confidence;
       return scoreB - scoreA;
     });
 
@@ -671,8 +671,8 @@ export class ICPDiscoveryService {
       try {
         // Add enrichment data
         lead.metadata.enrichmentData = {
-          companyInfo: await this.getCompanyInfo(lead.profile.company),
-          socialProfiles: await this.findSocialProfiles(lead.profile.name, lead.profile.location),
+          companyInfo: lead.profile.company ? await this.getCompanyInfo(lead.profile.company) : null,
+          socialProfiles: await this.findSocialProfiles(lead.profile.name, lead.profile.location || ''),
           propertyAnalysis: lead.property ? await this.analyzeProperty(lead.property) : null
         };
       } catch (error) {
@@ -733,7 +733,7 @@ export class ICPDiscoveryService {
         url: target.url,
         profile: {
           name: `Mock Lead ${i + 1}`,
-          title: icp.professional.jobTitles[0] || 'Real Estate Investor',
+          title: icp.criteria.professional.jobTitles[0] || 'Real Estate Investor',
           company: `Mock Company ${i + 1}`,
           email: `mock${i + 1}@${target.platform}.com`,
           phone: `+1415555${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
@@ -757,8 +757,8 @@ export class ICPDiscoveryService {
       if (target.searchType === 'listing') {
         lead.property = {
           address: `${Math.floor(Math.random() * 999) + 1} Main St, ${icp.criteria.locations.cities[0]}`,
-          price: icp.investment.priceRange.min + Math.random() * (icp.investment.priceRange.max - icp.investment.priceRange.min),
-          type: icp.investment.propertyTypes[0],
+          price: icp.criteria.investment.priceRange.min + Math.random() * (icp.criteria.investment.priceRange.max - icp.criteria.investment.priceRange.min),
+          type: icp.criteria.investment.propertyTypes[0],
           beds: Math.floor(Math.random() * 4) + 1,
           baths: Math.floor(Math.random() * 3) + 1,
           sqft: Math.floor(Math.random() * 2000) + 1000,
@@ -797,7 +797,6 @@ export class ICPDiscoveryService {
           province: discoveredLead.profile.location?.split(',')[1]?.trim() || 'CA',
           source: `icp_discovery_${discoveredLead.platform}`,
           tags: ['icp-discovered', discoveredLead.platform, 'auto-enriched'],
-          status: 'new',
           metadata: {
             icpMatch: discoveredLead.metadata.icpMatch,
             confidence: discoveredLead.metadata.confidence,

@@ -76,7 +76,15 @@ export class ICPManagementService {
 
       const updatedICP: ICPProfile = {
         ...existingICP.icp!,
-        ...request
+        ...request,
+        criteria: {
+          ...existingICP.icp!.criteria,
+          ...request.criteria
+        },
+        settings: {
+          ...existingICP.icp!.settings,
+          ...request.settings
+        }
       };
 
       await this.saveICP(updatedICP);
