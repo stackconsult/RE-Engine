@@ -1,7 +1,12 @@
 // RE Engine Main Entry Point
-// Complete orchestration and API layer
+// Complete Magical AI-Infused Automation System
 
-// Core orchestration components
+// 🪄 Magical AI Automation System
+export * from "./ai/magical-automation-engine.js";
+export * from "./ai/operational-agents.js";
+export * from "./ai/fixes-and-optimizations.js";
+
+// 🔄 Core orchestration components
 export * from "./orchestration/master-orchestrator.js";
 export * from "./orchestration/workflow-execution-engine.js";
 export * from "./orchestration/intelligent-model-selector.js";
@@ -11,19 +16,22 @@ export * from "./orchestration/guardrail-system.js";
 export * from "./orchestration/resource-manager.js";
 export * from "./orchestration/performance-monitor.js";
 
-// Types and utilities
+// 📋 Types and utilities
 export * from "./types/orchestration.types.js";
 export * from "./utils/logger.js";
 
-// Workflow system
+// 🔄 Workflow system
 export * from "./workflows/real-estate-workflows.js";
 export * from "./services/workflow-service.js";
 
-// API layer
+// 🌐 API layer
 export * from "./api/server.js";
 export * from "./api/workflow-api.js";
 
-// Legacy exports for backward compatibility
+// 🖥️ CLI tool
+export * from "./cli.js";
+
+// 📚 Legacy exports for backward compatibility
 export * from "./shared/types.js";
 export * from "./domain/schemas.js";
 export * from "./observability/logger.js";
