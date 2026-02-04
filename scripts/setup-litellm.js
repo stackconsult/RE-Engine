@@ -8,12 +8,12 @@
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(__dirname, '..');
+const __dirname = dirname(__filename);
 
 // Colors for output
 const colors = {
@@ -112,7 +112,7 @@ async function installLiteLLM() {
   
   try {
     await runCommand('pip3 install litellm[proxy]', 'LiteLLM installation');
-    await runCommand('pip3 install js-yaml', 'js-yaml for configuration');
+    await runCommand('npm install js-yaml', 'js-yaml for configuration');
     logSuccess('LiteLLM and dependencies installed');
   } catch (error) {
     logError('Failed to install LiteLLM');
@@ -140,8 +140,8 @@ async function generateMasterKey() {
 async function updateEnvironment(masterKey) {
   logStep('Updating environment configuration...');
   
-  const envPath = join(__dirname, '..', '.env');
-  const envExamplePath = join(__dirname, '..', '.env.example');
+  const envPath = join(__dirname, '.env');
+  const envExamplePath = join(__dirname, '.env.example');
   
   // Read existing .env or create from .env.example
   let envContent = '';
@@ -185,7 +185,7 @@ OLLAMA_CLAUDE_HAIKU_MODEL=llama3.1:8b
 async function createConfigFile() {
   logStep('Creating LiteLLM configuration...');
   
-  const configDir = join(__dirname, '..', 'config');
+  const configDir = join(__dirname, 'config');
   const configPath = join(configDir, 'litellm-config.yaml');
   
   // Create config directory if it doesn't exist
@@ -224,7 +224,7 @@ async function testLiteLLM() {
   
   try {
     // Start LiteLLM in background
-    const configPath = join(__dirname, '..', 'config', 'litellm-config.yaml');
+    const configPath = join(__dirname, 'config', 'litellm-config.yaml');
     const liteLLMProcess = spawn('litellm', ['--config', configPath, '--port', '4000'], {
       stdio: 'pipe',
       env: { ...process.env, LITELLM_MASTER_KEY: process.env.LITELLM_MASTER_KEY }
