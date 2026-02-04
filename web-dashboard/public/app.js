@@ -1,0 +1,664 @@
+// RE Engine Modern UI JavaScript
+class REEngine {
+    constructor() {
+        this.currentUser = null;
+        this.currentSection = 'overview';
+        this.icps = [];
+        this.leads = [];
+        this.approvals = [];
+        this.discoveryResults = [];
+        
+        this.init();
+    }
+
+    init() {
+        // Check if user is logged in
+        this.checkAuth();
+        
+        // Setup event listeners
+        this.setupEventListeners();
+        
+        // Load initial data
+        this.loadData();
+    }
+
+    checkAuth() {
+        const token = localStorage.getItem('reengine_token');
+        const user = localStorage.getItem('reengine_user');
+        
+        if (token && user) {
+            this.currentUser = JSON.parse(user);
+            this.showDashboard();
+        } else {
+            this.showLogin();
+        }
+    }
+
+    setupEventListeners() {
+        // Login form
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
+
+        // User menu
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userMenuDropdown = document.getElementById('user-menu-dropdown');
+        
+        if (userMenuButton && userMenuDropdown) {
+            userMenuButton.addEventListener('click', () => {
+                userMenuDropdown.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userMenuButton.contains(e.target) && !userMenuDropdown.contains(e.target)) {
+                    userMenuDropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        // Real-time updates
+        setInterval(() => this.updateTime(), 1000);
+        setInterval(() => this.refreshData(), 30000);
+    }
+
+    handleLogin(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        // Simulate authentication
+        if (email && password) {
+            const user = {
+                id: 'user_1',
+                email: email,
+                name: 'John Doe',
+                role: 'admin'
+            };
+            
+            const token = 'mock_token_' + Date.now();
+            
+            localStorage.setItem('reengine_token', token);
+            localStorage.setItem('reengine_user', JSON.stringify(user));
+            
+            this.currentUser = user;
+            this.showDashboard();
+        } else {
+            this.showNotification('Please enter valid credentials', 'error');
+        }
+    }
+
+    logout() {
+        localStorage.removeItem('reengine_token');
+        localStorage.removeItem('reengine_user');
+        this.currentUser = null;
+        this.showLogin();
+    }
+
+    showLogin() {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('main-dashboard').classList.add('hidden');
+    }
+
+    showDashboard() {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-dashboard').classList.remove('hidden');
+        this.updateUserDisplay();
+    }
+
+    updateUserDisplay() {
+        if (this.currentUser) {
+            const userNameElements = document.querySelectorAll('#user-menu-button span');
+            userNameElements.forEach(el => {
+                el.textContent = this.currentUser.name;
+            });
+        }
+    }
+
+    showSection(sectionName) {
+        // Hide all sections
+        const sections = document.querySelectorAll('section[id$="-section"]');
+        sections.forEach(section => section.classList.add('hidden'));
+        
+        // Show selected section
+        const targetSection = document.getElementById(`${sectionName}-section`);
+        if (targetSection) {
+            targetSection.classList.remove('hidden');
+        }
+        
+        // Update sidebar
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        sidebarItems.forEach(item => item.classList.remove('active'));
+        
+        const activeItem = document.querySelector(`.sidebar-item[onclick="showSection('${sectionName}')"]`);
+        if (activeItem) {
+            activeItem.classList.add('active');
+        }
+        
+        this.currentSection = sectionName;
+        
+        // Load section-specific data
+        this.loadSectionData(sectionName);
+    }
+
+    loadSectionData(sectionName) {
+        switch(sectionName) {
+            case 'overview':
+                this.loadOverviewData();
+                break;
+            case 'icp':
+                this.loadICPData();
+                break;
+            case 'discovery':
+                this.loadDiscoveryData();
+                break;
+            case 'leads':
+                this.loadLeadsData();
+                break;
+            case 'approvals':
+                this.loadApprovalsData();
+                break;
+            case 'analytics':
+                this.loadAnalyticsData();
+                break;
+        }
+    }
+
+    async loadData() {
+        try {
+            // Load all data in parallel
+            const [icps, leads, approvals] = await Promise.all([
+                this.fetchData('/api/icp'),
+                this.fetchData('/api/leads'),
+                this.fetchData('/api/approvals')
+            ]);
+
+            this.icps = icps.success ? icps.icps || [] : [];
+            this.leads = leads.success ? leads || [] : [];
+            this.approvals = approvals.success ? approvals || [];
+
+            // Update current section
+            this.loadSectionData(this.currentSection);
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    async fetchData(endpoint) {
+        try {
+            const response = await fetch(endpoint);
+            return await response.json();
+        } catch (error) {
+            console.error(`Error fetching ${endpoint}:`, error);
+            return { success: false };
+        }
+    }
+
+    loadOverviewData() {
+        // Update stats
+        document.getElementById('total-leads').textContent = this.leads.length;
+        document.getElementById('active-icps').textContent = this.icps.length;
+        document.getElementById('discovered-today').textContent = this.leads.filter(l => 
+            new Date(l.created_at).toDateString() === new Date().toDateString()
+        ).length;
+        document.getElementById('pending-approvals').textContent = this.approvals.filter(a => 
+            a.status === 'pending'
+        ).length;
+
+        // Load recent activity
+        this.loadRecentActivity();
+    }
+
+    loadRecentActivity() {
+        const activityContainer = document.getElementById('recent-activity');
+        if (!activityContainer) return;
+
+        const activities = [
+            {
+                type: 'discovery',
+                message: 'ICP Discovery completed for "San Francisco Residential Investors"',
+                time: '2 hours ago',
+                icon: 'fa-search',
+                color: 'text-blue-600'
+            },
+            {
+                type: 'lead',
+                message: 'New lead discovered: John Investor from LinkedIn',
+                time: '4 hours ago',
+                icon: 'fa-user',
+                color: 'text-green-600'
+            },
+            {
+                type: 'approval',
+                message: '3 leads approved and ready for outreach',
+                time: '6 hours ago',
+                icon: 'fa-check',
+                color: 'text-purple-600'
+            }
+        ];
+
+        activityContainer.innerHTML = activities.map(activity => `
+            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                    <i class="fas ${activity.icon} ${activity.color}"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">${activity.message}</p>
+                    <p class="text-xs text-gray-500">${activity.time}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadICPData() {
+        const icpList = document.getElementById('icp-list');
+        if (!icpList) return;
+
+        icpList.innerHTML = this.icps.map(icp => `
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">${icp.name}</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="editICP('${icp.id}')" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteICP('${icp.id}')" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">${icp.description}</p>
+                
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Locations:</span>
+                        <span class="font-medium">${icp.criteria?.locations?.cities?.join(', ') || 'N/A'}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Price Range:</span>
+                        <span class="font-medium">$${(icp.criteria?.investment?.priceRange?.min || 0).toLocaleString()} - $${(icp.criteria?.investment?.priceRange?.max || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">Platforms:</span>
+                        <div class="flex space-x-1">
+                            ${Object.entries(icp.criteria?.platforms || {}).map(([platform, enabled]) => 
+                                enabled ? `<span class="platform-badge platform-${platform}">${platform}</span>` : ''
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <button onclick="runICPDiscovery('${icp.id}')" class="modern-button modern-button-primary w-full">
+                        <i class="fas fa-search mr-2"></i>Run Discovery
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadDiscoveryData() {
+        // Update ICP select
+        const icpSelect = document.getElementById('discovery-icp-select');
+        if (icpSelect) {
+            icpSelect.innerHTML = '<option value="">Choose an ICP profile...</option>' +
+                this.icps.map(icp => `<option value="${icp.id}">${icp.name}</option>`).join('');
+        }
+
+        // Load discovery results
+        this.loadDiscoveryResults();
+    }
+
+    loadDiscoveryResults() {
+        const resultsContainer = document.getElementById('discovery-results');
+        if (!resultsContainer) return;
+
+        if (this.discoveryResults.length === 0) {
+            resultsContainer.innerHTML = '<p class="text-gray-500 text-center py-8">No discovery results yet. Run a discovery to see results.</p>';
+            return;
+        }
+
+        resultsContainer.innerHTML = this.discoveryResults.map(result => `
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 rounded-full ${result.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'}"></div>
+                        <span class="font-medium">${result.icpName}</span>
+                    </div>
+                    <span class="text-sm text-gray-500">${result.time}</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-600">Leads Found:</span>
+                        <span class="font-medium ml-2">${result.leadsFound}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">High Quality:</span>
+                        <span class="font-medium text-green-600 ml-2">${result.highQuality}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Avg Match:</span>
+                        <span class="font-medium ml-2">${result.avgMatch}%</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Duration:</span>
+                        <span class="font-medium ml-2">${result.duration}s</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadLeadsData() {
+        const leadsTable = document.getElementById('leads-table');
+        if (!leadsTable) return;
+
+        leadsTable.innerHTML = this.leads.map(lead => `
+            <tr class="border-b border-gray-100">
+                <td class="py-3 px-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-blue-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium">${lead.first_name} ${lead.last_name}</div>
+                            <div class="text-sm text-gray-500">${lead.status}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-3 px-4">
+                    <div class="text-sm">
+                        <div>${lead.email || 'N/A'}</div>
+                        <div class="text-gray-500">${lead.phone_e164 || 'N/A'}</div>
+                    </div>
+                </td>
+                <td class="py-3 px-4">${lead.city}, ${lead.province}</td>
+                <td class="py-3 px-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: ${Math.random() * 100}%"></div>
+                        </div>
+                        <span class="text-sm font-medium">${Math.floor(Math.random() * 30 + 70)}%</span>
+                    </div>
+                </td>
+                <td class="py-3 px-4">
+                    <span class="platform-badge platform-${lead.source}">${lead.source}</span>
+                </td>
+                <td class="py-3 px-4">
+                    <div class="flex space-x-2">
+                        <button onclick="viewLead('${lead.lead_id}')" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="editLead('${lead.lead_id}')" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    loadApprovalsData() {
+        const approvalsList = document.getElementById('approvals-list');
+        if (!approvalsList) return;
+
+        approvalsList.innerHTML = this.approvals.map(approval => `
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <input type="checkbox" class="approval-checkbox" value="${approval.id}">
+                        <div>
+                            <div class="font-medium">${approval.first_name} ${approval.last_name}</div>
+                            <div class="text-sm text-gray-500">${approval.email}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="approveLead('${approval.id}')" class="text-green-600 hover:text-green-800">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button onclick="rejectLead('${approval.id}')" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadAnalyticsData() {
+        // Update analytics stats
+        const totalDiscovered = this.leads.length;
+        const highQuality = this.leads.filter(l => l.grade === 'A' || l.grade === 'B').length;
+        const avgMatch = Math.floor(Math.random() * 20 + 75);
+
+        document.getElementById('analytics-total-discovered').textContent = totalDiscovered;
+        document.getElementById('analytics-high-quality').textContent = highQuality;
+        document.getElementById('analytics-avg-match').textContent = avgMatch + '%';
+
+        // Platform performance
+        const platformPerformance = document.getElementById('platform-performance');
+        if (platformPerformance) {
+            const platforms = ['linkedin', 'zillow', 'realtor', 'facebook'];
+            platformPerformance.innerHTML = platforms.map(platform => {
+                const count = this.leads.filter(l => l.source === platform).length;
+                return `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 capitalize">${platform}</span>
+                        <span class="text-sm font-medium">${count} leads</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // Modal functions
+    showCreateICPModal() {
+        document.getElementById('create-icp-modal').classList.remove('hidden');
+    }
+
+    hideCreateICPModal() {
+        document.getElementById('create-icp-modal').classList.add('hidden');
+        this.clearICPForm();
+    }
+
+    clearICPForm() {
+        document.getElementById('icp-name').value = '';
+        document.getElementById('icp-description').value = '';
+        document.getElementById('icp-cities').value = '';
+        document.getElementById('icp-radius').value = '';
+        document.getElementById('icp-price-min').value = '';
+        document.getElementById('icp-price-max').value = '';
+        
+        // Clear checkboxes
+        document.querySelectorAll('#create-icp-modal input[type="checkbox"]').forEach(cb => cb.checked = false);
+    }
+
+    async createICP() {
+        const name = document.getElementById('icp-name').value;
+        const description = document.getElementById('icp-description').value;
+        
+        if (!name || !description) {
+            this.showNotification('Please fill in all required fields', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/icp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    description,
+                    criteria: this.getICPCriteria(),
+                    settings: {
+                        maxLeadsPerDay: 50,
+                        discoveryFrequency: 'daily',
+                        confidenceThreshold: 0.7
+                    }
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('ICP profile created successfully!', 'success');
+                this.hideCreateICPModal();
+                this.loadData();
+            } else {
+                this.showNotification('Failed to create ICP profile', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error creating ICP profile: ' + error.message, 'error');
+        }
+    }
+
+    getICPCriteria() {
+        const cities = document.getElementById('icp-cities').value.split(',').map(s => s.trim()).filter(s => s);
+        const radius = parseInt(document.getElementById('icp-radius').value) || 25;
+        const priceMin = parseInt(document.getElementById('icp-price-min').value) || 0;
+        const priceMax = parseInt(document.getElementById('icp-price-max').value) || 1000000;
+        
+        const propertyTypes = Array.from(document.querySelectorAll('input[type="checkbox"][value="single_family"]:checked, input[type="checkbox"][value="multi_family"]:checked, input[type="checkbox"][value="commercial"]:checked')).map(cb => cb.value);
+        
+        const platforms = {};
+        document.querySelectorAll('input[type="checkbox"][value="linkedin"], input[type="checkbox"][value="zillow"], input[type="checkbox"][value="realtor"], input[type="checkbox"][value="facebook"]').forEach(cb => {
+            platforms[cb.value] = cb.checked;
+        });
+
+        return {
+            locations: { cities, states: ['CA'], zipCodes: [], radius },
+            investment: { propertyTypes, priceRange: { min: priceMin, max: priceMax } },
+            professional: { industries: ['Real Estate'], companySize: ['small', 'medium'], jobTitles: ['Investor'] },
+            platforms
+        };
+    }
+
+    async runDiscovery() {
+        const icpId = document.getElementById('discovery-icp-select').value;
+        const maxLeads = parseInt(document.getElementById('discovery-max-leads').value) || 50;
+        
+        if (!icpId) {
+            this.showNotification('Please select an ICP profile', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/icp/${icpId}/discover`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ maxLeads })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification(`Discovery completed! Found ${result.summary.totalFound} leads`, 'success');
+                this.discoveryResults.push({
+                    id: Date.now(),
+                    icpName: this.icps.find(icp => icp.id === icpId)?.name || 'Unknown',
+                    leadsFound: result.summary.totalFound,
+                    highQuality: result.summary.highConfidence,
+                    avgMatch: Math.floor(result.summary.avgMatchScore * 100),
+                    duration: Math.floor(result.processingTime / 1000),
+                    status: 'completed',
+                    time: 'Just now'
+                });
+                this.loadDiscoveryResults();
+                this.loadData();
+            } else {
+                this.showNotification('Discovery failed', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error running discovery: ' + error.message, 'error');
+        }
+    }
+
+    async runICPDiscovery(icpId) {
+        try {
+            const response = await fetch(`/api/icp/${icpId}/discover`, { method: 'POST' });
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification(`Discovery completed! Found ${result.summary.totalFound} leads`, 'success');
+                this.loadData();
+            } else {
+                this.showNotification('Discovery failed', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error running discovery: ' + error.message, 'error');
+        }
+    }
+
+    // Utility functions
+    updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        const timeElements = document.querySelectorAll('#current-time');
+        timeElements.forEach(el => el.textContent = timeString);
+    }
+
+    async refreshData() {
+        await this.loadData();
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 animate-slide-in ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <i class="fas ${
+                    type === 'success' ? 'fa-check-circle' :
+                    type === 'error' ? 'fa-exclamation-circle' :
+                    'fa-info-circle'
+                }"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Placeholder functions for UI interactions
+    editICP(id) { console.log('Edit ICP:', id); }
+    deleteICP(id) { console.log('Delete ICP:', id); }
+    viewLead(id) { console.log('View lead:', id); }
+    editLead(id) { console.log('Edit lead:', id); }
+    approveLead(id) { console.log('Approve lead:', id); }
+    rejectLead(id) { console.log('Reject lead:', id); }
+    bulkApprove() { console.log('Bulk approve'); }
+    bulkReject() { console.log('Bulk reject'); }
+    showApprovalsModal() { console.log('Show approvals modal'); }
+}
+
+// Initialize the app
+const app = new REEngine();
+
+// Global functions for onclick handlers
+window.showSection = (section) => app.showSection(section);
+window.showCreateICPModal = () => app.showCreateICPModal();
+window.hideCreateICPModal = () => app.hideCreateICPModal();
+window.createICP = () => app.createICP();
+window.runDiscovery = () => app.runDiscovery();
+window.runICPDiscovery = (id) => app.runICPDiscovery(id);
+window.logout = () => app.logout();
+window.editICP = (id) => app.editICP(id);
+window.deleteICP = (id) => app.deleteICP(id);
+window.viewLead = (id) => app.viewLead(id);
+window.editLead = (id) => app.editLead(id);
+window.approveLead = (id) => app.approveLead(id);
+window.rejectLead = (id) => app.rejectLead(id);
+window.bulkApprove = () => app.bulkApprove();
+window.bulkReject = () => app.bulkReject();
+window.showApprovalsModal = () => app.showApprovalsModal();

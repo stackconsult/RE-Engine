@@ -1096,6 +1096,60 @@ app.get('/api/analytics/performance', async (req, res) => {
     }
 });
 
+// Authentication endpoints
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        // Mock authentication - in production would validate against database
+        if (email && password) {
+            const user = {
+                id: 'user_1',
+                email: email,
+                name: 'John Doe',
+                role: 'admin'
+            };
+            
+            const token = 'mock_token_' + Date.now();
+            
+            res.json({
+                success: true,
+                user,
+                token
+            });
+        } else {
+            res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+app.post('/api/auth/logout', async (req, res) => {
+    try {
+        // Mock logout - in production would invalidate token
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Logout failed' });
+    }
+});
+
+app.get('/api/auth/me', async (req, res) => {
+    try {
+        // Mock user validation - in production would validate token
+        const user = {
+            id: 'user_1',
+            email: 'john@example.com',
+            name: 'John Doe',
+            role: 'admin'
+        };
+        
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get user info' });
+    }
+});
+
 // Settings endpoints
 app.get('/api/settings', async (req, res) => {
     try {
