@@ -1,9 +1,11 @@
 # RE Engine (Real Estate Outreach Engine)
 
-A production-ready multi-channel outreach automation system for real estate professionals. Built with Node.js, featuring MCP integration, Playwright browser automation, and approval-first messaging across WhatsApp, Telegram, Email, LinkedIn, and Facebook.
+A production-ready multi-channel outreach automation system for real estate professionals. Built with Node.js, featuring MCP integration, Playwright browser automation, comprehensive WhatsApp integration, and approval-first messaging across WhatsApp, Telegram, Email, LinkedIn, and Facebook.
 
 ## 🚀 Features
 
+- **Complete WhatsApp Integration**: 100% Whapi.Cloud API coverage with 35+ MCP tools
+- **Advanced Lead Management**: Multi-factor scoring, A-F grading, and automated workflows
 - **Multi-channel outreach**: WhatsApp, Telegram, Email, LinkedIn, Facebook
 - **Approval-first system**: All outbound messages require explicit approval
 - **CSV-based storage**: Local-first data storage with upgrade path to PostgreSQL
@@ -19,6 +21,9 @@ RE-Engine/
 ├── engine/           # Core Node.js engine
 ├── playwright/       # Browser automation harness
 ├── mcp/             # MCP servers for tool integration
+│   ├── reengine-outreach/  # WhatsApp integration server
+│   ├── reengine-tinyfish/   # Web scraping server
+│   └── whapi-mcp-optimal/  # Official Whapi.Cloud server
 ├── web-dashboard/   # React-based approval dashboard
 ├── docs/           # Documentation and specs
 ├── tests/          # Unit and integration tests
@@ -29,7 +34,7 @@ RE-Engine/
 
 - Node.js v22+
 - macOS (current MVP target)
-- Dedicated WhatsApp number
+- Whapi.Cloud account with WhatsApp number
 - SpaceEmail account (for SMTP/IMAP)
 
 ## 🛠️ Installation
@@ -64,7 +69,15 @@ ollama pull deepseek-coder:6.7b
 ollama serve &
 ```
 
-### 5. Configure environment
+### 5. Build WhatsApp MCP Server
+```bash
+cd mcp/reengine-outreach
+npm install
+npm run build
+cd ../..
+```
+
+### 6. Configure environment
 ```bash
 cp .env.example .env
 # Edit .env with your credentials
@@ -74,6 +87,14 @@ cp .env.example .env
 
 ### Environment Variables
 ```bash
+# WhatsApp API Configuration (Whapi.Cloud)
+WHATSAPP_API_KEY="your_whapi_cloud_api_key"
+WHATSAPP_API_URL="https://gate.whapi.cloud"
+WHATSAPP_WEBHOOK_URL="https://your-domain.cloud/webhook-path"
+WHATSAPP_CHANNEL_ID="your_channel_id"
+WHATSAPP_PHONE_NUMBER="+1234567890"
+WHATSAPP_START_CHAT_LINK="https://wa.me/1234567890?text=Start"
+
 # SpaceEmail Configuration
 SPACEMAIL_USER="your-email@domain.com"
 SPACEMAIL_PASS="your-password"
@@ -89,6 +110,15 @@ RE_CONTACT_CAPTURE_ALERTS="telegram"
 # Ollama Configuration
 OLLAMA_API_KEY="your-ollama-api-key"
 ```
+
+### MCP Integration (Windsurf Cascade)
+The system includes 3 MCP servers automatically configured:
+
+1. **reengine-outreach** - Complete WhatsApp automation with 35+ tools
+2. **reengine-tinyfish** - Web scraping and data extraction
+3. **whapi-mcp-optimal** - Official Whapi.Cloud API server
+
+Configuration is in `.windsurf/mcp-config.json` and automatically loaded by Windsurf Cascade.
 
 ### OpenClaw + Ollama Configuration
 Add to `~/.openclaw/openclaw.json`:
@@ -152,7 +182,16 @@ mkdir -p data
 # The system will create CSV files automatically
 ```
 
-### 2. Link communication channels
+### 2. Set up WhatsApp integration
+```bash
+# Get your Whapi.Cloud API token and channel ID
+# Configure in .env as shown above
+
+# Test WhatsApp connection
+node mcp/reengine-outreach/dist/index.js
+```
+
+### 3. Link communication channels
 ```bash
 # WhatsApp (QR scan)
 openclaw channels login
@@ -164,12 +203,12 @@ openclaw pairing approve whatsapp <code>
 openclaw pairing approve telegram <code>
 ```
 
-### 3. Start the web dashboard
+### 4. Start the web dashboard
 ```bash
 npm run dashboard
 ```
 
-### 4. Set up automated workflows
+### 5. Set up automated workflows
 ```bash
 # Daily outreach drafts (150/day at 8:00 AM)
 npm run schedule:daily
@@ -183,12 +222,44 @@ npm run schedule:approvals
 
 ## 📊 Usage
 
+### WhatsApp Automation Features
+The system provides comprehensive WhatsApp capabilities:
+
+#### Lead Management
+- **Create Leads**: `create_lead` - Add new leads with scoring
+- **Score Updates**: `update_lead_score` - Multi-factor lead scoring
+- **Lead Analytics**: `get_lead_analytics` - Comprehensive reporting
+
+#### Advanced Messaging
+- **Text/Media Messages**: `send_whatsapp_message` - All message types
+- **Interactive Messages**: Buttons, lists, and interactive elements
+- **Carousel Messages**: Multi-card interactive presentations
+- **Poll Messages**: Interactive polls for engagement
+- **Location Messages**: Share property locations
+- **Contact Messages**: Share contact information
+
+#### Business Features
+- **Business Profile**: `get_business_profile` - Manage WhatsApp Business
+- **Product Catalogs**: `create_product`, `send_catalog` - Property listings
+- **Newsletter Management**: `create_newsletter`, `subscribe_to_newsletter`
+
+#### Stories & Status
+- **Text Stories**: `create_text_story` - Status updates
+- **Media Stories**: `create_media_story` - Photo/video status
+- **Story Management**: `get_stories` - View published stories
+
+#### Workflow Automation
+- **Create Workflows**: `create_workflow_rule` - Custom automation rules
+- **Execute Workflows**: `execute_workflow` - Run automation sequences
+- **Analytics**: `get_workflow_analytics` - Performance metrics
+
 ### Web Dashboard
 Access the approval dashboard at `http://localhost:3000` to:
 - Review pending message approvals
 - Approve/reject outbound messages
 - Monitor campaign performance
 - View lead status and activity
+- Track WhatsApp automation metrics
 
 ### Command Line Interface
 ```bash
@@ -203,6 +274,12 @@ npm run approvals:reject <approval_id>
 
 # Generate daily reports
 npm run report:daily
+
+# Test WhatsApp integration
+npm run whatsapp:test
+
+# View lead analytics
+npm run leads:analytics
 ```
 
 ## 🔄 Data Storage
@@ -237,8 +314,12 @@ npm run build
 cd ../mcp
 npm run build:all
 
+# Build WhatsApp outreach server
+cd reengine-outreach
+npm run build
+
 # Build web dashboard
-cd ../web-dashboard
+cd ../../web-dashboard
 npm run build
 ```
 
@@ -246,6 +327,7 @@ npm run build
 ✅ **Current Status**: All TypeScript compilation issues resolved  
 📦 **Build Target**: Node.js v22+ with TypeScript 5.7+  
 🔧 **Quality Gates**: Linting, type-checking, and smoke tests passing  
+🚀 **WhatsApp Integration**: 100% Whapi.Cloud API coverage with 35+ tools  
 
 ## 🔧 Development
 
@@ -254,6 +336,7 @@ npm run build
 npm test
 npm run test:integration
 npm run test:smoke
+npm run test:whatsapp
 ```
 
 ### Code Quality
@@ -268,14 +351,19 @@ npm run type-check
 # Start MCP servers
 npm run mcp:start
 
-# Test MCP integration
-npm run mcp:test
+# Test WhatsApp MCP server
+npm run mcp:test:whatsapp
+
+# Test TinyFish MCP server
+npm run mcp:test:tinyfish
 ```
 
 ## 📚 Documentation
 
 - [Production Spec](./REENGINE-PRODUCTION-SPEC.md) - System architecture and requirements
 - [Agent Instructions](./AGENTS.md) - Development guidelines and policies
+- [WhatsApp Integration Guide](./docs/WHATSAPPI-INTEGRATION.md) - Complete WhatsApp setup
+- [Enhancement Summary](./docs/WHATSAPPI-ENHANCEMENT-SUMMARY.md) - Feature overview
 - [Deployment Guide](./DEPLOYMENT.md) - Production deployment instructions
 - [API Documentation](./docs/API.md) - REST API reference
 
@@ -285,6 +373,7 @@ npm run mcp:test
 - **No secrets in repo**: All credentials stored in environment variables
 - **Audit logging**: All actions recorded in events.csv
 - **Pairing-based access**: Unknown contacts require manual approval
+- **WhatsApp Security**: API tokens and webhook secrets properly secured
 
 ## 🤝 Contributing
 
@@ -306,12 +395,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🗺️ Roadmap
 
+- [x] Complete WhatsApp integration with Whapi.Cloud
+- [x] Advanced lead management and scoring
+- [x] Workflow automation engine
+- [x] MCP integration with Windsurf Cascade
 - [ ] PostgreSQL/Neon database integration
 - [ ] Advanced AI-powered message generation
 - [ ] Multi-tenant support
 - [ ] Mobile app for on-the-go approvals
 - [ ] Advanced analytics and reporting
 - [ ] CRM integrations (Zillow, Realtor.com)
+- [ ] Vertex AI integration
+- [ ] Voice and video messaging
+- [ ] Advanced property matching algorithms
 
 ---
 
