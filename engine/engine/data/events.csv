@@ -25,4 +25,7 @@ evt_1770159699580,2026-02-03T23:01:39.580Z,lead_smoke,email,approve,reengine,,{a
 evt_1770159699586,2026-02-03T23:01:39.586Z,lead_smoke,email,sent,reengine,mock_email_1,{approval_id:appr_8a2ede4a-5fd
 evt_1770159753144,2026-02-03T23:02:33.144Z,lead_smoke,email,draft_created,smoke,,{approval_id:appr_f4353bfe-f7d
 evt_1770159753155,2026-02-03T23:02:33.155Z,lead_smoke,email,approve,reengine,,{approval_id:appr_f4353bfe-f7d}
-evt_1770159753159,2026-02-03T23:02:33.159Z,lead_smoke,email,sent,reengine,mock_email_1,{"approval_id":"appr_f4353bfe-f7d","to":"test@example.com","ok":true}
+evt_1770159753159,2026-02-03T23:02:33.159Z,lead_smoke,email,sent,reengine,mock_email_1,{approval_id:appr_f4353bfe-f7d
+evt_1770162639299,2026-02-03T23:50:39.299Z,lead_smoke,email,draft_created,smoke,,{approval_id:appr_d01019d4-b63
+evt_1770162639319,2026-02-03T23:50:39.319Z,lead_smoke,email,approve,reengine,,{approval_id:appr_d01019d4-b63}
+evt_1770162639332,2026-02-03T23:50:39.332Z,lead_smoke,email,sent,reengine,mock_email_1,{"approval_id":"appr_d01019d4-b63","to":"test@example.com","ok":true}
