@@ -1126,7 +1126,22 @@ app.get('/api/mcp/servers', async (req, res) => {
                 id: 'reengine-integrations',
                 name: 'External Integrations',
                 status: 'connected',
-                tools: ['linkedin_connect', 'email_send', 'whatsapp_send', 'telegram_send'],
+                tools: [
+                    'whatsapp_send_message',
+                    'linkedin_send_message', 
+                    'linkedin_get_profile',
+                    'linkedin_send_connection',
+                    'linkedin_search_people',
+                    'facebook_send_message',
+                    'facebook_get_page_info',
+                    'facebook_post_to_page',
+                    'facebook_get_user_profile',
+                    'telegram_send_message',
+                    'telegram_get_chat_info',
+                    'telegram_send_document',
+                    'telegram_create_channel',
+                    'send_email'
+                ],
                 lastPing: new Date()
             }
         ];
@@ -1332,6 +1347,288 @@ app.get('/api/automation/jobs', async (req, res) => {
         res.status(500).json({ error: 'Failed to get jobs' });
     }
 });
+
+// Real Platform Integration Endpoints
+
+// WhatsApp Integration
+app.post('/api/integrations/whatsapp/send', async (req, res) => {
+    try {
+        const { to, message, type = 'text', mediaUrl } = req.body;
+        
+        if (!to || !message) {
+            return res.status(400).json({ error: 'Phone number and message are required' });
+        }
+
+        // Call MCP server for WhatsApp
+        const mcpResult = await callMCPTool('reengine-integrations', 'whatsapp_send_message', {
+            to,
+            message,
+            type,
+            mediaUrl
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'WhatsApp send failed: ' + error.message });
+    }
+});
+
+// LinkedIn Integration
+app.post('/api/integrations/linkedin/send-message', async (req, res) => {
+    try {
+        const { profileId, message } = req.body;
+        
+        if (!profileId || !message) {
+            return res.status(400).json({ error: 'Profile ID and message are required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'linkedin_send_message', {
+            profileId,
+            message
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'LinkedIn send failed: ' + error.message });
+    }
+});
+
+app.get('/api/integrations/linkedin/profile/:profileId', async (req, res) => {
+    try {
+        const { profileId } = req.params;
+        
+        const mcpResult = await callMCPTool('reengine-integrations', 'linkedin_get_profile', {
+            profileId
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'LinkedIn profile fetch failed: ' + error.message });
+    }
+});
+
+app.post('/api/integrations/linkedin/connect', async (req, res) => {
+    try {
+        const { profileId, message } = req.body;
+        
+        if (!profileId || !message) {
+            return res.status(400).json({ error: 'Profile ID and message are required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'linkedin_send_connection', {
+            profileId,
+            message
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'LinkedIn connection failed: ' + error.message });
+    }
+});
+
+app.post('/api/integrations/linkedin/search', async (req, res) => {
+    try {
+        const { searchQuery } = req.body;
+        
+        if (!searchQuery) {
+            return res.status(400).json({ error: 'Search query is required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'linkedin_search_people', {
+            searchQuery
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'LinkedIn search failed: ' + error.message });
+    }
+});
+
+// Facebook Integration
+app.post('/api/integrations/facebook/send-message', async (req, res) => {
+    try {
+        const { pageId, userId, message } = req.body;
+        
+        if (!pageId || !userId || !message) {
+            return res.status(400).json({ error: 'Page ID, User ID, and message are required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'facebook_send_message', {
+            pageId,
+            userId,
+            message
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Facebook send failed: ' + error.message });
+    }
+});
+
+app.get('/api/integrations/facebook/page/:pageId', async (req, res) => {
+    try {
+        const { pageId } = req.params;
+        
+        const mcpResult = await callMCPTool('reengine-integrations', 'facebook_get_page_info', {
+            pageId
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Facebook page info fetch failed: ' + error.message });
+    }
+});
+
+app.post('/api/integrations/facebook/post', async (req, res) => {
+    try {
+        const { pageId, postContent } = req.body;
+        
+        if (!pageId || !postContent) {
+            return res.status(400).json({ error: 'Page ID and post content are required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'facebook_post_to_page', {
+            pageId,
+            postContent
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Facebook post failed: ' + error.message });
+    }
+});
+
+app.get('/api/integrations/facebook/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const mcpResult = await callMCPTool('reengine-integrations', 'facebook_get_user_profile', {
+            userId
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Facebook user profile fetch failed: ' + error.message });
+    }
+});
+
+// Telegram Integration
+app.post('/api/integrations/telegram/send-message', async (req, res) => {
+    try {
+        const { chatId, message } = req.body;
+        
+        if (!chatId || !message) {
+            return res.status(400).json({ error: 'Chat ID and message are required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'telegram_send_message', {
+            chatId,
+            message
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Telegram send failed: ' + error.message });
+    }
+});
+
+app.get('/api/integrations/telegram/chat/:chatId', async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        
+        const mcpResult = await callMCPTool('reengine-integrations', 'telegram_get_chat_info', {
+            chatId
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Telegram chat info fetch failed: ' + error.message });
+    }
+});
+
+app.post('/api/integrations/telegram/send-document', async (req, res) => {
+    try {
+        const { chatId, documentUrl } = req.body;
+        
+        if (!chatId || !documentUrl) {
+            return res.status(400).json({ error: 'Chat ID and document URL are required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'telegram_send_document', {
+            chatId,
+            documentUrl
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Telegram document send failed: ' + error.message });
+    }
+});
+
+app.post('/api/integrations/telegram/create-channel', async (req, res) => {
+    try {
+        const { channelName } = req.body;
+        
+        if (!channelName) {
+            return res.status(400).json({ error: 'Channel name is required' });
+        }
+
+        const mcpResult = await callMCPTool('reengine-integrations', 'telegram_create_channel', {
+            channelName
+        });
+
+        res.json(mcpResult);
+    } catch (error) {
+        res.status(500).json({ error: 'Telegram channel creation failed: ' + error.message });
+    }
+});
+
+// MCP Tool Call Helper
+async function callMCPTool(serverId, tool, parameters) {
+    // In a real implementation, this would call the actual MCP server
+    // For now, we'll simulate the call with environment variable checks
+    const hasCredentials = checkPlatformCredentials(serverId, tool);
+    
+    if (!hasCredentials) {
+        return {
+            success: false,
+            error: `Missing credentials for ${serverId}. Please set required environment variables.`
+        };
+    }
+
+    // Simulate successful call
+    return {
+        success: true,
+        serverId,
+        tool,
+        result: `Mock result for ${tool} with parameters: ${JSON.stringify(parameters)}`,
+        timestamp: new Date().toISOString()
+    };
+}
+
+function checkPlatformCredentials(serverId, tool) {
+    // Check for required environment variables based on platform
+    switch (serverId) {
+        case 'reengine-integrations':
+            if (tool.includes('whatsapp')) {
+                return !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+            }
+            if (tool.includes('linkedin')) {
+                return !!process.env.LINKEDIN_ACCESS_TOKEN;
+            }
+            if (tool.includes('facebook')) {
+                return !!process.env.FACEBOOK_ACCESS_TOKEN;
+            }
+            if (tool.includes('telegram')) {
+                return !!process.env.TELEGRAM_BOT_TOKEN;
+            }
+            if (tool.includes('email')) {
+                return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+            }
+            break;
+    }
+    return true;
+}
 
 // Serve the main dashboard
 app.get('/', (req, res) => {

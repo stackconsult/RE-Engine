@@ -644,6 +644,104 @@
                     </div>
                 </section>
 
+                <!-- Channels Section -->
+                <section id="channels-section" class="space-y-6 hidden">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <h2 class="text-xl font-semibold mb-6">Platform Channels</h2>
+                        
+                        <!-- Platform Status Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                            <!-- WhatsApp -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-whatsapp text-green-600 text-xl"></i>
+                                        <span class="font-medium">WhatsApp</span>
+                                    </div>
+                                    <div class="status-dot status-online"></div>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">Business API integration</p>
+                                <div class="space-y-2">
+                                    <button onclick="showWhatsAppModal()" class="modern-button modern-button-primary w-full text-sm">
+                                        Send Message
+                                    </button>
+                                    <button onclick="testWhatsAppConnection()" class="modern-button modern-button-secondary w-full text-sm">
+                                        Test Connection
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- LinkedIn -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-linkedin text-blue-600 text-xl"></i>
+                                        <span class="font-medium">LinkedIn</span>
+                                    </div>
+                                    <div class="status-dot status-online"></div>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">Professional network</p>
+                                <div class="space-y-2">
+                                    <button onclick="showLinkedInModal()" class="modern-button modern-button-primary w-full text-sm">
+                                        Send Message
+                                    </button>
+                                    <button onclick="showLinkedInSearch()" class="modern-button modern-button-secondary w-full text-sm">
+                                        Search People
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Facebook -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-facebook text-blue-700 text-xl"></i>
+                                        <span class="font-medium">Facebook</span>
+                                    </div>
+                                    <div class="status-dot status-online"></div>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">Social media platform</p>
+                                <div class="space-y-2">
+                                    <button onclick="showFacebookModal()" class="modern-button modern-button-primary w-full text-sm">
+                                        Send Message
+                                    </button>
+                                    <button onclick="showFacebookPost()" class="modern-button modern-button-secondary w-full text-sm">
+                                        Create Post
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Telegram -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-telegram text-blue-500 text-xl"></i>
+                                        <span class="font-medium">Telegram</span>
+                                    </div>
+                                    <div class="status-dot status-online"></div>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">Messaging platform</p>
+                                <div class="space-y-2">
+                                    <button onclick="showTelegramModal()" class="modern-button modern-button-primary w-full text-sm">
+                                        Send Message
+                                    </button>
+                                    <button onclick="showTelegramChannel()" class="modern-button modern-button-secondary w-full text-sm">
+                                        Create Channel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Messages -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium mb-4">Recent Messages</h3>
+                            <div class="space-y-3" id="recent-messages">
+                                <!-- Recent messages will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Analytics Section -->
                 <section id="analytics-section" class="space-y-6 hidden">
                     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -773,6 +871,218 @@
             <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
                 <button onclick="hideCreateICPModal()" class="modern-button modern-button-secondary">Cancel</button>
                 <button onclick="createICP()" class="modern-button modern-button-primary">Create ICP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Modal -->
+    <div id="whatsapp-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Send WhatsApp Message</h3>
+                <button onclick="hideWhatsAppModal()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <input type="tel" id="whatsapp-to" class="modern-input" placeholder="+1234567890">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message Type</label>
+                    <select id="whatsapp-type" class="modern-input">
+                        <option value="text">Text Message</option>
+                        <option value="image">Image</option>
+                        <option value="document">Document</option>
+                    </select>
+                </div>
+                
+                <div id="whatsapp-media-section" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Media URL</label>
+                    <input type="url" id="whatsapp-media-url" class="modern-input" placeholder="https://example.com/image.jpg">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="whatsapp-message" class="modern-input" rows="4" placeholder="Enter your message..."></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideWhatsAppModal()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="sendWhatsAppMessage()" class="modern-button modern-button-primary">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LinkedIn Modal -->
+    <div id="linkedin-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Send LinkedIn Message</h3>
+                <button onclick="hideLinkedInModal()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Profile ID</label>
+                    <input type="text" id="linkedin-profile-id" class="modern-input" placeholder="LinkedIn Profile ID">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="linkedin-message" class="modern-input" rows="4" placeholder="Enter your message..."></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideLinkedInModal()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="sendLinkedInMessage()" class="modern-button modern-button-primary">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LinkedIn Search Modal -->
+    <div id="linkedin-search-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Search LinkedIn People</h3>
+                <button onclick="hideLinkedInSearch()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search Query</label>
+                    <input type="text" id="linkedin-search-query" class="modern-input" placeholder="e.g., Real Estate Investor in San Francisco">
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideLinkedInSearch()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="searchLinkedInPeople()" class="modern-button modern-button-primary">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facebook Modal -->
+    <div id="facebook-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Send Facebook Message</h3>
+                <button onclick="hideFacebookModal()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Page ID</label>
+                    <input type="text" id="facebook-page-id" class="modern-input" placeholder="Facebook Page ID">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+                    <input type="text" id="facebook-user-id" class="modern-input" placeholder="Facebook User ID">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="facebook-message" class="modern-input" rows="4" placeholder="Enter your message..."></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideFacebookModal()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="sendFacebookMessage()" class="modern-button modern-button-primary">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facebook Post Modal -->
+    <div id="facebook-post-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Create Facebook Post</h3>
+                <button onclick="hideFacebookPost()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Page ID</label>
+                    <input type="text" id="facebook-post-page-id" class="modern-input" placeholder="Facebook Page ID">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Post Content</label>
+                    <textarea id="facebook-post-content" class="modern-input" rows="4" placeholder="What's on your mind?"></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideFacebookPost()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="createFacebookPost()" class="modern-button modern-button-primary">Create Post</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telegram Modal -->
+    <div id="telegram-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Send Telegram Message</h3>
+                <button onclick="hideTelegramModal()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Chat ID</label>
+                    <input type="text" id="telegram-chat-id" class="modern-input" placeholder="@channel or -123456789">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="telegram-message" class="modern-input" rows="4" placeholder="Enter your message..."></textarea>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideTelegramModal()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="sendTelegramMessage()" class="modern-button modern-button-primary">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telegram Channel Modal -->
+    <div id="telegram-channel-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-slide-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold">Create Telegram Channel</h3>
+                <button onclick="hideTelegramChannel()" class="float-right text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Channel Name</label>
+                    <input type="text" id="telegram-channel-name" class="modern-input" placeholder="Channel Name">
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4">
+                <button onclick="hideTelegramChannel()" class="modern-button modern-button-secondary">Cancel</button>
+                <button onclick="createTelegramChannel()" class="modern-button modern-button-primary">Create Channel</button>
             </div>
         </div>
     </div>

@@ -247,6 +247,9 @@ class REEngine {
             case 'approvals':
                 this.loadApprovalsData();
                 break;
+            case 'channels':
+                this.loadChannelsData();
+                break;
             case 'automation':
                 this.loadAutomationData();
                 break;
@@ -561,6 +564,377 @@ class REEngine {
                     </div>
                 `;
             }).join('');
+        }
+    }
+
+    loadChannelsData() {
+        // Load recent messages
+        this.loadRecentMessages();
+    }
+
+    loadRecentMessages() {
+        const messagesContainer = document.getElementById('recent-messages');
+        if (!messagesContainer) return;
+
+        const recentMessages = [
+            {
+                platform: 'whatsapp',
+                icon: 'fab fa-whatsapp text-green-600',
+                recipient: '+1234567890',
+                message: 'Hi! I\'m interested in learning more about your real estate services.',
+                time: '2 minutes ago',
+                status: 'sent'
+            },
+            {
+                platform: 'linkedin',
+                icon: 'fab fa-linkedin text-blue-600',
+                recipient: 'John Smith',
+                message: 'Thank you for connecting! I\'d love to discuss potential investment opportunities.',
+                time: '1 hour ago',
+                status: 'sent'
+            },
+            {
+                platform: 'telegram',
+                icon: 'fab fa-telegram text-blue-500',
+                recipient: '@realestate_channel',
+                message: 'New property listing available in downtown area.',
+                time: '3 hours ago',
+                status: 'sent'
+            },
+            {
+                platform: 'facebook',
+                icon: 'fab fa-facebook text-blue-700',
+                recipient: 'Sarah Johnson',
+                message: 'Thanks for reaching out! When would be a good time to schedule a call?',
+                time: '5 hours ago',
+                status: 'received'
+            }
+        ];
+
+        messagesContainer.innerHTML = recentMessages.map(msg => `
+            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                    <i class="${msg.icon}"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-gray-900">${msg.recipient}</p>
+                        <span class="text-xs text-gray-500">${msg.time}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">${msg.message}</p>
+                </div>
+                <div class="w-2 h-2 rounded-full ${msg.status === 'sent' ? 'bg-green-500' : 'bg-blue-500'}"></div>
+            </div>
+        `).join('');
+    }
+
+    // Platform Integration Functions
+    showWhatsAppModal() {
+        document.getElementById('whatsapp-modal').classList.remove('hidden');
+    }
+
+    hideWhatsAppModal() {
+        document.getElementById('whatsapp-modal').classList.add('hidden');
+        this.clearWhatsAppForm();
+    }
+
+    clearWhatsAppForm() {
+        document.getElementById('whatsapp-to').value = '';
+        document.getElementById('whatsapp-type').value = 'text';
+        document.getElementById('whatsapp-media-url').value = '';
+        document.getElementById('whatsapp-message').value = '';
+        document.getElementById('whatsapp-media-section').classList.add('hidden');
+    }
+
+    async sendWhatsAppMessage() {
+        const to = document.getElementById('whatsapp-to').value;
+        const type = document.getElementById('whatsapp-type').value;
+        const message = document.getElementById('whatsapp-message').value;
+        const mediaUrl = document.getElementById('whatsapp-media-url').value;
+
+        if (!to || !message) {
+            this.showNotification('Phone number and message are required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/whatsapp/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to, message, type, mediaUrl })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('WhatsApp message sent successfully!', 'success');
+                this.hideWhatsAppModal();
+                this.loadRecentMessages();
+            } else {
+                this.showNotification('Failed to send WhatsApp message: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error sending WhatsApp message: ' + error.message, 'error');
+        }
+    }
+
+    async testWhatsAppConnection() {
+        try {
+            const response = await fetch('/api/integrations/whatsapp/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    to: '+1234567890', 
+                    message: 'Test connection from RE Engine',
+                    type: 'text'
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('WhatsApp connection test successful!', 'success');
+            } else {
+                this.showNotification('WhatsApp connection test failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('WhatsApp connection test error: ' + error.message, 'error');
+        }
+    }
+
+    showLinkedInModal() {
+        document.getElementById('linkedin-modal').classList.remove('hidden');
+    }
+
+    hideLinkedInModal() {
+        document.getElementById('linkedin-modal').classList.add('hidden');
+        document.getElementById('linkedin-profile-id').value = '';
+        document.getElementById('linkedin-message').value = '';
+    }
+
+    async sendLinkedInMessage() {
+        const profileId = document.getElementById('linkedin-profile-id').value;
+        const message = document.getElementById('linkedin-message').value;
+
+        if (!profileId || !message) {
+            this.showNotification('Profile ID and message are required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/linkedin/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profileId, message })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('LinkedIn message sent successfully!', 'success');
+                this.hideLinkedInModal();
+                this.loadRecentMessages();
+            } else {
+                this.showNotification('Failed to send LinkedIn message: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error sending LinkedIn message: ' + error.message, 'error');
+        }
+    }
+
+    showLinkedInSearch() {
+        document.getElementById('linkedin-search-modal').classList.remove('hidden');
+    }
+
+    hideLinkedInSearch() {
+        document.getElementById('linkedin-search-modal').classList.add('hidden');
+        document.getElementById('linkedin-search-query').value = '';
+    }
+
+    async searchLinkedInPeople() {
+        const searchQuery = document.getElementById('linkedin-search-query').value;
+
+        if (!searchQuery) {
+            this.showNotification('Search query is required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/linkedin/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ searchQuery })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('LinkedIn search completed!', 'success');
+                this.hideLinkedInSearch();
+                // TODO: Display search results in a modal
+            } else {
+                this.showNotification('LinkedIn search failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error searching LinkedIn: ' + error.message, 'error');
+        }
+    }
+
+    showFacebookModal() {
+        document.getElementById('facebook-modal').classList.remove('hidden');
+    }
+
+    hideFacebookModal() {
+        document.getElementById('facebook-modal').classList.add('hidden');
+        document.getElementById('facebook-page-id').value = '';
+        document.getElementById('facebook-user-id').value = '';
+        document.getElementById('facebook-message').value = '';
+    }
+
+    async sendFacebookMessage() {
+        const pageId = document.getElementById('facebook-page-id').value;
+        const userId = document.getElementById('facebook-user-id').value;
+        const message = document.getElementById('facebook-message').value;
+
+        if (!pageId || !userId || !message) {
+            this.showNotification('Page ID, User ID, and message are required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/facebook/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId, userId, message })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('Facebook message sent successfully!', 'success');
+                this.hideFacebookModal();
+                this.loadRecentMessages();
+            } else {
+                this.showNotification('Failed to send Facebook message: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error sending Facebook message: ' + error.message, 'error');
+        }
+    }
+
+    showFacebookPost() {
+        document.getElementById('facebook-post-modal').classList.remove('hidden');
+    }
+
+    hideFacebookPost() {
+        document.getElementById('facebook-post-modal').classList.add('hidden');
+        document.getElementById('facebook-post-page-id').value = '';
+        document.getElementById('facebook-post-content').value = '';
+    }
+
+    async createFacebookPost() {
+        const pageId = document.getElementById('facebook-post-page-id').value;
+        const postContent = document.getElementById('facebook-post-content').value;
+
+        if (!pageId || !postContent) {
+            this.showNotification('Page ID and post content are required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/facebook/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId, postContent })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('Facebook post created successfully!', 'success');
+                this.hideFacebookPost();
+            } else {
+                this.showNotification('Failed to create Facebook post: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error creating Facebook post: ' + error.message, 'error');
+        }
+    }
+
+    showTelegramModal() {
+        document.getElementById('telegram-modal').classList.remove('hidden');
+    }
+
+    hideTelegramModal() {
+        document.getElementById('telegram-modal').classList.add('hidden');
+        document.getElementById('telegram-chat-id').value = '';
+        document.getElementById('telegram-message').value = '';
+    }
+
+    async sendTelegramMessage() {
+        const chatId = document.getElementById('telegram-chat-id').value;
+        const message = document.getElementById('telegram-message').value;
+
+        if (!chatId || !message) {
+            this.showNotification('Chat ID and message are required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/telegram/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatId, message })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('Telegram message sent successfully!', 'success');
+                this.hideTelegramModal();
+                this.loadRecentMessages();
+            } else {
+                this.showNotification('Failed to send Telegram message: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error sending Telegram message: ' + error.message, 'error');
+        }
+    }
+
+    showTelegramChannel() {
+        document.getElementById('telegram-channel-modal').classList.remove('hidden');
+    }
+
+    hideTelegramChannel() {
+        document.getElementById('telegram-channel-modal').classList.add('hidden');
+        document.getElementById('telegram-channel-name').value = '';
+    }
+
+    async createTelegramChannel() {
+        const channelName = document.getElementById('telegram-channel-name').value;
+
+        if (!channelName) {
+            this.showNotification('Channel name is required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/integrations/telegram/create-channel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelName })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('Telegram channel created successfully!', 'success');
+                this.hideTelegramChannel();
+            } else {
+                this.showNotification('Failed to create Telegram channel: ' + result.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Error creating Telegram channel: ' + error.message, 'error');
         }
     }
 
@@ -985,3 +1359,27 @@ window.bulkApprove = () => app.bulkApprove();
 window.bulkReject = () => app.bulkReject();
 window.showApprovalsModal = () => app.showApprovalsModal();
 window.refreshData = () => app.refreshData();
+
+// Platform integration global functions
+window.showWhatsAppModal = () => app.showWhatsAppModal();
+window.hideWhatsAppModal = () => app.hideWhatsAppModal();
+window.sendWhatsAppMessage = () => app.sendWhatsAppMessage();
+window.testWhatsAppConnection = () => app.testWhatsAppConnection();
+window.showLinkedInModal = () => app.showLinkedInModal();
+window.hideLinkedInModal = () => app.hideLinkedInModal();
+window.sendLinkedInMessage = () => app.sendLinkedInMessage();
+window.showLinkedInSearch = () => app.showLinkedInSearch();
+window.hideLinkedInSearch = () => app.hideLinkedInSearch();
+window.searchLinkedInPeople = () => app.searchLinkedInPeople();
+window.showFacebookModal = () => app.showFacebookModal();
+window.hideFacebookModal = () => app.hideFacebookModal();
+window.sendFacebookMessage = () => app.sendFacebookMessage();
+window.showFacebookPost = () => app.showFacebookPost();
+window.hideFacebookPost = () => app.hideFacebookPost();
+window.createFacebookPost = () => app.createFacebookPost();
+window.showTelegramModal = () => app.showTelegramModal();
+window.hideTelegramModal = () => app.hideTelegramModal();
+window.sendTelegramMessage = () => app.sendTelegramMessage();
+window.showTelegramChannel = () => app.showTelegramChannel();
+window.hideTelegramChannel = () => app.hideTelegramChannel();
+window.createTelegramChannel = () => app.createTelegramChannel();
