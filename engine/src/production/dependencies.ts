@@ -28,7 +28,7 @@ import {
   MessageQueue, MessageQueueConfig, QueueDefinition, Message, MessageHandler, QueueStats, ConnectionStatus,
   PerformanceOptimizer, MemoryConfig, CPUConfig, NetworkConfig, DatabaseConfig, PerformanceMetrics, OptimizationResult, OptimizationImprovement, ValidationResult as PerfValidationResult,
   SupabaseService, SupabaseConfig, SupabaseConnectionConfig, SupabasePoolConfig, SupabaseHealthCheckResult, MigrationStatus, IndexOptimizationResult, SupabaseQuery, SupabaseQueryResult, SupabaseOperation, SupabaseTransactionResult, SupabaseSubscription, SupabaseChangePayload, SupabaseSubscriptionHandle, SupabaseMetrics, SupabaseStatistics, SupabaseRealtimeClient
-} from './types.js';
+} from '../shared/types.js';
 
 // JWT Manager Implementation
 export class JWTManagerImpl implements JWTManager {

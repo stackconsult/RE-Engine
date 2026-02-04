@@ -14,12 +14,14 @@ export * from "./classify/index.js";
 export * from "./policy/policy.js";
 export * from "./util/index.js";
 
+// Shared types (consolidated to avoid conflicts)
+export * from "./shared/types.js";
+
 // Production Foundation Services
 export * from "./production/production-bootstrap.service.js";
-export * from "./production/types.js";
 export * from "./production/dependencies.js";
 
-// Production Security & Monitoring
+// Production Security & Monitoring (use shared types)
 export * from "./security/production-security.service.js";
 export * from "./monitoring/production-health.service.js";
 
