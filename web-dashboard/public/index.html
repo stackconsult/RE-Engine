@@ -47,6 +47,9 @@
                 <div class="sidebar-item" onclick="showSection('approvals')">
                     <i class="fas fa-clipboard-check mr-3"></i>Approvals
                 </div>
+                <div class="sidebar-item" onclick="showSection('automation')">
+                    <i class="fas fa-magic mr-3"></i>Automation
+                </div>
                 <div class="sidebar-item" onclick="showSection('channels')">
                     <i class="fas fa-share-alt mr-3"></i>Channels
                 </div>
@@ -192,7 +195,7 @@
 
                 <!-- Lead Search/Filter -->
                 <div class="card p-4">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <input type="text" id="lead-search" placeholder="Search by name, email, phone..." class="px-4 py-2 border border-gray-300 rounded-lg">
                         <select id="lead-status-filter" class="px-4 py-2 border border-gray-300 rounded-lg">
                             <option value="">All Statuses</option>
@@ -211,6 +214,20 @@
                             <option value="import">Import</option>
                         </select>
                         <button onclick="searchLeads()" class="btn-primary">Search</button>
+                        <button onclick="enrichSelectedLeads()" class="btn-secondary">Enrich Selected</button>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            <span id="search-results-count">0</span> results found
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="exportLeads()" class="btn-secondary">
+                                <i class="fas fa-download mr-2"></i>Export
+                            </button>
+                            <button onclick="bulkEnrichLeads()" class="btn-secondary">
+                                <i class="fas fa-magic mr-2"></i>Bulk Enrich
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -220,11 +237,16 @@
                         <table class="w-full">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <input type="checkbox" id="select-all-leads" onchange="toggleAllLeads()">
+                                    </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrichment</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -325,10 +347,401 @@
                 </div>
             </section>
 
+            <!-- Automation Section -->
+            <section id="automation-section" class="space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-900">ICP Automation Center</h2>
+                    <div class="flex space-x-2">
+                        <button onclick="showCreateICPModal()" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Create ICP
+                        </button>
+                        <button onclick="runFullAutomation()" class="btn-primary">
+                            <i class="fas fa-play mr-2"></i>Run Discovery
+                        </button>
+                        <button onclick="scheduleAutomation()" class="btn-secondary">
+                            <i class="fas fa-clock mr-2"></i>Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ICP Selection -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Select ICP Profile</h3>
+                    <div class="flex items-center space-x-4">
+                        <select id="icp-select" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Select an ICP profile...</option>
+                        </select>
+                        <button onclick="showCreateICPModal()" class="btn-secondary">
+                            <i class="fas fa-plus mr-2"></i>Create New
+                        </button>
+                        <button onclick="loadICPDetails()" class="btn-secondary">
+                            <i class="fas fa-info-circle mr-2"></i>View Details
+                        </button>
+                    </div>
+                    <div id="icp-details" class="mt-4 p-4 bg-gray-50 rounded-lg hidden">
+                        <!-- ICP details will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Automation Status -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-600" id="active-jobs">0</p>
+                        <p class="text-sm text-gray-600">Active Jobs</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600" id="completed-jobs">0</p>
+                        <p class="text-0.5 text-gray-600">Completed Today</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-purple-600" id="leads-discovered">0</p>
+                        <p class="text-sm text-gray-600">Leads Discovered</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-2xl font-bold text-orange-600" id="leads-enriched">0</p>
+                        <p class="text-sm text-gray-600">Leads Enriched</p>
+                    </div>
+                </div>
+
+                <!-- ICP Criteria Display -->
+                <div class="card p-6" id="icp-criteria-display">
+                    <h3 class="text-lg font-semibold mb-4">ICP Criteria</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium text-sm text-gray-700 mb-2">Location Criteria</h4>
+                            <div id="icp-locations" class="space-y-2">
+                                <!-- Location criteria will be populated here -->
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-sm text-gray-700 mb-2">Investment Criteria</h4>
+                            <div id="icp-investment" class="space-y-2">
+                                <!-- Investment criteria will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium text-sm text-gray-700 mb-2">Professional Criteria</h4>
+                            <div id="icp-professional" class="space-y-2">
+                                <!-- Professional criteria will be populated here -->
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="platforms text-sm text-gray-700 mb-2">Target Platforms</h4>
+                            <div id="icp-platforms" class="flex flex-wrap gap-2">
+                                <!-- Platform icons will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discovery Controls -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold mb-4">Discovery Settings</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Auto Discovery</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="auto-discovery" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Frequency</span>
+                                <select id="discovery-frequency" class="px-3 py-1 border border-gray-300 rounded-lg text-sm">
+                                    <option value="hourly">Hourly</option>
+                                    <option value="daily" selected>Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Max Leads/Day</span>
+                                <input type="number" id="max-leads-per-day" value="50" class="px-3 py-1 border border-gray-300 rounded-lg text-sm w-20">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Confidence Threshold</span>
+                                <input type="number" id="confidence-threshold" value="0.7" min="0" max="1" step="0.1" class="px-3 py-1 border border-gray-300 rounded-lg text-sm w-20">
+                            </div>
+                            <button onclick="runICPDiscovery()" class="btn-secondary w-full">
+                                <i class="fas fa-search mr-2"></i>Run Discovery Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold mb-4">Enrichment Settings</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Auto Enrichment</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="auto-enrichment" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Batch Size</span>
+                                <select id="enrichment-batch-size" class="px-3 py-1 border border-gray-300 rounded-lg text-sm">
+                                    <option value="5">5 leads</option>
+                                    <option value="10" selected>10 leads</option>
+                                    <option value="25">25 leads</option>
+                                </select>
+                            </div>
+                            <button onclick="runEnrichmentAutomation()" class="btn-secondary w-full">
+                                <i class="fac fa-magic mr-2"></i>Run Enrichment Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Jobs -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Recent Discovery Jobs</h3>
+                    <div class="space-y-3" id="recent-jobs">
+                        <!-- Jobs will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Discovery Sources -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold mb-4">Discovery Sources</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium">LinkedIn</h4>
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
+                            </div>
+                            <p class="text-sm text-gray-600">Professional profiles and networking</p>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span>High quality leads</span>
+                            </div>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium">Zillow</h4>
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
+                            </div>
+                            <p class="text-sm text-gray-600">Property listings and agents</p>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span>Property data available</span>
+                            </div>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium">Realtor.com</h4>
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
+                            </div>
+                            <p class="text-sm text-gray-600">Real estate listings</p>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span>Comprehensive data</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Other sections (Channels, Browser, Compliance, Analytics, Settings) would be similar -->
             <!-- For brevity, I'll focus on the core sections first -->
 
         </main>
+    </div>
+
+    <!-- ICP Creation Modal -->
+    <div id="icp-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-semibold mb-4">Create Ideal Client Profile</h3>
+            
+            <div class="space-y-6">
+                <!-- Basic Info -->
+                <div>
+                    <h4 class="font-medium mb-3">Basic Information</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Profile Name</label>
+                            <input type="text" id="icp-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., San Francisco Residential Investors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <input type="text" id="icp-description" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Brief description of your ideal client">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Criteria -->
+                <div>
+                    <h4 class="font-medium mb-3">Location Criteria</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cities</label>
+                            <input type="text" id="icp-cities" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="San Francisco, Oakland, San Jose">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">States</label>
+                            <input type="text" id="icp-states" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="CA, NY, TX">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Radius (miles)</label>
+                            <input type="number" id="icp-radius" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="25">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Zip Codes</label>
+                            <input type="text" id="icp-zipcodes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="94102, 94103, 94107">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investment Criteria -->
+                <div>
+                    <h4 class="font-medium mb-3">Investment Criteria</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Property Types</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="single_family"> Single Family
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="multi_family"> Multi Family
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="commercial"> Commercial
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="condo"> Condo
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                            <div class="flex space-x-2">
+                                <input type="number" id="icp-price-min" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Min">
+                                <input type="number" id="icp-price-max" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Max">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cap Rate Range</label>
+                            <div class="flex space-x-2">
+                                <input type="number" id="icp-caprate-min" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Min" step="0.01">
+                                <input type="number" id="icp-caprate-max" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Max" step="0.01">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cash Flow Range</label>
+                            <div class="flex space-x-2">
+                                <input type="number" id="icp-cashflow-min" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Min">
+                                <input type="number" id="icp-cashflow-max" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Max">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Criteria -->
+                <div>
+                    <h4 class="font-medium mb-3">Professional Criteria</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Industries</label>
+                            <input type="text" id="icp-industries" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Real Estate, Finance, Technology">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Job Titles</label>
+                            <input type="text" id="icp-job-titles" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Investor, CEO, Founder, Manager">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Size</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="small"> Small
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="medium"> Medium
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="large"> Large
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="enterprise"> Enterprise
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Seniority</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="c_level"> C-Level
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="director"> Director
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="manager"> Manager
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2" value="individual"> Individual
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platform Selection -->
+                <div>
+                    <h4 class="font-medium mb-3">Target Platforms</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="linkedin"> LinkedIn
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="zillow"> Zillow
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="realtor"> Realtor.com
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="craigslist"> Craigslist
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="facebook"> Facebook
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="instagram"> Instagram
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="twitter"> Twitter
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div>
+                    <h4 class="font-medium mb-3">Discovery Settings</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Leads Per Day</label>
+                            <input type="number" id="icp-max-leads" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Discovery Frequency</label>
+                            <select id="icp-frequency" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="hourly">Hourly</option>
+                                <option value="daily" selected>Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Confidence Threshold</label>
+                            <input type="number" id="icp-confidence" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="0.7" min="0" max="1" step="0.1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="hideCreateICPModal()" class="btn-secondary">Cancel</button>
+                <button onclick="createICP()" class="btn-primary">Create ICP</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modals -->
@@ -420,6 +833,12 @@
                 approvals = await approvalsResponse.json();
                 updateApprovalsSection();
                 
+                // Load automation status
+                await loadAutomationStatus();
+                
+                // Load ICP profiles
+                await loadICPs();
+                
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -494,6 +913,9 @@
             tbody.innerHTML = leads.map(lead => `
                 <tr class="table-row">
                     <td class="px-6 py-4 whitespace-nowrap">
+                        <input type="checkbox" value="${lead.lead_id}" onchange="toggleLeadSelection('${lead.lead_id}')">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
                                 <i class="fas fa-user text-gray-500 text-sm"></i>
@@ -517,12 +939,27 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="status-badge lead-status-${lead.status}">${lead.status}</span>
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div id="grade-${lead.lead_id}" class="text-sm">
+                            <span class="grade-badge grade-unknown">-</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div id="enrichment-${lead.lead_id}" class="text-sm">
+                            <button onclick="enrichLead('${lead.lead_id}')" class="text-blue-600 hover:text-blue-900 text-xs">
+                                <i class="fas fa-magic mr-1"></i>Enrich
+                            </button>
+                        </div>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <button onclick="viewLead('${lead.lead_id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                        <button onclick="viewLead('${lead.lead_id}')" class="text-blue-600 hover:text-blue-900 mr-2">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button onclick="editLead('${lead.lead_id}')" class="text-green-600 hover:text-green-900 mr-3">
+                        <button onclick="editLead('${lead.lead_id}')" class="text-green-600 hover:text-green-900 mr-2">
                             <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="findSimilarLeads('${lead.lead_id}')" class="text-purple-600 hover:text-purple-900 mr-2">
+                            <i class="fas fa-users"></i>
                         </button>
                         <button onclick="addToDnc('${lead.lead_id}')" class="text-red-600 hover:text-red-900">
                             <i class="fas fa-ban"></i>
@@ -530,6 +967,11 @@
                     </td>
                 </tr>
             `).join('');
+            
+            // Load enrichment data for existing leads
+            leads.forEach(lead => {
+                loadEnrichmentData(lead.lead_id);
+            });
         }
 
         function updateApprovalsSection() {
@@ -699,6 +1141,571 @@
         function bulkReject() { console.log('Bulk reject'); }
         function searchLeads() { console.log('Search leads'); }
         function searchApprovals() { console.log('Search approvals'); }
+
+        // Lead enrichment functions
+        let selectedLeads = new Set();
+
+        function toggleLeadSelection(leadId) {
+            if (selectedLeads.has(leadId)) {
+                selectedLeads.delete(leadId);
+            } else {
+                selectedLeads.add(leadId);
+            }
+        }
+
+        function toggleAllLeads() {
+            const selectAll = document.getElementById('select-all-leads');
+            const checkboxes = document.querySelectorAll('#leads-table-body input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                const leadId = checkbox.value;
+                if (selectAll.checked) {
+                    selectedLeads.add(leadId);
+                } else {
+                    selectedLeads.delete(leadId);
+                }
+            });
+        }
+
+        async function enrichLead(leadId) {
+            try {
+                const button = document.querySelector(`#enrichment-${leadId} button`);
+                if (button) button.disabled = true;
+                
+                const response = await fetch(`/api/leads/${leadId}/enrich`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateLeadGrade(leadId, result.grade);
+                    updateEnrichmentStatus(leadId, 'enriched');
+                    alert('Lead enriched successfully!');
+                } else {
+                    alert('Failed to enrich lead');
+                }
+            } catch (error) {
+                alert('Error enriching lead: ' + error.message);
+            } finally {
+                const button = document.querySelector(`#enrichment-${leadId} button`);
+                if (button) button.disabled = false;
+            }
+        }
+
+        async function enrichSelectedLeads() {
+            if (selectedLeads.size === 0) {
+                alert('Please select leads to enrich');
+                return;
+            }
+            
+            if (!confirm(`Enrich ${selectedLeads.size} selected leads?`)) {
+                return;
+            }
+            
+            for (const leadId of selectedLeads) {
+                await enrichLead(leadId);
+            }
+        }
+
+        async function bulkEnrichLeads() {
+            if (!confirm('Enrich all leads? This may take a while.')) {
+                return;
+            }
+            
+            for (const lead of leads) {
+                await enrichLead(lead.lead_id);
+            }
+        }
+
+        async function loadEnrichmentData(leadId) {
+            try {
+                const response = await fetch(`/api/leads/${leadId}/enrichment`);
+                const result = await response.json();
+                
+                if (result.success && result.data.grade) {
+                    updateLeadGrade(leadId, result.data.grade);
+                    updateEnrichmentStatus(leadId, 'enriched');
+                }
+            } catch (error) {
+                // No enrichment data available
+            }
+        }
+
+        function updateLeadGrade(leadId, grade) {
+            const gradeElement = document.getElementById(`grade-${leadId}`);
+            if (gradeElement) {
+                const gradeClass = `grade-${grade.grade.toLowerCase()}`;
+                gradeElement.innerHTML = `
+                    <span class="grade-badge ${gradeClass}">
+                        ${grade.grade} (${grade.overall_score})
+                    </span>
+                `;
+            }
+        }
+
+        function updateEnrichmentStatus(leadId, status) {
+            const enrichmentElement = document.getElementById(`enrichment-${leadId}`);
+            if (enrichmentElement) {
+                if (status === 'enriched') {
+                    enrichmentElement.innerHTML = `
+                        <span class="text-xs text-green-600">
+                            <i class="fas fa-check-circle mr-1"></i>Enriched
+                        </span>
+                    `;
+                }
+            }
+        }
+
+        async function findSimilarLeads(leadId) {
+            try {
+                const response = await fetch(`/api/leads/${leadId}/similar`);
+                const similarLeads = await response.json();
+                
+                console.log('Similar leads:', similarLeads);
+                alert(`Found ${similarLeads.length} similar leads`);
+            } catch (error) {
+                alert('Error finding similar leads: ' + error.message);
+            }
+        }
+
+        async function searchLeads() {
+            const searchText = document.getElementById('lead-search').value;
+            const statusFilter = document.getElementById('lead-status-filter').value;
+            const sourceFilter = document.getElementById('lead-source-filter').value;
+            
+            const searchQuery = {
+                text: searchText,
+                filters: {
+                    status: statusFilter ? [statusFilter] : undefined,
+                    source: sourceFilter ? [sourceFilter] : undefined
+                },
+                pagination: { offset: 0, limit: 100 }
+            };
+            
+            try {
+                const response = await fetch('/api/leads/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(searchQuery)
+                });
+                
+                const result = await response.json();
+                
+                if (result.leads) {
+                    leads = result.leads;
+                    updateLeadsSection();
+                    document.getElementById('search-results-count').textContent = result.total;
+                }
+            } catch (error) {
+                alert('Search failed: ' + error.message);
+            }
+        }
+
+        function exportLeads() {
+            // Simple CSV export
+            const csvContent = [
+                ['Lead ID', 'Name', 'Email', 'Phone', 'City', 'Province', 'Source', 'Status'],
+                ...leads.map(lead => [
+                    lead.lead_id,
+                    `${lead.first_name} ${lead.last_name}`,
+                    lead.email || '',
+                    lead.phone_e164 || '',
+                    lead.city || '',
+                    lead.province || '',
+                    lead.source,
+                    lead.status
+                ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'leads_export.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // ICP Management functions
+        let currentICPs = [];
+        let selectedICP = null;
+
+        async function loadICPs() {
+            try {
+                const response = await fetch('/api/icp');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentICPs = result.icps;
+                    updateICPSelect();
+                }
+            } catch (error) {
+                console.error('Failed to load ICPs:', error);
+            }
+        }
+
+        function updateICPSelect() {
+            const select = document.getElementById('icp-select');
+            select.innerHTML = '<option value="">Select an ICP profile...</option>';
+            
+            currentICPs.forEach(icp => {
+                const option = document.createElement('option');
+                option.value = icp.id;
+                option.textContent = icp.name;
+                select.appendChild(option);
+            });
+        }
+
+        function showCreateICPModal() {
+            document.getElementById('icp-modal').classList.remove('hidden');
+            document.getElementById('icp-modal').classList.add('flex');
+        }
+
+        function hideCreateICPModal() {
+            document.getElementById('icp-modal').classList.add('hidden');
+            document.getElementById('icp-modal').classList.remove('flex');
+            clearICPForm();
+        }
+
+        function clearICPForm() {
+            document.getElementById('icp-name').value = '';
+            document.getElementById('icp-description').value = '';
+            document.getElementById('icp-cities').value = '';
+            document.getElementById('icp-states').value = '';
+            document.getElementById('icp-radius').value = '';
+            document.getElementById('icp-zipcodes').value = '';
+            document.getElementById('icp-price-min').value = '';
+            document.getElementById('icp-price-max').value = '';
+            document.getElementById('icp-caprate-min').value = '';
+            document.getElementById('icp-caprate-max').value = '';
+            document.getElementById('icp-cashflow-min').value = '';
+            document.getElementById('icp-cashflow-max').value = '';
+            document.getElementById('icp-industries').value = '';
+            document.getElementById('icp-job-titles').value = '';
+            document.getElementById('icp-max-leads').value = '50';
+            document.getElementById('icp-confidence').value = '0.7';
+            
+            // Clear checkboxes
+            const checkboxes = document.querySelectorAll('#icp-modal input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+        }
+
+        async function createICP() {
+            try {
+                const icpData = {
+                    name: document.getElementById('icp-name').value,
+                    description: document.getElementById('icp-description').value,
+                    criteria: {
+                        locations: {
+                            cities: document.getElementById('icp-cities').value.split(',').map(s => s.trim()).filter(s => s),
+                            states: document.getElementById('icp-states').value.split(',').map(s => s.trim()).filter(s => s),
+                            zipCodes: document.getElementById('icp-zipcodes').value.split(',').map(s => s.trim()).filter(s => s),
+                            radius: parseInt(document.getElementById('icp-radius').value) || 25
+                        },
+                        investment: {
+                            propertyTypes: Array.from(document.querySelectorAll('input[type="checkbox"][value="single_family"], input[type="checkbox"][value="multi_family"], input[type="checkbox"][value="commercial"], input[type="checkbox"][value="condo"]:checked')).map(cb => cb.value),
+                            priceRange: {
+                                min: parseInt(document.getElementById('icp-price-min').value) || 0,
+                                max: parseInt(document.getElementById('icp-price-max').value) || 10000000
+                            },
+                            capRate: {
+                                min: parseFloat(document.getElementById('icp-caprate-min').value) || 0,
+                                max: parseFloat(document.getElementById('icp-caprate-max').value) || 1
+                            },
+                            cashFlow: {
+                                min: parseInt(document.getElementById('icp-cashflow-min').value) || 0,
+                                max: parseInt(document.getElementById('icp-cashflow-max').value) || 100000
+                            }
+                        },
+                        professional: {
+                            industries: document.getElementById('icp-industries').value.split(',').map(s => s.trim()).filter(s => s),
+                            companySize: Array.from(document.querySelectorAll('input[type="checkbox"][value="small"]:checked, input[type="checkbox"][value="medium"]:checked, input[type="checkbox"][value="large"]:checked, input[type="checkbox"][value="enterprise"]:checked')).map(cb => cb.value),
+                            jobTitles: document.getElementById('icp-job-titles').value.split(',').map(s => s.trim()).filter(s => s),
+                            seniority: Array.from(document.querySelectorAll('input[type="checkbox"][value="c_level"]:checked, input[type="checkbox"][value="director"]:checked, input[type="checkbox"][value="manager"]:checked, input[type="checkbox"][value="individual"]:checked')).map(cb => cb.value)
+                        },
+                        platforms: {
+                            linkedin: document.querySelector('input[type="checkbox"][value="linkedin"]').checked,
+                            zillow: document.querySelector('input[type="checkbox"][value="zillow"]').checked,
+                            realtor: document.querySelector('input[type="checkbox"][value="realtor"]').checked,
+                            craigslist: document.querySelector('input[type="checkbox"][value="craigslist"]').checked,
+                            facebook: document.querySelector('input[type="checkbox"][value="facebook"]').checked,
+                            instagram: document.querySelector('input[type="checkbox"][value="instagram"]').checked,
+                            twitter: document.querySelector('input[type="checkbox"][value="twitter"]').checked,
+                            customSites: []
+                        }
+                    },
+                    settings: {
+                        maxLeadsPerDay: parseInt(document.getElementById('icp-max-leads').value) || 50,
+                        discoveryFrequency: document.getElementById('icp-frequency').value,
+                        confidenceThreshold: parseFloat(document.getElementById('icp-confidence').value) || 0.7,
+                        excludeDuplicates: true,
+                        enrichmentEnabled: true
+                    }
+                };
+
+                const response = await fetch('/api/icp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(icpData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('ICP profile created successfully!');
+                    hideCreateICPModal();
+                    await loadICPs();
+                } else {
+                    alert('Failed to create ICP profile');
+                }
+            } catch (error) {
+                alert('Error creating ICP profile: ' + error.message);
+            }
+        }
+
+        async function loadICPDetails() {
+            const select = document.getElementById('icp-select');
+            const icpId = select.value;
+            
+            if (!icpId) {
+                alert('Please select an ICP profile first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/icp/${icpId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    selectedICP = result.icp;
+                    displayICPDetails(selectedICP);
+                } else {
+                    alert('Failed to load ICP details');
+                }
+            } catch (error) {
+                alert('Error loading ICP details: ' + error.message);
+            }
+        }
+
+        function displayICPDetails(icp) {
+            const detailsDiv = document.getElementById('icp-details');
+            detailsDiv.classList.remove('hidden');
+            
+            detailsDiv.innerHTML = `
+                <h4 class="font-semibold mb-2">${icp.name}</h4>
+                <p class="text-sm text-gray-600 mb-3">${icp.description}</p>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="font-medium">Locations:</span> ${icp.criteria.locations.cities.join(', ')}
+                    </div>
+                    <div>
+                        <span class="font-medium">Price Range:</span> $${icp.criteria.investment.priceRange.min.toLocaleString()} - $${icp.criteria.investment.priceRange.max.toLocaleString()}
+                    </div>
+                    <div>
+                        <span class="font-medium">Property Types:</span> ${icp.criteria.investment.propertyTypes.join(', ')}
+                    </div>
+                    <div>
+                        <span class="font-medium">Industries:</span> ${icp.criteria.professional.industries.join(', ')}
+                    </div>
+                </div>
+            `;
+
+            // Update criteria display
+            updateICPCriteriaDisplay(icp);
+        }
+
+        function updateICPCriteriaDisplay(icp) {
+            // Location criteria
+            document.getElementById('icp-locations').innerHTML = `
+                <div class="text-sm">
+                    <div><strong>Cities:</strong> ${icp.criteria.locations.cities.join(', ')}</div>
+                    <div><strong>States:</strong> ${icp.criteria.locations.states.join(', ')}</div>
+                    <div><strong>Radius:</strong> ${icp.criteria.locations.radius} miles</div>
+                </div>
+            `;
+
+            // Investment criteria
+            document.getElementById('icp-investment').innerHTML = `
+                <div class="text-sm">
+                    <div><strong>Property Types:</strong> ${icp.criteria.investment.propertyTypes.join(', ')}</div>
+                    <div><strong>Price Range:</strong> $${icp.criteria.investment.priceRange.min.toLocaleString()} - $${icp.criteria.investment.priceRange.max.toLocaleString()}</div>
+                    <div><strong>Cap Rate:</strong> ${(icp.criteria.investment.capRate.min || 0).toFixed(2)} - ${(icp.criteria.investment.capRate.max || 1).toFixed(2)}</div>
+                </div>
+            `;
+
+            // Professional criteria
+            document.getElementById('icp-professional').innerHTML = `
+                <div class="text-sm">
+                    <div><strong>Industries:</strong> ${icp.criteria.professional.industries.join(', ')}</div>
+                    <div><strong>Company Size:</strong> ${icp.criteria.professional.companySize.join(', ')}</div>
+                    <div><strong>Job Titles:</strong> ${icp.criteria.professional.jobTitles.join(', ')}</div>
+                </div>
+            `;
+
+            // Platform icons
+            const platformsDiv = document.getElementById('icp-platforms');
+            platformsDiv.innerHTML = '';
+            
+            Object.entries(icp.criteria.platforms).forEach(([platform, enabled]) => {
+                if (enabled) {
+                    const icon = document.createElement('span');
+                    icon.className = 'px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs';
+                    icon.textContent = platform.charAt(0).toUpperCase() + platform.slice(1);
+                    platformsDiv.appendChild(icon);
+                }
+            });
+        }
+
+        async function runICPDiscovery() {
+            const select = document.getElementById('icp-select');
+            const icpId = select.value;
+            
+            if (!icpId) {
+                alert('Please select an ICP profile first');
+                return;
+            }
+
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Discovering...';
+                
+                const response = await fetch(`/api/icp/${icpId}/discover`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`ICP Discovery completed! Found ${result.summary.totalFound} leads with ${result.summary.highConfidence} high confidence matches.`);
+                    await loadAutomationStatus();
+                    await loadData(); // Refresh data
+                } else {
+                    alert('ICP Discovery failed');
+                }
+            } catch (error) {
+                alert('Error running ICP discovery: ' + error.message);
+            } finally {
+                const button = event.target;
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-search mr-2"></i>Run Discovery Now';
+            }
+        }
+
+        // Automation functions
+        async function runFullAutomation() {
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Running...';
+                
+                const response = await fetch('/api/automation/full', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`Automation completed! Discovered ${result.summary.leadsDiscovered} leads and enriched ${result.summary.leadsEnriched} leads.`);
+                    await loadAutomationStatus();
+                    await loadData(); // Refresh data
+                } else {
+                    alert('Automation failed');
+                }
+            } catch (error) {
+                alert('Error running automation: ' + error.message);
+            } finally {
+                const button = event.target;
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-play mr-2"></i>Run Full Automation';
+            }
+        }
+
+        async function runDiscoveryAutomation() {
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Discovering...';
+                
+                const response = await fetch('/api/automation/discovery', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`Discovery completed! Found ${result.summary.totalLeads} leads from ${result.summary.totalSources} sources.`);
+                    await loadAutomationStatus();
+                    await loadData(); // Refresh data
+                } else {
+                    alert('Discovery failed');
+                }
+            } catch (error) {
+                alert('Error running discovery: ' + error.message);
+            } finally {
+                const button = event.target;
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-search mr-2"></i>Run Discovery Now';
+            }
+        }
+
+        async function runEnrichmentAutomation() {
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Enriching...';
+                
+                const response = await fetch('/api/automation/enrichment', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`Enrichment completed! Enriched ${result.enrichedCount} leads.`);
+                    await loadAutomationStatus();
+                    await loadData(); // Refresh data
+                } else {
+                    alert('Enrichment failed');
+                }
+            } catch (error) {
+                alert('Error running enrichment: ' + error.message);
+            } finally {
+                const button = event.target;
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-magic mr-2"></i>Run Enrichment Now';
+            }
+        }
+
+        async function scheduleAutomation() {
+            const autoDiscovery = document.getElementById('auto-discovery').checked;
+            const autoEnrichment = document.getElementById('auto-enrichment').checked;
+            const frequency = document.getElementById('discovery-frequency').value;
+            const batchSize = document.getElementById('enrichment-batch-size').value;
+            
+            alert(`Automation scheduled:\n- Discovery: ${autoDiscovery ? 'Enabled' : 'Disabled'} (${frequency})\n- Enrichment: ${autoEnrichment ? 'Enabled' : 'Disabled'} (Batch: ${batchSize})`);
+        }
+
+        async function loadAutomationStatus() {
+            try {
+                const response = await fetch('/api/automation/status');
+                const status = await response.json();
+                
+                // Update metrics
+                document.getElementById('active-jobs').textContent = status.activeJobs;
+                document.getElementById('completed-jobs').textContent = status.recentJobs.filter(j => j.status === 'completed').length;
+                document.getElementById('leads-discovered').textContent = status.recentJobs.reduce((sum, job) => sum + (job.result?.leadsDiscovered || 0), 0);
+                document.getElementById('leads-enriched').textContent = status.recentJobs.reduce((sum, job) => sum + (job.result?.leadsEnriched || 0), 0);
+                
+                // Update recent jobs
+                const jobsContainer = document.getElementById('recent-jobs');
+                jobsContainer.innerHTML = status.recentJobs.map(job => `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 rounded-full ${job.status === 'completed' ? 'bg-green-500' : job.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'}"></div>
+                            <div>
+                                <div class="font-medium text-sm">${job.type.charAt(0).toUpperCase() + job.type.slice(1)}</div>
+                                <div class="text-xs text-gray-500">${new Date(job.startTime).toLocaleTimeString()}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-medium ${job.status === 'completed' ? 'text-green-600' : job.status === 'failed' ? 'text-red-600' : 'text-yellow-600'}">${job.status}</div>
+                            ${job.result ? `<div class="text-xs text-gray-500">${job.result.leadsDiscovered || job.result.leadsEnriched || 0} leads</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Failed to load automation status:', error);
+            }
+        }
     </script>
 </body>
 </html>
