@@ -207,18 +207,8 @@ export class OllamaClient {
   /**
    * Handle and format errors
    */
-  private handleError(error: unknown): OllamaError {
-    if (error instanceof Error) {
-      return {
-        error: error.message,
-        status: 500
-      };
-    }
-
-    if (typeof error === 'object' && error !== null && 'error' in error) {
-      return error as OllamaError;
-    }
-
+  private handleError(_error: unknown): OllamaError {
+    // Simplified error handling since we're throwing errors directly in makeRequest
     return {
       error: 'Unknown Ollama error occurred',
       status: 500

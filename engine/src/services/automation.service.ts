@@ -3,9 +3,9 @@
  * Integrates TinyFish API, Lead Discovery, and Lead Enrichment services
  */
 
-import { LeadDiscoveryService, RealEstateSource, DiscoveryConfig } from './lead-discovery.service';
-import { LeadEnrichmentService, EnrichmentConfig } from './lead-enrichment.service';
-import { LeadSearchService, SearchConfig } from './lead-search.service';
+import { LeadDiscoveryService, RealEstateSource } from './lead-discovery.service';
+import { LeadEnrichmentService } from './lead-enrichment.service';
+import { LeadSearchService } from './lead-search.service';
 
 export interface AutomationConfig {
   dataDir: string;
@@ -31,7 +31,7 @@ export interface AutomationJob {
   status: 'pending' | 'running' | 'completed' | 'failed';
   startTime: string;
   endTime?: string;
-  result?: any;
+  result?: Record<string, unknown>;
   error?: string;
   progress?: number;
   total?: number;
@@ -220,7 +220,7 @@ export class AutomationService {
       return;
     }
 
-    const { frequency, timeOfDay } = this.config.discoverySchedule;
+    const { frequency } = this.config.discoverySchedule;
     
     // Set up interval based on frequency
     const intervalMs = this.getIntervalFromFrequency(frequency);
@@ -279,7 +279,7 @@ export class AutomationService {
   /**
    * Create new automation job
    */
-  private createJob(type: AutomationJob['type'], description: string): string {
+  private createJob(type: AutomationJob['type'], _description: string): string {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const job: AutomationJob = {
@@ -296,7 +296,7 @@ export class AutomationService {
   /**
    * Update job status
    */
-  private updateJob(jobId: string, status: AutomationJob['status'], result?: any, error?: string, progress?: { progress: number; total: number }): void {
+  private updateJob(jobId: string, status: AutomationJob['status'], result?: Record<string, unknown>, error?: string, progress?: { progress: number; total: number }): void {
     const job = this.jobs.get(jobId);
     if (!job) return;
     
@@ -338,10 +338,10 @@ export class AutomationService {
     
     for (const job of jobs) {
       if (job.result) {
-        if (job.type === 'discovery' && job.result.results) {
-          summary.leadsDiscovered += job.result.results.reduce((sum: number, r: any) => sum + r.leads.length, 0);
+        if (job.type === 'discovery' && Array.isArray(job.result.results)) {
+          summary.leadsDiscovered += job.result.results.reduce((sum: number, r: { leads: unknown[] }) => sum + r.leads.length, 0);
         }
-        if (job.type === 'enrichment' && job.result.enrichedCount) {
+        if (job.type === 'enrichment' && typeof job.result.enrichedCount === 'number') {
           summary.leadsEnriched += job.result.enrichedCount;
         }
       }
