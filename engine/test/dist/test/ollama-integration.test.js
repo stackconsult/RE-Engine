@@ -16,9 +16,14 @@ describe('Ollama Integration', () => {
             timeout: 10000
         });
         service = new OllamaService({
-            baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1',
-            model: process.env.OLLAMA_MODEL || 'qwen:7b',
-            timeout: 10000
+            useProxy: false,
+            directConfig: {
+                baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1',
+                model: process.env.OLLAMA_MODEL || 'qwen:7b',
+                timeout: 10000
+            },
+            defaultModel: process.env.OLLAMA_MODEL || 'qwen:7b',
+            fallbackToDirect: true
         });
     });
     it('should create Ollama client instance', () => {
@@ -81,14 +86,17 @@ describe('Ollama Integration', () => {
     });
     it('should generate outreach message', async () => {
         try {
-            const message = await service.generateOutreachMessage({
-                company: 'Test Company',
-                industry: 'Technology',
-                size: '100-500',
-                description: 'A software company that makes amazing products'
+            const message = await service.analyzeLead({
+                leadData: {
+                    company: 'Test Company',
+                    industry: 'Technology',
+                    size: 'Medium',
+                    description: 'A test company for outreach'
+                },
+                analysisType: 'outreach'
             });
             console.log('Outreach Message:', message);
-            assert.ok(message.length > 0);
+            assert.ok(message.insights.length > 0 || message.recommendations.length > 0);
         }
         catch (error) {
             console.log('Outreach generation failed (expected if Ollama not running):', error);
@@ -97,14 +105,20 @@ describe('Ollama Integration', () => {
     });
     it('should generate qualification score', async () => {
         try {
-            const score = await service.generateQualificationScore({
-                company: 'Test Company',
-                industry: 'Technology',
-                size: '100-500',
-                description: 'A software company that makes amazing products'
+            const score = await service.analyzeLead({
+                leadData: {
+                    company: 'Test Company',
+                    industry: 'Technology',
+                    size: 'Medium',
+                    description: 'A test company for qualification'
+                },
+                analysisType: 'qualification'
             });
             console.log('Qualification Score:', score);
-            assert.ok(score >= 0 && score <= 100);
+            assert.ok(score.qualificationScore !== undefined);
+            if (score.qualificationScore !== undefined) {
+                assert.ok(score.qualificationScore >= 0 && score.qualificationScore <= 100);
+            }
         }
         catch (error) {
             console.log('Score generation failed (expected if Ollama not running):', error);
@@ -113,7 +127,7 @@ describe('Ollama Integration', () => {
     });
     after(async () => {
         try {
-            await service.close();
+            await service.cleanup();
         }
         catch (error) {
             console.log('Service cleanup failed:', error);

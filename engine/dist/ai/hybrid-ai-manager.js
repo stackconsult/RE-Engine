@@ -8,7 +8,7 @@
  * 4. Fallback and redundancy mechanisms
  * 5. Performance monitoring and optimization
  */
-import { OllamaService } from '../ollama/index.js';
+import { OllamaService } from '../ollama/ollama.service.js';
 import { VertexAIService } from './vertex-ai.service.js';
 import { ClaudeVertexService } from './claude-vertex.service.js';
 import { AIServiceManager } from './ai-service-manager.js';
@@ -21,11 +21,18 @@ export class HybridAIManager {
     aiManager;
     modelRegistry = new Map();
     performanceMetrics = new Map();
-    constructor() {
-        this.ollamaService = new OllamaService();
-        this.vertexService = new VertexAIService();
-        this.claudeService = new ClaudeVertexService();
-        this.aiManager = new AIServiceManager();
+    constructor(config) {
+        this.ollamaService = new OllamaService(config?.ollamaConfig);
+        // Only initialize optional services if config is provided
+        if (config?.vertexConfig) {
+            this.vertexService = new VertexAIService(config.vertexConfig);
+        }
+        if (config?.claudeConfig) {
+            this.claudeService = new ClaudeVertexService(config.claudeConfig);
+        }
+        if (config?.aiManagerConfig) {
+            this.aiManager = new AIServiceManager(config.aiManagerConfig);
+        }
         this.initializeModelRegistry();
         this.initializePerformanceTracking();
     }
@@ -164,7 +171,7 @@ export class HybridAIManager {
             logSystemEvent('Hybrid AI request completed', 'info', {
                 provider: response.provider,
                 modelId: response.modelId,
-                strategy: response.strategy,
+                strategy: response.metadata.strategy,
                 latency: totalLatency,
                 confidence: response.confidence
             });
@@ -439,9 +446,9 @@ export class HybridAIManager {
                     temperature: model.temperature
                 });
             case 'embedding':
-                return await this.ollamaService.generateEmbedding({
-                    content: request.prompt,
-                    model: model.modelId
+                return await this.ollamaService.embed({
+                    model: model.modelId,
+                    prompt: request.prompt
                 });
             default:
                 throw new Error(`Ollama does not support task type: ${request.taskType}`);
@@ -456,14 +463,14 @@ export class HybridAIManager {
             case 'chat':
                 return await this.vertexService.generateCompletion({
                     prompt: request.prompt,
-                    model: model.modelId,
+                    modelId: model.modelId,
                     maxTokens: model.maxTokens,
                     temperature: model.temperature
                 });
             case 'embedding':
                 return await this.vertexService.generateEmbedding({
                     content: request.prompt,
-                    model: model.modelId
+                    modelId: model.modelId
                 });
             default:
                 throw new Error(`Vertex AI does not support task type: ${request.taskType}`);
@@ -478,7 +485,10 @@ export class HybridAIManager {
             case 'chat':
             case 'creative':
                 return await this.claudeService.generateCompletion({
-                    prompt: request.prompt,
+                    messages: [{
+                            role: 'user',
+                            content: request.prompt
+                        }],
                     model: model.modelId,
                     maxTokens: model.maxTokens,
                     temperature: model.temperature
@@ -625,13 +635,13 @@ export class HybridAIManager {
             results.ollama = false;
         }
         try {
-            results.vertex = await this.vertexService.healthCheck();
+            results.vertex = this.vertexService ? await this.vertexService.healthCheck() : false;
         }
         catch (error) {
             results.vertex = false;
         }
         try {
-            results.claude = await this.claudeService.healthCheck();
+            results.claude = this.claudeService ? await this.claudeService.healthCheck() : false;
         }
         catch (error) {
             results.claude = false;

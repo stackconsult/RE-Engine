@@ -59,25 +59,30 @@ export interface LeadAnalysisResponse {
 }
 
 export class OllamaService {
-  private client: OllamaClient;
+  private client?: OllamaClient;
   private proxyService?: LiteLLMProxyService;
   private config: OllamaServiceConfig;
   private defaultModel: string;
   private useProxy: boolean;
 
-  constructor(config: OllamaServiceConfig) {
-    this.config = config;
-    this.useProxy = config.useProxy;
-    this.defaultModel = config.defaultModel;
+  constructor(config?: Partial<OllamaServiceConfig>) {
+    this.config = {
+      useProxy: false,
+      defaultModel: 'qwen:7b',
+      fallbackToDirect: true,
+      ...config
+    };
+    this.useProxy = this.config.useProxy;
+    this.defaultModel = this.config.defaultModel;
 
     // Initialize direct client
-    if (config.directConfig) {
-      this.client = new OllamaClient(config.directConfig);
+    if (this.config.directConfig) {
+      this.client = new OllamaClient(this.config.directConfig);
     }
 
     // Initialize proxy service
-    if (config.useProxy && config.proxyConfig) {
-      this.proxyService = new LiteLLMProxyService(config.proxyConfig);
+    if (this.config.useProxy && this.config.proxyConfig) {
+      this.proxyService = new LiteLLMProxyService(this.config.proxyConfig);
     }
   }
 
@@ -106,6 +111,56 @@ export class OllamaService {
     }
   }
 
+  async embed(request: { model: string; prompt: string }): Promise<number[]> {
+    try {
+      const startTime = Date.now();
+      
+      if (this.useProxy && this.proxyService) {
+        return await this.embedViaProxy(request);
+      } else if (this.client) {
+        return await this.embedDirectly(request);
+      } else {
+        throw new Error('No available embedding provider');
+      }
+    } catch (error) {
+      logError(error as Error, 'ollama-embed-failed');
+      throw error;
+    }
+  }
+
+  private async embedViaProxy(request: { model: string; prompt: string }): Promise<number[]> {
+    if (!this.proxyService) {
+      throw new Error('Proxy service not initialized');
+    }
+
+    const response = await fetch(`${this.config.proxyConfig?.proxyUrl || 'http://localhost:4000'}/v1/embeddings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.proxyConfig?.masterKey}`
+      },
+      body: JSON.stringify({
+        model: request.model,
+        input: request.prompt
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Embedding request failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data[0].embedding;
+  }
+
+  private async embedDirectly(request: { model: string; prompt: string }): Promise<number[]> {
+    if (!this.client) {
+      throw new Error('Direct client not initialized');
+    }
+
+    return await this.client?.generateEmbeddings(request.prompt, request.model) || [];
+  }
+
   async generateCompletion(request: AIRequest): Promise<AIResponse> {
     const startTime = Date.now();
 
@@ -127,7 +182,7 @@ export class OllamaService {
       response.processingTime = Date.now() - startTime;
 
       logSystemEvent('ollama-completion-success', 'info', {
-        model: response.model,
+        model: response.model || this.defaultModel,
         provider: response.provider,
         processingTime: response.processingTime,
         tokensUsed: response.tokensUsed
@@ -189,7 +244,7 @@ export class OllamaService {
       temperature: request.temperature || 0.7
     };
 
-    const response = await fetch(`${this.proxyService.getStatus().proxyUrl}/v1/messages`, {
+    const response = await fetch(`${this.config.proxyConfig?.proxyUrl || 'http://localhost:4000'}/v1/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

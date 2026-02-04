@@ -28,6 +28,7 @@ export interface OllamaRequest {
 }
 
 export interface OllamaResponse {
+  model: string;
   message: OllamaMessage;
   done: boolean;
   total_duration?: number;

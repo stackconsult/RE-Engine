@@ -20,15 +20,17 @@ import {
   AlertManager, AlertConfig, AlertChannel, AlertRule, Alert, AlertFilters, EscalationPolicy,
   DashboardService, DashboardConfig, Dashboard, DashboardPanel, PanelPosition, TimeRange, DashboardData, PanelData,
   TracingService, TracingConfig, TracingOperationConfig, Span, SpanLog, Trace, TraceFilters,
-  HealthMonitor, HealthEndpoints, AlertingConfig, ServiceRegistration, HealthCheckResult, HealthStatus,
+  HealthMonitor, HealthEndpoints, AlertingConfig, ServiceRegistration, HealthCheckResult,
   CircuitBreaker, CircuitBreakerConfig, CircuitBreakerState, CircuitBreakerStatistics,
   RateLimiter, RateLimitConfig, RateLimitResult,
   SelfHealingManager, AutoRestartConfig, CircuitBreakerHealingConfig, DatabaseHealingConfig, AIHealingConfig, HealingStatus, HealingAction,
   ServiceRegistry, ServiceRegistryConfig, ServiceDefinition, ServiceEndpoint, HealthCheckEndpoint,
   MessageQueue, MessageQueueConfig, QueueDefinition, Message, MessageHandler, QueueStats, ConnectionStatus,
-  PerformanceOptimizer, MemoryConfig, CPUConfig, NetworkConfig, DatabaseConfig, PerformanceMetrics, OptimizationResult, OptimizationImprovement, ValidationResult as PerfValidationResult,
-  SupabaseService, SupabaseConfig, SupabaseConnectionConfig, SupabasePoolConfig, SupabaseHealthCheckResult, MigrationStatus, IndexOptimizationResult, SupabaseQuery, SupabaseQueryResult, SupabaseOperation, SupabaseTransactionResult, SupabaseSubscription, SupabaseChangePayload, SupabaseSubscriptionHandle, SupabaseMetrics, SupabaseStatistics, SupabaseRealtimeClient
+  PerformanceOptimizer, MemoryConfig, CPUConfig, NetworkConfig, DatabaseConfig, PerformanceMetrics, OptimizationResult, OptimizationImprovement, ValidationResult as PerfValidationResult
 } from '../shared/types.js';
+import {
+  SupabaseService, SupabaseConfig, SupabaseConnectionConfig, SupabasePoolConfig, SupabaseHealthCheckResult, MigrationStatus, IndexOptimizationResult, SupabaseQuery, SupabaseQueryResult, SupabaseOperation, SupabaseTransactionResult, SupabaseSubscription, SupabaseChangePayload, SupabaseSubscriptionHandle, SupabaseMetrics, SupabaseStatistics, SupabaseRealtimeClient
+} from './types.js';
 
 // JWT Manager Implementation
 export class JWTManagerImpl implements JWTManager {
@@ -1161,9 +1163,9 @@ export class SupabaseServiceImpl implements SupabaseService {
 
       // Apply columns selection
       if (query.columns) {
-        supabaseQuery = supabaseQuery.select(query.columns);
+        supabaseQuery = supabaseQuery.select(query.columns) as any;
       } else {
-        supabaseQuery = supabaseQuery.select('*');
+        supabaseQuery = supabaseQuery.select('*') as any;
       }
 
       // Apply filters
@@ -1171,10 +1173,10 @@ export class SupabaseServiceImpl implements SupabaseService {
         query.filters.forEach(filter => {
           switch (filter.operator) {
             case 'eq':
-              supabaseQuery = supabaseQuery.eq(filter.column, filter.value);
+              supabaseQuery = (supabaseQuery as any).eq(filter.column, filter.value);
               break;
             case 'in':
-              supabaseQuery = supabaseQuery.in(filter.column, filter.value as string[]);
+              supabaseQuery = (supabaseQuery as any).in(filter.column, filter.value as string[]);
               break;
             // Add other operators as needed
           }
@@ -1184,16 +1186,16 @@ export class SupabaseServiceImpl implements SupabaseService {
       // Apply ordering
       if (query.orderBy) {
         query.orderBy.forEach(order => {
-          supabaseQuery = supabaseQuery.order(order.column, { ascending: order.ascending });
+          supabaseQuery = (supabaseQuery as any).order(order.column, { ascending: order.ascending });
         });
       }
 
       // Apply pagination
       if (query.limit) {
         if (query.offset !== undefined) {
-          supabaseQuery = supabaseQuery.range(query.offset, query.offset + query.limit - 1);
+          supabaseQuery = supabaseQuery.range(query.offset, query.offset + query.limit - 1) as any;
         } else {
-          supabaseQuery = supabaseQuery.limit(query.limit);
+          supabaseQuery = supabaseQuery.limit(query.limit) as any;
         }
       }
 
@@ -1207,7 +1209,7 @@ export class SupabaseServiceImpl implements SupabaseService {
           result = await supabaseQuery.insert(query.data);
           break;
         case 'update':
-          result = await supabaseQuery.update(query.data);
+          result = await supabaseQuery.update(query.data as any);
           break;
         case 'delete':
           result = await supabaseQuery.delete();
@@ -1221,9 +1223,9 @@ export class SupabaseServiceImpl implements SupabaseService {
 
       const executionTime = Date.now() - startTime;
       
-      if (result.error) {
+      if ((result as any).error) {
         this.metrics.queries.failed++;
-        throw new Error(`Query failed: ${result.error.message}`);
+        throw new Error(`Query failed: ${(result as any).error.message}`);
       }
 
       this.metrics.queries.successful++;
@@ -1231,8 +1233,8 @@ export class SupabaseServiceImpl implements SupabaseService {
 
       return {
         success: true,
-        data: result.data as T[],
-        count: result.count,
+        data: (result as any).data as T[],
+        count: (result as any).count,
         executionTime,
         cached: false
       };
@@ -1263,27 +1265,27 @@ export class SupabaseServiceImpl implements SupabaseService {
 
         switch (operation.type) {
           case 'insert':
-            query = query.insert(operation.data);
+            query = query.insert(operation.data) as any;
             break;
           case 'update':
             if (operation.filters) {
-              operation.filters.forEach(filter => {
-                query = query.eq(filter.column, filter.value);
+              operation.filters.forEach((filter: any) => {
+                query = (query as any).eq(filter.column, filter.value);
               });
             }
-            query = query.update(operation.data);
+            query = query.update(operation.data) as any;
             break;
           case 'delete':
             if (operation.filters) {
-              operation.filters.forEach(filter => {
-                query = query.eq(filter.column, filter.value);
+              operation.filters.forEach((filter: any) => {
+                query = (query as any).eq(filter.column, filter.value);
               });
             }
-            query = query.delete();
+            query = query.delete() as any;
             break;
         }
 
-        const { data, error } = await query;
+        const { data, error } = await query as any;
         
         if (error) {
           throw new Error(`Transaction operation failed: ${error.message}`);

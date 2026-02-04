@@ -2,7 +2,7 @@
  * Ollama AI Service
  * Native Ollama client for RE Engine integration
  */
-import { logger } from '../observability/logger.js';
+import { logger, logSystemEvent } from '../observability/logger.js';
 import { EventEmitter } from 'events';
 export class OllamaService extends EventEmitter {
     config;
@@ -35,7 +35,7 @@ export class OllamaService extends EventEmitter {
         if (this.config.apiKey) {
             this.headers['Authorization'] = `Bearer ${this.config.apiKey}`;
         }
-        logger.info('Ollama service initialized', {
+        logSystemEvent('Ollama service initialized', 'info', {
             baseUrl: this.baseUrl,
             defaultModel: this.config.defaultModel
         });
@@ -51,15 +51,15 @@ export class OllamaService extends EventEmitter {
             });
             if (response.ok) {
                 const version = await response.json();
-                logger.info('Ollama connection successful', { version });
+                logSystemEvent('Ollama connection successful', 'info', { version });
                 this.emit('connected', version);
                 return true;
             }
-            logger.error('Ollama connection failed', { status: response.status });
+            logSystemEvent('Ollama connection failed', 'error', { status: response.status });
             return false;
         }
         catch (error) {
-            logger.error('Ollama connection error', { error: error.message });
+            logSystemEvent('Ollama connection error', 'error', { error: error instanceof Error ? error.message : String(error) });
             return false;
         }
     }

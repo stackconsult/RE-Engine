@@ -3,8 +3,17 @@
  * Centralized types to avoid conflicts and circular dependencies
  */
 
-// Re-export domain types
-export * from '../domain/types.js';
+// Re-export domain types (excluding conflicting ones)
+export type { 
+  ISO8601, 
+  Channel, 
+  ApprovalStatus, 
+  LeadStatus, 
+  ApprovalActionType 
+} from '../domain/types.js';
+
+// Re-export specific domain types with aliases to avoid conflicts
+export type { Lead as DomainLead, Approval as DomainApproval } from '../domain/types.js';
 
 // Re-export database types
 export * from '../database/supabase.types.js';

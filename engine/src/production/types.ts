@@ -1031,7 +1031,7 @@ export interface SecurityThreat {
   resolved: boolean;
 }
 
-export interface PerformanceMetrics {
+export interface SystemPerformanceMetrics {
   cpu: number;
   memory: number;
   responseTime: number;

@@ -63,9 +63,14 @@ describe('Smoke Tests - Core System Validation', () => {
         it('should initialize OllamaService', () => {
             assert.doesNotThrow(() => {
                 const service = new OllamaService({
-                    baseUrl: 'http://127.0.0.1:11434/v1',
-                    model: 'qwen:7b',
-                    timeout: 5000
+                    useProxy: false,
+                    directConfig: {
+                        baseUrl: 'http://127.0.0.1:11434/v1',
+                        model: 'qwen:7b',
+                        timeout: 5000
+                    },
+                    defaultModel: 'qwen:7b',
+                    fallbackToDirect: true
                 });
                 assert.ok(service instanceof OllamaService);
             });

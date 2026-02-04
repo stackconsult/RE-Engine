@@ -7,8 +7,8 @@ import { Approval, CreateApprovalRequest, UpdateApprovalRequest, ApprovalFilter 
 import { Lead, CreateLeadRequest, UpdateLeadRequest, LeadFilter } from '../../a2d/models/lead.model';
 import { ApprovalsRepository } from '../../a2d/repositories/approvals.repository';
 import { LeadsRepository } from '../../a2d/repositories/leads.repository';
-import { getOllamaService, OllamaChatRequest, OllamaService } from '../../services/ollama.service.js';
-import { logger } from '../../observability/logger.js';
+import { createOllamaService, OllamaChatRequest, OllamaUnifiedService } from '../../services/ollama-unified.service.js';
+import { logSystemEvent } from '../../observability/logger.js';
 
 export interface REEngineClientOptions {
   dataDir: string;
@@ -51,7 +51,7 @@ export class REEngineClient {
   private approvals: ApprovalsRepository;
   private leads: LeadsRepository;
   private options: Required<REEngineClientOptions>;
-  private ollama: OllamaService;
+  private ollama?: OllamaUnifiedService;
 
   constructor(options: REEngineClientOptions) {
     this.options = {
@@ -67,9 +67,18 @@ export class REEngineClient {
       ...options
     } as Required<REEngineClientOptions>;
 
+    // Initialize Ollama service if configured
+    if (this.options.ollama) {
+      this.ollama = createOllamaService({
+        baseUrl: this.options.ollama.baseUrl,
+        apiKey: this.options.ollama.apiKey,
+        defaultModel: this.options.ollama.defaultModel,
+        timeout: this.options.timeout
+      });
+    }
+
     this.approvals = new ApprovalsRepository({ dataDir: options.dataDir });
     this.leads = new LeadsRepository({ dataDir: options.dataDir });
-    this.ollama = getOllamaService(this.options.ollama);
   }
 
   /**
@@ -370,7 +379,7 @@ export class REEngineClient {
       const message = response.message.content;
       const confidence = this.calculateMessageConfidence(message, lead);
 
-      logger.info('Outreach message generated', {
+      logSystemEvent('Outreach message generated', 'info', {
         requestId,
         leadId: lead.lead_id,
         model: response.model,
@@ -379,7 +388,7 @@ export class REEngineClient {
 
       return this.createResponse(requestId, startTime, true, { message, confidence });
     } catch (error) {
-      logger.error('Failed to generate outreach message', {
+      logSystemEvent('Failed to generate outreach message', 'error', {
         requestId,
         leadId: lead.lead_id,
         error: error instanceof Error ? error.message : String(error)
@@ -449,7 +458,7 @@ Respond in JSON format with keys: score, insights (array), recommendations (arra
       // Validate and sanitize analysis
       analysis = this.validateAnalysis(analysis);
 
-      logger.info('Lead analysis completed', {
+      logSystemEvent('Lead analysis completed', 'info', {
         requestId,
         leadId: lead.lead_id,
         score: analysis.score,
@@ -458,7 +467,7 @@ Respond in JSON format with keys: score, insights (array), recommendations (arra
 
       return this.createResponse(requestId, startTime, true, analysis);
     } catch (error) {
-      logger.error('Failed to analyze lead', {
+      logSystemEvent('Failed to analyze lead', 'error', {
         requestId,
         leadId: lead.lead_id,
         error: error instanceof Error ? error.message : String(error)
@@ -514,7 +523,7 @@ Respond in JSON format with keys: score, insights (array), recommendations (arra
       const aiResponse = response.message.content;
       const suggestedActions = this.extractSuggestedActions(aiResponse);
 
-      logger.info('AI response generated', {
+      logSystemEvent('AI response generated', 'info', {
         requestId,
         leadId: lead.lead_id,
         messageCount: messages.length,
@@ -526,7 +535,7 @@ Respond in JSON format with keys: score, insights (array), recommendations (arra
         suggestedActions 
       });
     } catch (error) {
-      logger.error('Failed to generate AI response', {
+      logSystemEvent('Failed to generate AI response', 'error', {
         requestId,
         leadId: lead.lead_id,
         error: error instanceof Error ? error.message : String(error)
