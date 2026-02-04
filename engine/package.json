@@ -43,5 +43,9 @@
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.54.0",
     "vitest": "^2.1.8"
+  },
+  "optionalDependencies": {
+    "@google-cloud/vertexai": "^1.0.0",
+    "google-auth-library": "^9.0.0"
   }
 }
