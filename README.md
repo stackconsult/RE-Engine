@@ -221,6 +221,32 @@ Migration path to PostgreSQL (Neon/Supabase):
 npm run migrate:postgres
 ```
 
+## 🏗️ Build
+
+### Building the Engine
+```bash
+# Build the core engine
+cd engine
+npm run build
+
+# Build Playwright harness
+cd ../playwright
+npm run build
+
+# Build MCP servers
+cd ../mcp
+npm run build:all
+
+# Build web dashboard
+cd ../web-dashboard
+npm run build
+```
+
+### Build Status
+✅ **Current Status**: All TypeScript compilation issues resolved  
+📦 **Build Target**: Node.js v22+ with TypeScript 5.7+  
+🔧 **Quality Gates**: Linting, type-checking, and smoke tests passing  
+
 ## 🔧 Development
 
 ### Running Tests
