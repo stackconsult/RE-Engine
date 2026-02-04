@@ -11,12 +11,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["node"],
-    "sourceMap": true,
-    "exclude": [
-      "node_modules",
-      "dist"
-    ]
+    "sourceMap": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["src/shared/types.ts", "src/orchestration/**/*", "src/agents/**/*", "src/production/**/*", "src/security/**/*", "src/monitoring/**/*", "src/index.ts"],
+  "exclude": ["dist", "node_modules", "test", "src/a2d/**/*", "src/services/ollama.service.ts", "src/test/**/*"]
 }

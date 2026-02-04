@@ -3,6 +3,20 @@
  * Comprehensive security management for production deployment
  */
 
+import { 
+  SecurityFeature 
+} from '../shared/types.js';
+import { 
+  JWTManager, 
+  EncryptionManager, 
+  AuditLogger, 
+  ThreatDetector, 
+  APIKeyManager, 
+  RequestValidator, 
+  DDoSProtection, 
+  IPWhitelist 
+} from '../production/types.js';
+
 export interface ProductionSecurityDependencies {
   jwtManager: JWTManager;
   encryptionManager: EncryptionManager;
@@ -18,13 +32,6 @@ export interface SecurityResult {
   status: 'secured' | 'failed';
   features: SecurityFeature[];
   configuration: SecurityConfiguration;
-}
-
-export interface SecurityFeature {
-  name: string;
-  enabled: boolean;
-  status: 'active' | 'inactive' | 'error';
-  lastChecked: number;
 }
 
 export class ProductionSecurityService {
