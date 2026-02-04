@@ -19,6 +19,7 @@
     "smoke": "node --enable-source-maps dist/ops/smoke.js"
   },
   "dependencies": {
+    "csv": "^6.4.1",
     "mailparser": "^3.6.5",
     "pino": "^9.6.0",
     "uuid": "^10.0.0",

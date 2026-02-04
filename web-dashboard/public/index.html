@@ -332,7 +332,7 @@
     </div>
 
     <!-- Modals -->
-    <div id="add-lead-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div id="add-lead-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 class="text-lg font-semibold mb-4">Add New Lead</h3>
             <form id="add-lead-form" class="space-y-4">
@@ -592,11 +592,15 @@
 
         // Modal functions
         function showAddLeadModal() {
-            document.getElementById('add-lead-modal').classList.remove('hidden');
+            const modal = document.getElementById('add-lead-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
         function hideAddLeadModal() {
-            document.getElementById('add-lead-modal').classList.add('hidden');
+            const modal = document.getElementById('add-lead-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             document.getElementById('add-lead-form').reset();
         }
 
