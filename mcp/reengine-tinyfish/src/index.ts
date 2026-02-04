@@ -1,35 +1,101 @@
-<<<<<<< /Users/kirtissiemens/Documents/BrowserOs/mcp/reengine-tinyfish/src/index.ts
-import { McpServer } from "@tinyfish/mcp-server";
-import { scrape } from "./tools/scrape.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  Tool,
+} from "@modelcontextprotocol/sdk/types.js";
 
-const server = new McpServer({
-  tools: {
-    "tinyfish.scrape": scrape,
+const server = new Server(
+  {
+    name: "reengine-tinyfish",
+    version: "0.1.0",
+  }
+);
+
+const tools: Tool[] = [
+  {
+    name: "scrape_url",
+    description: "Scrape data from a URL using TinyFish API",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "URL to scrape",
+        },
+        extract: {
+          type: "string",
+          enum: ["text", "links", "images", "metadata"],
+          description: "Type of data to extract",
+          default: "text",
+        },
+        selector: {
+          type: "string",
+          description: "CSS selector for targeted extraction",
+        },
+      },
+      required: ["url"],
+    },
   },
-=======
-import { Server } from "@tinyfish/mcp-server";
-import { scrapeTool } from "./tools/scrape.js";
-
-const server = new Server({
-  name: "reengine-tinyfish",
-  version: "0.1.0",
-});
-
-server.addTool(scrapeTool);
-
-server.start().catch(console.error);
+  {
+    name: "extract_links",
+    description: "Extract all links from a webpage",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "URL to extract links from",
+        },
+        filter: {
+          type: "string",
+          description: "Filter links by pattern (optional)",
+        },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "extract_images",
+    description: "Extract all images from a webpage",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "URL to extract images from",
+        },
+        minSize: {
+          type: "number",
+          description: "Minimum image size filter",
+        },
+      },
+      required: ["url"],
+    },
+  },
+];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: server.getTools() };
+  return { tools };
 });
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
   const { name, arguments: args } = request.params;
 
   try {
     switch (name) {
       case "scrape_url": {
-        const parsed = TinyFishSchema.parse(args);
+        // Basic validation without zod dependency
+        if (!args.url || typeof args.url !== 'string') {
+          throw new Error('URL is required and must be a string');
+        }
+        
+        const extract = args.extract || 'text';
+        const validExtractTypes = ['text', 'links', 'images', 'metadata'];
+        if (!validExtractTypes.includes(extract)) {
+          throw new Error(`extract must be one of: ${validExtractTypes.join(', ')}`);
+        }
         
         // Mock TinyFish API implementation
         // In production, this would call the actual TinyFish API
@@ -54,7 +120,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         let result: any;
         
-        switch (parsed.extract) {
+        switch (extract) {
           case "text":
             result = { content: mockData.text };
             break;
@@ -145,7 +211,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       isError: true,
     };
   }
->>>>>>> /Users/kirtissiemens/.windsurf/worktrees/BrowserOs/BrowserOs-9f77a2b9/mcp/reengine-tinyfish/src/index.ts
 });
 
-server.start();
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});
