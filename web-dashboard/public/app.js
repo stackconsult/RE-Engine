@@ -69,24 +69,71 @@ class REEngine {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         
-        // Simulate authentication
-        if (email && password) {
-            const user = {
-                id: 'user_1',
-                email: email,
-                name: 'John Doe',
-                role: 'admin'
-            };
+        // Show loading state
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<div class="loading-spinner inline-block mr-2"></div>Signing in...';
+        submitButton.disabled = true;
+        
+        // Simulate authentication with API call
+        this.authenticateUser(email, password)
+            .then(response => {
+                if (response.success) {
+                    const user = response.user;
+                    const token = response.token;
+                    
+                    localStorage.setItem('reengine_token', token);
+                    localStorage.setItem('reengine_user', JSON.stringify(user));
+                    
+                    this.currentUser = user;
+                    this.showDashboard();
+                    this.showNotification('Login successful!', 'success');
+                } else {
+                    this.showNotification('Invalid credentials', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                this.showNotification('Login failed: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
+    }
+
+    async authenticateUser(email, password) {
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
             
-            const token = 'mock_token_' + Date.now();
-            
-            localStorage.setItem('reengine_token', token);
-            localStorage.setItem('reengine_user', JSON.stringify(user));
-            
-            this.currentUser = user;
-            this.showDashboard();
-        } else {
-            this.showNotification('Please enter valid credentials', 'error');
+            return await response.json();
+        } catch (error) {
+            // Fallback to mock authentication if server is not available
+            if (email && password) {
+                const user = {
+                    id: 'user_1',
+                    email: email,
+                    name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    role: 'admin'
+                };
+                
+                const token = 'mock_token_' + Date.now();
+                
+                return {
+                    success: true,
+                    user,
+                    token
+                };
+            } else {
+                return { success: false, error: 'Invalid credentials' };
+            }
         }
     }
 

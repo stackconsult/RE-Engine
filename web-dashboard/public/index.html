@@ -26,7 +26,33 @@
         .glass-effect {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-effect h1,
+        .glass-effect h3,
+        .glass-effect h4 {
+            color: #1f2937;
+        }
+        
+        .glass-effect p {
+            color: #6b7280;
+        }
+        
+        .glass-effect label {
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        .glass-effect a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        
+        .glass-effect a:hover {
+            color: #2563eb;
+            text-decoration: underline;
         }
         
         .gradient-bg {
@@ -55,32 +81,66 @@
         
         /* Modern form styles */
         .modern-input {
-            @apply w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #1f2937;
+        }
+        
+        .modern-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         
         .modern-button {
-            @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
         }
         
         .modern-button-primary {
-            @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .modern-button-primary:hover {
+            background-color: #2563eb;
         }
         
         .modern-button-secondary {
-            @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        
+        .modern-button-secondary:hover {
+            background-color: #e5e7eb;
         }
         
         /* Sidebar styles */
         .sidebar-item {
-            @apply px-4 py-3 rounded-lg cursor-pointer transition-all duration-200;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #4b5563;
         }
         
         .sidebar-item:hover {
-            @apply bg-gray-100;
+            background-color: #f3f4f6;
         }
         
         .sidebar-item.active {
-            @apply bg-blue-100 text-blue-700;
+            background-color: #dbeafe;
+            color: #1d4ed8;
         }
         
         /* Loading states */
@@ -100,36 +160,83 @@
         
         /* Modal styles */
         .modal-overlay {
-            @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
         }
         
         .modal-content {
-            @apply bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 56rem;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         /* Stats cards */
         .stat-card {
-            @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100;
+            background-color: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #f3f4f6;
         }
         
         .stat-number {
-            @apply text-3xl font-bold;
+            font-size: 1.875rem;
+            font-weight: 700;
+            line-height: 2.25rem;
         }
         
         .stat-label {
-            @apply text-sm text-gray-600 font-medium;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
         }
         
         /* Platform badges */
         .platform-badge {
-            @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
         
-        .platform-linkedin { @apply bg-blue-100 text-blue-800; }
-        .platform-zillow { @apply bg-green-100 text-green-800; }
-        .platform-realtor { @apply bg-purple-100 text-purple-800; }
-        .platform-facebook { @apply bg-blue-100 text-blue-800; }
-        .platform-craigslist { @apply bg-orange-100 text-orange-800; }
+        .platform-linkedin { 
+            background-color: #dbeafe; 
+            color: #1e40af; 
+        }
+        
+        .platform-zillow { 
+            background-color: #d1fae5; 
+            color: #065f46; 
+        }
+        
+        .platform-realtor { 
+            background-color: #e9d5ff; 
+            color: #6b21a8; 
+        }
+        
+        .platform-facebook { 
+            background-color: #dbeafe; 
+            color: #1e40af; 
+        }
+        
+        .platform-craigslist { 
+            background-color: #fed7aa; 
+            color: #9a3412; 
+        }
     </style>
 </head>
 <body class="bg-gray-50">
