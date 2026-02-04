@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
+import { AuthMiddleware } from '../engine/src/auth/auth.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,10 @@ const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Initialize authentication
+const auth = new AuthMiddleware();
+await auth.initialize();
 
 // Helper functions
 async function readCsvFile(filename) {
@@ -82,8 +87,15 @@ async function writeCsvFile(filename, data) {
     }
 }
 
-// Routes
-app.get('/api/status', (req, res) => {
+// Authentication Routes
+app.post('/api/auth/login', (req, res) => auth.login(req, res));
+app.post('/api/auth/logout', (req, res) => auth.logout(req, res));
+app.get('/api/auth/me', auth.authenticate(), (req, res) => auth.getCurrentUser(req, res));
+app.post('/api/auth/change-password', auth.authenticate(), (req, res) => auth.changePassword(req, res));
+app.post('/api/auth/api-key', auth.authenticate(), (req, res) => auth.generateApiKey(req, res));
+
+// Protected API Routes
+app.get('/api/status', auth.authenticate(), (req, res) => {
     res.json({
         status: 'operational',
         system: 'RE Engine',

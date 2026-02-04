@@ -584,21 +584,93 @@
 
                 <!-- Approvals Section -->
                 <section id="approvals-section" class="space-y-6 hidden">
+                    <!-- Approval Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-2xl font-bold text-orange-600" id="pending-count">0</div>
+                                    <div class="text-sm text-gray-600">Pending</div>
+                                </div>
+                                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-clock text-orange-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-2xl font-bold text-green-600" id="approved-count">0</div>
+                                    <div class="text-sm text-gray-600">Approved</div>
+                                </div>
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-2xl font-bold text-red-600" id="rejected-count">0</div>
+                                    <div class="text-sm text-gray-600">Rejected</div>
+                                </div>
+                                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-times text-red-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-600" id="total-count">0</div>
+                                    <div class="text-sm text-gray-600">Total</div>
+                                </div>
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-clipboard-list text-blue-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Approval Actions -->
                     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-semibold">Approvals</h2>
-                            <div class="flex space-x-4">
-                                <button onclick="bulkApprove()" class="modern-button modern-button-primary">
-                                    <i class="fas fa-check mr-2"></i>Bulk Approve
-                                </button>
-                                <button onclick="bulkReject()" class="modern-button modern-button-secondary">
-                                    <i class="fas fa-times mr-2"></i>Bulk Reject
+                            <h2 class="text-xl font-semibold">Approval Queue</h2>
+                            <div class="flex items-center space-x-4">
+                                <select id="status-filter" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="all">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                                <button onclick="refreshApprovals()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                    <i class="fas fa-sync-alt mr-2"></i>Refresh
                                 </button>
                             </div>
                         </div>
                         
+                        <!-- Bulk Actions -->
+                        <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <input type="checkbox" id="select-all" onchange="toggleSelectAll()" class="rounded">
+                                    <label for="select-all" class="text-sm text-gray-700">Select All</label>
+                                    <span id="selected-count" class="text-sm text-gray-600">0 selected</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="bulkApprove()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="bulk-approve-btn" disabled>
+                                        <i class="fas fa-check mr-2"></i>Approve Selected
+                                    </button>
+                                    <button onclick="bulkReject()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="bulk-reject-btn" disabled>
+                                        <i class="fas fa-times mr-2"></i>Reject Selected
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Approvals List -->
                         <div class="space-y-4" id="approvals-list">
-                            <!-- Approvals will be populated here -->
+                            <!-- Approval items will be populated here -->
                         </div>
                     </div>
                 </section>

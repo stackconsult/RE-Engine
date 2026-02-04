@@ -16,18 +16,24 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier -w .",
-    "smoke": "node --enable-source-maps dist/ops/smoke.js"
+    "smoke": "node --enable-source-maps dist/ops/smoke.js",
+    "migrate": "node migrate.js",
+    "migrate:status": "node migrate.js status"
   },
   "dependencies": {
     "csv": "^6.4.1",
+    "jsonwebtoken": "^9.0.2",
     "mailparser": "^3.6.5",
     "pino": "^9.6.0",
+    "pg": "^8.11.3",
     "uuid": "^10.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.19.8",
+    "@types/pg": "^8.10.9",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.39.2",
     "prettier": "^3.5.0",

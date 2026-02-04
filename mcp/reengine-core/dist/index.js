@@ -2,22 +2,9 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from "@modelcontextprotocol/sdk/types.js";
 import { v4 as uuidv4 } from "uuid";
-// Mock implementations - in production these would connect to the actual RE Engine
-const approvals = [
-    {
-        approval_id: "test_1",
-        status: "pending",
-        lead_id: "lead_1",
-        channel: "email",
-        draft_to: "test@example.com",
-        draft_subject: "Test Subject",
-        draft_text: "Test message",
-        created_at: new Date().toISOString(),
-        approved_by: "",
-        approved_at: "",
-        notes: ""
-    }
-];
+import { LocalMCPIntegration } from "./local-integration.js";
+// Initialize local integration
+const engine = new LocalMCPIntegration();
 const server = new Server({
     name: "reengine-core",
     version: "0.1.0",
@@ -136,14 +123,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         switch (name) {
             case "approvals_list": {
                 const status = args?.status;
-                const filtered = status
-                    ? approvals.filter(a => a.status === status)
-                    : approvals;
+                const approvals = await engine.listApprovals(status);
                 return {
                     content: [
                         {
                             type: "text",
-                            text: JSON.stringify(filtered, null, 2)
+                            text: JSON.stringify(approvals, null, 2)
                         }
                     ]
                 };
@@ -151,16 +136,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             case "approvals_approve": {
                 const approvalId = args?.approval_id;
                 const approvedBy = args?.approved_by || "windsurf";
-                const approval = approvals.find(a => a.approval_id === approvalId);
+                const approval = await engine.approveApproval(approvalId, approvedBy);
                 if (!approval) {
-                    throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} not found`);
+                    throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} not found or cannot be approved`);
                 }
-                if (approval.status !== "pending") {
-                    throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} is not pending`);
-                }
-                approval.status = "approved";
-                approval.approved_by = approvedBy;
-                approval.approved_at = new Date().toISOString();
                 return {
                     content: [
                         {
@@ -174,17 +153,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const approvalId = args?.approval_id;
                 const reason = args?.reason || "rejected";
                 const rejectedBy = args?.rejected_by || "windsurf";
-                const approval = approvals.find(a => a.approval_id === approvalId);
+                const approval = await engine.rejectApproval(approvalId, reason);
                 if (!approval) {
-                    throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} not found`);
+                    throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} not found or cannot be rejected`);
                 }
-                if (approval.status !== "pending") {
-                    throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} is not pending`);
-                }
-                approval.status = "rejected";
-                approval.notes = reason;
-                approval.approved_by = rejectedBy;
-                approval.approved_at = new Date().toISOString();
                 return {
                     content: [
                         {
@@ -253,6 +225,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 // Start the server
 async function main() {
+    try {
+        // Initialize RE Engine integration
+        await engine.initialize();
+        console.error("RE Engine integration initialized");
+    }
+    catch (error) {
+        console.error("Failed to initialize RE Engine:", error);
+        process.exit(1);
+    }
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("RE Engine Core MCP server running on stdio");

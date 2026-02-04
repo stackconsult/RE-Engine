@@ -474,27 +474,88 @@ class REEngine {
         const approvalsList = document.getElementById('approvals-list');
         if (!approvalsList) return;
 
+        // Update stats
+        const pendingCount = this.approvals.filter(a => a.status === 'pending').length;
+        const approvedCount = this.approvals.filter(a => a.status === 'approved').length;
+        const rejectedCount = this.approvals.filter(a => a.status === 'rejected').length;
+        
+        document.getElementById('pending-count').textContent = pendingCount;
+        document.getElementById('approved-count').textContent = approvedCount;
+        document.getElementById('rejected-count').textContent = rejectedCount;
+        document.getElementById('total-count').textContent = this.approvals.length;
+
+        // Render approval cards
         approvalsList.innerHTML = this.approvals.map(approval => `
-            <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <input type="checkbox" class="approval-checkbox" value="${approval.id}">
-                        <div>
-                            <div class="font-medium">${approval.first_name} ${approval.last_name}</div>
-                            <div class="text-sm text-gray-500">${approval.email}</div>
+            <div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-4 flex-1">
+                        <input type="checkbox" class="approval-checkbox mt-1" value="${approval.approval_id}" 
+                               onchange="updateSelectedCount()">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <div class="font-semibold text-gray-900">${approval.draft_to}</div>
+                                    <div class="text-sm text-gray-500">Lead: ${approval.lead_id}</div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                                        approval.status === 'pending' ? 'bg-orange-100 text-orange-800' :
+                                        approval.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                        'bg-red-100 text-red-800'
+                                    }">
+                                        ${approval.status.charAt(0).toUpperCase() + approval.status.slice(1)}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        ${new Date(approval.created_at).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-2">
+                                <strong>Subject:</strong> ${approval.draft_subject}
+                            </div>
+                            <div class="text-sm text-gray-600 mb-4 line-clamp-2">
+                                ${approval.draft_content}
+                            </div>
+                            ${approval.rejection_reason ? `
+                                <div class="bg-red-50 border border-red-200 rounded p-2 mb-2">
+                                    <div class="text-sm text-red-800">
+                                        <strong>Rejection Reason:</strong> ${approval.rejection_reason}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs text-gray-500">
+                                    ${approval.approved_by ? `Approved by: ${approval.approved_by}` : ''}
+                                </div>
+                                <div class="flex space-x-2">
+                                    ${approval.status === 'pending' ? `
+                                        <button onclick="approveLead('${approval.approval_id}')" 
+                                                class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors">
+                                            <i class="fas fa-check mr-1"></i>Approve
+                                        </button>
+                                        <button onclick="rejectLead('${approval.approval_id}')" 
+                                                class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors">
+                                            <i class="fas fa-times mr-1"></i>Reject
+                                        </button>
+                                    ` : ''}
+                                    ${approval.status === 'approved' ? `
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded">
+                                            <i class="fas fa-check mr-1"></i>Approved
+                                        </span>
+                                    ` : ''}
+                                    ${approval.status === 'rejected' ? `
+                                        <span class="px-3 py-1 bg-red-100 text-red-800 text-sm rounded">
+                                            <i class="fas fa-times mr-1"></i>Rejected
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="approveLead('${approval.id}')" class="text-green-600 hover:text-green-800">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button onclick="rejectLead('${approval.id}')" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
                 </div>
-            </div>
         `).join('');
+        
+        this.updateSelectedCount();
     }
 
     loadAutomationData() {
@@ -1326,12 +1387,183 @@ class REEngine {
     editICP(id) { console.log('Edit ICP:', id); }
     deleteICP(id) { console.log('Delete ICP:', id); }
     viewLead(id) { console.log('View lead:', id); }
-    editLead(id) { console.log('Edit lead:', id); }
-    approveLead(id) { console.log('Approve lead:', id); }
-    rejectLead(id) { console.log('Reject lead:', id); }
-    bulkApprove() { console.log('Bulk approve'); }
-    bulkReject() { console.log('Bulk reject'); }
-    showApprovalsModal() { console.log('Show approvals modal'); }
+    // Enhanced Approval Functions
+    async approveLead(id) {
+        try {
+            const response = await fetch('/api/approvals/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approval_id: id, approved_by: 'dashboard_user' })
+            });
+            
+            if (response.ok) {
+                this.showNotification('Lead approved successfully', 'success');
+                await this.loadData();
+                this.updateSelectedCount();
+            } else {
+                this.showNotification('Failed to approve lead', 'error');
+            }
+        } catch (error) {
+            console.error('Error approving lead:', error);
+            this.showNotification('Error approving lead', 'error');
+        }
+    }
+
+    async rejectLead(id) {
+        try {
+            const response = await fetch('/api/approvals/reject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approval_id: id, rejected_by: 'dashboard_user', reason: 'Rejected from dashboard' })
+            });
+            
+            if (response.ok) {
+                this.showNotification('Lead rejected successfully', 'success');
+                await this.loadData();
+                this.updateSelectedCount();
+            } else {
+                this.showNotification('Failed to reject lead', 'error');
+            }
+        } catch (error) {
+            console.error('Error rejecting lead:', error);
+            this.showNotification('Error rejecting lead', 'error');
+        }
+    }
+
+    async bulkApprove() {
+        const selectedCheckboxes = document.querySelectorAll('.approval-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        
+        if (selectedIds.length === 0) {
+            this.showNotification('No approvals selected', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/approvals/bulk-approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    approval_ids: selectedIds, 
+                    approved_by: 'dashboard_user' 
+                })
+            });
+            
+            if (response.ok) {
+                this.showNotification(`Approved ${selectedIds.length} leads successfully`, 'success');
+                await this.loadData();
+                this.clearSelection();
+            } else {
+                this.showNotification('Failed to bulk approve', 'error');
+            }
+        } catch (error) {
+            console.error('Error bulk approving:', error);
+            this.showNotification('Error bulk approving', 'error');
+        }
+    }
+
+    async bulkReject() {
+        const selectedCheckboxes = document.querySelectorAll('.approval-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        
+        if (selectedIds.length === 0) {
+            this.showNotification('No approvals selected', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/approvals/bulk-reject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    approval_ids: selectedIds, 
+                    rejected_by: 'dashboard_user',
+                    reason: 'Bulk rejected from dashboard'
+                })
+            });
+            
+            if (response.ok) {
+                this.showNotification(`Rejected ${selectedIds.length} leads`, 'success');
+                await this.loadData();
+                this.clearSelection();
+            } else {
+                this.showNotification('Failed to bulk reject', 'error');
+            }
+        } catch (error) {
+            console.error('Error bulk rejecting:', error);
+            this.showNotification('Error bulk rejecting', 'error');
+        }
+    }
+
+    toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('.approval-checkbox');
+        const isChecked = selectAllCheckbox.checked;
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+        
+        this.updateSelectedCount();
+    }
+
+    updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('.approval-checkbox:checked').length;
+        const selectedCountElement = document.getElementById('selected-count');
+        const bulkApproveBtn = document.getElementById('bulk-approve-btn');
+        const bulkRejectBtn = document.getElementById('bulk-reject-btn');
+        
+        selectedCountElement.textContent = `${selectedCount} selected`;
+        
+        // Enable/disable bulk action buttons
+        if (selectedCount > 0) {
+            bulkApproveBtn.disabled = false;
+            bulkRejectBtn.disabled = false;
+        } else {
+            bulkApproveBtn.disabled = true;
+            bulkRejectBtn.disabled = true;
+        }
+    }
+
+    clearSelection() {
+        document.getElementById('select-all').checked = false;
+        this.updateSelectedCount();
+    }
+
+    async refreshApprovals() {
+        this.showNotification('Refreshing approvals...', 'info');
+        await this.loadData();
+        this.showNotification('Approvals refreshed', 'success');
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 animate-slide-in ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${
+                    type === 'success' ? 'fa-check-circle' :
+                    type === 'error' ? 'fa-exclamation-circle' :
+                    type === 'warning' ? 'fa-exclamation-triangle' :
+                    'fa-info-circle'
+                } mr-2"></i>
+                ${message}
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
 }
 
 // Initialize the app
@@ -1342,13 +1574,6 @@ window.showSection = (section) => app.showSection(section);
 window.showCreateICPModal = () => app.showCreateICPModal();
 window.hideCreateICPModal = () => app.hideCreateICPModal();
 window.createICP = () => app.createICP();
-window.runDiscovery = () => app.runDiscovery();
-window.runICPDiscovery = (id) => app.runICPDiscovery(id);
-window.runFullAutomation = () => app.runFullAutomation();
-window.stopAllAutomation = () => app.stopAllAutomation();
-window.scheduleAutomation = () => app.scheduleAutomation();
-window.toggleSkill = (skillId) => app.toggleSkill(skillId);
-window.stopJob = (jobId) => app.stopJob(jobId);
 window.editICP = (id) => app.editICP(id);
 window.deleteICP = (id) => app.deleteICP(id);
 window.viewLead = (id) => app.viewLead(id);
@@ -1357,6 +1582,9 @@ window.approveLead = (id) => app.approveLead(id);
 window.rejectLead = (id) => app.rejectLead(id);
 window.bulkApprove = () => app.bulkApprove();
 window.bulkReject = () => app.bulkReject();
+window.toggleSelectAll = () => app.toggleSelectAll();
+window.updateSelectedCount = () => app.updateSelectedCount();
+window.refreshApprovals = () => app.refreshApprovals();
 window.showApprovalsModal = () => app.showApprovalsModal();
 window.refreshData = () => app.refreshData();
 
