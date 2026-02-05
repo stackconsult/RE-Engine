@@ -29,7 +29,11 @@
 ### ✅ **API Connection Validated**
 - **Project Access**: ✅ `creditx-478204`
 - **Service Account**: ✅ `creditx-478204@appspot.gserviceaccount.com`
+<<<<<<< HEAD
 - **OAuth Client**: ✅ `your_oauth_client_id_here`
+=======
+- **OAuth Client**: ✅ `739953812004-c7hqk0i4upmihbf0ua4tq8e07jc2p0dp.apps.googleusercontent.com`
+>>>>>>> claude-vertex-clean
 - **API Endpoint**: ✅ Successfully reaching Vertex AI services
 
 ---
