@@ -43,7 +43,7 @@ export interface FixResult {
 
 export interface Optimization {
   id: string;
-  type: 'performance' | 'security' | 'learning' | 'resource' | 'user-experience';
+  type: 'performance' | 'security' | 'learning' | 'resource' | 'user-experience' | 'optimization';
   category: string;
   description: string;
   impact: 'low' | 'medium' | 'high' | 'critical';
@@ -514,7 +514,10 @@ export class FixesAndOptimizationsManager extends EventEmitter {
 
     for (const issue of commonIssues) {
       if (Math.random() < 0.1) { // 10% chance of detecting common issues
-        this.reportIssue(issue);
+        this.reportIssue({
+          ...issue,
+          timestamp: Date.now()
+        });
       }
     }
   }
@@ -525,8 +528,8 @@ export class FixesAndOptimizationsManager extends EventEmitter {
       memoryUsage: process.memoryUsage().heapUsed / 1024 / 1024, // MB
       cpuUsage: process.cpuUsage().user, // percentage
       uptime: process.uptime(), // seconds
-      activeHandles: process._getActiveHandles().length,
-      activeRequests: process._getActiveRequests().length
+      activeHandles: 0, // Placeholder - process._getActiveHandles() not available
+      activeRequests: 0 // Placeholder - process._getActiveRequests() not available
     };
 
     for (const [metric, value] of Object.entries(metrics)) {
@@ -541,7 +544,8 @@ export class FixesAndOptimizationsManager extends EventEmitter {
           category: 'performance',
           description: `${metric} exceeds threshold: ${value} > ${threshold}`,
           location: 'system',
-          autoFixable: true
+          autoFixable: true,
+          timestamp: Date.now()
         });
       }
     }

@@ -974,5 +974,3 @@ export class UserAgentManager {
     }
   }
 }
-
-export { UserAgent };

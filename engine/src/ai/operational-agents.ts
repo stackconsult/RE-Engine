@@ -126,7 +126,7 @@ export class OperationalAgentsManager extends EventEmitter {
   /**
    * Train agent skill
    */
-  async trainAgentSkill(agentId: string, skillId: string, trainingType: 'enhancement' | 'adaptation' = 'enhancement'): Promise<AgentTraining> {
+  async trainAgentSkill(agentId: string, skillId: string, trainingType: 'initial' | 'enhancement' | 'adaptation' | 'correction' = 'enhancement'): Promise<AgentTraining> {
     this.logger.info(`🎓 Training agent skill: ${agentId} - ${skillId}`);
 
     const agent = this.agents.get(agentId);
