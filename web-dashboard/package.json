@@ -1,1 +1,33 @@
-{"name": "reengine-dashboard", "version": "1.0.0", "description": "RE Engine Web Dashboard", "private": true, "scripts": {"dev": "next dev", "build": "next build", "start": "next start", "export": "next export"}, "dependencies": {"@supabase/supabase-js": "^2.94.0", "cors": "^2.8.5", "express": "^4.18.2", "uuid": "^13.0.0", "next": "^15.0.0", "react": "^18.2.0", "react-dom": "^18.2.0", "ai": "^3.0.0", "@ai-sdk/openai": "^0.0.0", "@ai-sdk/google-vertex": "^0.0.0"}, "devDependencies": {"@types/cors": "^2.8.17", "@types/express": "^4.17.21", "@types/node": "^22.13.4", "@types/react": "^18.2.0", "@types/react-dom": "^18.2.0", "autoprefixer": "^10.4.24", "postcss": "^8.5.6", "tailwindcss": "^4.1.18", "typescript": "^5.0.0"}}
+{
+  "name": "reengine-dashboard",
+  "version": "1.0.0",
+  "description": "RE Engine Web Dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "export": "next export"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.94.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "uuid": "^13.0.0",
+    "next": "^14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ai": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.4",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.0.0"
+  }
+}

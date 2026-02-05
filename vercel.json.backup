@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "web-dashboard/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "out"
+      }
+    },
+    {
+      "src": "engine/api/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/engine/api/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/web-dashboard/out/$1"
+    }
+  ]
+}

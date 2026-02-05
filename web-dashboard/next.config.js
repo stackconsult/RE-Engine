@@ -1,11 +1,10 @@
-/** @type {import('next').NextConfig} */
+/** @type {import(next).NextConfig} */
 const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
+  output: "export",
   images: {
-    unoptimized: true
+    unoptimized: true,
   },
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : undefined,
+  assetPrefix: process.env.NODE_ENV === "production" ? "" : undefined,
 }
 
 module.exports = nextConfig
