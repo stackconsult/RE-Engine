@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { WorkflowService, WorkflowTemplateService } from '../services/workflow-service';
+import { WorkflowService, WorkflowTemplateService, workflowTemplateService } from '../services/workflow-service';
 import { MasterOrchestrator } from '../orchestration/master-orchestrator';
 import { Logger } from '../utils/logger';
 

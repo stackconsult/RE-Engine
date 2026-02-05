@@ -1,5 +1,5 @@
 /**
- * Workflow Tests
+ * Workflow Tests - Fixed Version
  * Comprehensive testing for real estate workflows
  */
 
@@ -48,7 +48,7 @@ export async function testRealEstateWorkflows(): Promise<boolean> {
     await testClientOnboardingWorkflow(workflowService);
 
     // Test 5: Workflow Registry
-    await testWorkflowRegistry();
+    await testWorkflowRegistry(workflowService);
 
     // Test 6: Template Service
     await testTemplateService();
@@ -261,12 +261,12 @@ async function testClientOnboardingWorkflow(workflowService: WorkflowService): P
 /**
  * Test Workflow Registry
  */
-async function testWorkflowRegistry(): Promise<void> {
+async function testWorkflowRegistry(workflowService: WorkflowService): Promise<void> {
   const logger = new Logger('WorkflowRegistryTest', true);
   
   logger.info('🧪 Testing Workflow Registry...');
 
-  // Test workflow availability
+  // Test workflow retrieval
   const allWorkflows = workflowService.getAvailableWorkflows();
   
   if (allWorkflows.length === 0) {
