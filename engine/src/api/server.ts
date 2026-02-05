@@ -3,13 +3,15 @@
  * Main API server with Express.js
  */
 
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response, NextFunction, Router, Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import { createServer as httpCreateServer, Server } from 'http';
+import { EventEmitter } from 'events';
+import { WorkflowService, WorkflowTemplateService, workflowTemplateService } from '../services/workflow-service';
 import { MasterOrchestrator } from '../orchestration/master-orchestrator';
-import { WorkflowService } from '../services/workflow-service';
 import { createWorkflowAPIRouter, createTemplateAPIRouter } from './workflow-api';
 import { Logger } from '../utils/logger';
 
@@ -28,16 +30,18 @@ export interface ServerConfig {
 /**
  * RE Engine API Server
  */
-export class REEngineAPIServer {
-  private app: Application;
-  private server: any;
+export class REEngineAPIServer extends EventEmitter {
+  private app: Express;
+  private server: Server | null = null;
+  private orchestrator!: MasterOrchestrator;
+  private workflowService!: WorkflowService;
   private config: ServerConfig;
   private logger: Logger;
-  private orchestrator: MasterOrchestrator;
-  private workflowService: WorkflowService;
 
   constructor(config?: Partial<ServerConfig>) {
-    this.config = {
+    super();
+    
+    const defaultConfig = {
       port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
       host: process.env.HOST || 'localhost',
       environment: (process.env.NODE_ENV as any) || 'development',
@@ -49,9 +53,25 @@ export class REEngineAPIServer {
       enableDetailedLogging: process.env.NODE_ENV !== 'production',
       ...config
     };
-
+    
+    this.config = defaultConfig;
     this.logger = new Logger('REEngineAPIServer', this.config.enableDetailedLogging);
     this.app = express();
+    
+    this.orchestrator = new MasterOrchestrator({
+      maxConcurrentWorkflows: 5,
+      defaultTimeout: 300000,
+      healthCheckInterval: 30000,
+      enableAutoScaling: false,
+      enableDetailedLogging: this.config.enableDetailedLogging
+    });
+    
+    this.workflowService = new WorkflowService(this.orchestrator, {
+      defaultTimeout: 300000,
+      maxConcurrentWorkflows: 3,
+      enableDetailedLogging: this.config.enableDetailedLogging,
+      enableAutoRetry: true
+    });
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -66,14 +86,6 @@ export class REEngineAPIServer {
 
     try {
       // Initialize orchestrator
-      this.orchestrator = new MasterOrchestrator({
-        maxConcurrentWorkflows: 10,
-        defaultTimeout: 600000,
-        healthCheckInterval: 30000,
-        enableAutoScaling: this.config.environment === 'production',
-        enableDetailedLogging: this.config.enableDetailedLogging
-      });
-
       await this.orchestrator.initialize();
 
       // Initialize workflow service
