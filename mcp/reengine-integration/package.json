@@ -1,0 +1,52 @@
+{
+  "name": "@stackconsult/reengine-enhanced-integration",
+  "version": "0.1.0",
+  "description": "Enhanced Integration Server - LLAMA + Fish API + NEON + SuperBase",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "node --test",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "integration",
+    "llama",
+    "fish-api",
+    "neon",
+    "supabase",
+    "real-estate",
+    "automation",
+    "data-processing",
+    "vector-search",
+    "real-time"
+  ],
+  "author": "StackConsult",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.2",
+    "@supabase/supabase-js": "^2.39.0",
+    "pg": "^8.11.0",
+    "pino": "^9.0.0",
+    "zod": "^3.22.4",
+    "uuid": "^10.0.0",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.10.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}

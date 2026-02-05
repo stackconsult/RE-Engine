@@ -1196,19 +1196,22 @@ function clearCache() {
   };
 }
 
-// Start server
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  logger.info('RE Engine LLAMA MCP server started');
-  
-  logger.info(`LLAMA Configuration - Base URL: ${ollamaConfig.baseUrl}, Default Model: ${ollamaConfig.defaultModel}`);
-  logger.info(`Available Models: ${Object.keys(LLAMA_MODELS).length} models configured`);
-}
+// Enhanced LLAMA MCP Server Integration
+// This file now integrates with the enhanced LLAMA system
+// Import and use enhanced-llama-server for production deployments
 
-if (require.main === module) {
-  main().catch((error) => {
-    logger.error('Server startup failed: Server failed to start');
-    process.exit(1);
-  });
-}
+export { EnhancedLlamaServer } from './enhanced-llama-server';
+export { default as EnhancedLlamaSystem } from './enhanced-llama-system';
+export { default as AgenticAutomationSkill } from './skills/agentic-automation.skill';
+export { default as CollaborativeGovernanceRules } from './rules/collaborative-governance.rules';
+
+// Legacy server functionality maintained for backward compatibility
+// The enhanced server provides:
+// - Advanced memory management and sharing
+// - Agentic automation workflows  
+// - Collaborative governance rules
+// - Real-time performance optimization
+// - Enhanced error handling and recovery
+
+console.log('RE Engine LLAMA MCP Server - Enhanced Version');
+console.log('Features: Memory Management | Agentic Automation | Governance Rules | Performance Optimization');
