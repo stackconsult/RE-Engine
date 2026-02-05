@@ -252,7 +252,8 @@ jobs:
           --memory=512Mi \
           --cpu=1 \
           --timeout=300 \
-          --set-env-vars=DB_HOST=${{ secrets.DB_HOST }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }}
+          --set-env-vars=DB_HOST=${{ secrets.DB_HOST }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          --quiet
 
         # Deploy dashboard service
         gcloud run deploy reengine-dashboard \
@@ -263,7 +264,51 @@ jobs:
           --memory=256Mi \
           --cpu=1 \
           --timeout=300 \
-          --set-env-vars=ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION }} --format='value(status.url)')
+          --quiet
+
+    - name: Health Check After Deployment
+      run: |
+        # Wait for deployment to be ready
+        sleep 30
+        
+        # Get service URL
+        ENGINE_URL=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION }} \
+          --format='value(status.url)')
+        
+        # Health check with retry logic
+        for i in {1..5}; do
+          echo "Health check attempt $i/5..."
+          if curl -f --max-time 10 "$ENGINE_URL/health" 2>/dev/null; then
+            echo "✅ Engine deployment successful and healthy"
+            break
+          elif [ $i -eq 5 ]; then
+            echo "❌ Health check failed after 5 attempts"
+            exit 1
+          else
+            echo "⏳ Health check failed, retrying in 10 seconds..."
+            sleep 10
+          fi
+        done
+
+    - name: Rollback on Failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed, initiating rollback..."
+        
+        # Get previous successful deployment
+        PREVIOUS_REVISION=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION }} \
+          --format='value(status.latestReadyRevision.name)' | head -n 2 | tail -n 1)
+        
+        if [ -n "$PREVIOUS_REVISION" ] && [ "$PREVIOUS_REVISION" != "$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION }} --format='value(status.latestReadyRevision.name)')" ]; then
+          gcloud run services update-traffic reengine-engine \
+            --region=${{ secrets.GCP_REGION }} \
+            --to-revisions=$PREVIOUS_REVISION=100
+          echo "🔄 Rollback completed to $PREVIOUS_REVISION"
+        else
+          echo "⚠️ No previous revision found for rollback"
+        fi
 
     - name: Get service URLs
       id: services
@@ -340,7 +385,8 @@ jobs:
           --timeout=300 \
           --min-instances=1 \
           --max-instances=10 \
-          --set-env-vars=DB_HOST=${{ secrets.DB_HOST_PROD }},DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }},JWT_SECRET=${{ secrets.JWT_SECRET_PROD }}
+          --set-env-vars=DB_HOST=${{ secrets.DB_HOST_PROD }},DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }},JWT_SECRET=${{ secrets.JWT_SECRET_PROD }} \
+          --quiet
 
         # Deploy dashboard service with production settings
         gcloud run deploy reengine-dashboard \
@@ -353,7 +399,57 @@ jobs:
           --timeout=300 \
           --min-instances=1 \
           --max-instances=5 \
-          --set-env-vars=ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.url)')
+          --quiet
+
+    - name: Production Health Check
+      run: |
+        # Wait for deployment to be ready
+        sleep 60
+        
+        # Get service URL
+        ENGINE_URL=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --format='value(status.url)')
+        
+        # Production health check with retry logic
+        for i in {1..10}; do
+          echo "Production health check attempt $i/10..."
+          if curl -f --max-time 15 "$ENGINE_URL/health" 2>/dev/null; then
+            echo "✅ Production deployment successful and healthy"
+            break
+          elif [ $i -eq 10 ]; then
+            echo "❌ Production health check failed after 10 attempts"
+            exit 1
+          else
+            echo "⏳ Production health check failed, retrying in 15 seconds..."
+            sleep 15
+          fi
+        done
+
+    - name: Production Rollback on Failure
+      if: failure()
+      run: |
+        echo "❌ Production deployment failed, initiating rollback..."
+        
+        # Get previous successful deployment
+        VERSION=${{ github.event.release.tag_name }}
+        PREVIOUS_REVISION=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --format='value(status.latestReadyRevision.name)' | head -n 2 | tail -n 1)
+        
+        if [ -n "$PREVIOUS_REVISION" ] && [ "$PREVIOUS_REVISION" != "$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.latestReadyRevision.name)')" ]; then
+          gcloud run services update-traffic reengine-engine \
+            --region=${{ secrets.GCP_REGION_PROD }} \
+            --to-revisions=$PREVIOUS_REVISION=100
+          echo "🔄 Production rollback completed to $PREVIOUS_REVISION"
+          
+          # Send Slack notification for production rollback
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🚨 PRODUCTION ROLLBACK: Version '$VERSION' failed, rolled back to '$PREVIOUS_REVISION'"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }} || true
+        else
+          echo "⚠️ No previous revision found for production rollback"
+        fi
 
     - name: Get production service URLs
       id: prod-services
