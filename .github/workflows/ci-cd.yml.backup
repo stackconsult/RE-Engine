@@ -1,0 +1,496 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  NODE_VERSION: '22'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Testing
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        component: [engine, web-dashboard, playwright, mcp-reengine-core, mcp-reengine-browser, mcp-reengine-tinyfish]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ${{ matrix.component }}/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ${{ matrix.component }}
+      run: npm ci
+
+    - name: Run linting
+      working-directory: ${{ matrix.component }}
+      run: npm run lint
+
+    - name: Run type checking
+      working-directory: ${{ matrix.component }}
+      run: npm run typecheck
+
+    - name: Run tests
+      working-directory: ${{ matrix.component }}
+      run: npm test
+
+    - name: Upload coverage reports
+      if: matrix.component == 'engine'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+  # Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Audit npm packages
+      run: |
+        for dir in engine web-dashboard playwright mcp/*; do
+          if [ -f "$dir/package.json" ]; then
+            echo "Auditing $dir"
+            cd "$dir"
+            npm audit --audit-level=high
+            cd - > /dev/null
+          fi
+        done
+
+  # Build Docker Images
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.event_name != 'pull_request'
+    
+    strategy:
+      matrix:
+        component: [engine, web-dashboard, mcp-reengine-core, mcp-reengine-browser, mcp-reengine-tinyfish, playwright]
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.component }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+        flavor: latest=true
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ matrix.component }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+  # Integration Tests
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: reengine_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Start services with Docker Compose
+      run: |
+        docker-compose -f docker-compose.test.yml up -d
+        sleep 30
+
+    - name: Run integration tests
+      run: |
+        npm run test:integration
+
+    - name: Stop services
+      if: always()
+      run: |
+        docker-compose -f docker-compose.test.yml down -v
+
+    - name: Upload test results
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: integration-test-results
+        path: test-results/
+
+  # Deploy to Google Cloud Platform
+  deploy-gcp:
+    name: Deploy to GCP
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: 
+      name: staging
+      url: https://staging.reengine.com
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '555.0.0'
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker
+
+    - name: Build and push Docker images to GCR
+      run: |
+        # Build and push engine image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-engine:${{ github.sha }} ./engine
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-engine:${{ github.sha }}
+        
+        # Build and push dashboard image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-dashboard:${{ github.sha }} ./web-dashboard
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-dashboard:${{ github.sha }}
+
+    - name: Deploy to Cloud Run
+      run: |
+        # Deploy engine service
+        gcloud run deploy reengine-engine \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-engine:${{ github.sha }} \
+          --region=${{ secrets.GCP_REGION }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=512Mi \
+          --cpu=1 \
+          --timeout=300 \
+          --set-env-vars=DB_HOST=${{ secrets.DB_HOST }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          --quiet
+
+        # Deploy dashboard service
+        gcloud run deploy reengine-dashboard \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/reengine-dashboard:${{ github.sha }} \
+          --region=${{ secrets.GCP_REGION }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=256Mi \
+          --cpu=1 \
+          --timeout=300 \
+          --quiet
+
+    - name: Health Check After Deployment
+      run: |
+        # Wait for deployment to be ready
+        sleep 30
+        
+        # Get service URL
+        ENGINE_URL=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION }} \
+          --format='value(status.url)')
+        
+        # Health check with retry logic
+        for i in {1..5}; do
+          echo "Health check attempt $i/5..."
+          if curl -f --max-time 10 "$ENGINE_URL/health" 2>/dev/null; then
+            echo "✅ Engine deployment successful and healthy"
+            break
+          elif [ $i -eq 5 ]; then
+            echo "❌ Health check failed after 5 attempts"
+            exit 1
+          else
+            echo "⏳ Health check failed, retrying in 10 seconds..."
+            sleep 10
+          fi
+        done
+
+    - name: Rollback on Failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed, initiating rollback..."
+        
+        # Get previous successful deployment
+        PREVIOUS_REVISION=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION }} \
+          --format='value(status.latestReadyRevision.name)' | head -n 2 | tail -n 1)
+        
+        if [ -n "$PREVIOUS_REVISION" ] && [ "$PREVIOUS_REVISION" != "$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION }} --format='value(status.latestReadyRevision.name)')" ]; then
+          gcloud run services update-traffic reengine-engine \
+            --region=${{ secrets.GCP_REGION }} \
+            --to-revisions=$PREVIOUS_REVISION=100
+          echo "🔄 Rollback completed to $PREVIOUS_REVISION"
+        else
+          echo "⚠️ No previous revision found for rollback"
+        fi
+
+    - name: Get service URLs
+      id: services
+      run: |
+        ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION }} --format='value(status.url)')
+        DASHBOARD_URL=$(gcloud run services describe reengine-dashboard --region=${{ secrets.GCP_REGION }} --format='value(status.url)')
+        echo "engine_url=$ENGINE_URL" >> $GITHUB_OUTPUT
+        echo "dashboard_url=$DASHBOARD_URL" >> $GITHUB_OUTPUT
+
+    - name: Run smoke tests
+      run: |
+        curl -f ${{ steps.services.outputs.engine_url }}/health || exit 1
+        curl -f ${{ steps.services.outputs.dashboard_url }}/api/status || exit 1
+
+    - name: Update deployment status
+      run: |
+        echo "🚀 RE Engine deployed to staging!"
+        echo "Engine: ${{ steps.services.outputs.engine_url }}"
+        echo "Dashboard: ${{ steps.services.outputs.dashboard_url }}"
+
+  # Deploy to Production GCP
+  deploy-gcp-production:
+    name: Deploy to Production GCP
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    if: github.event_name == 'release'
+    environment: 
+      name: production
+      url: https://reengine.com
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '555.0.0'
+        project_id: ${{ secrets.GCP_PROJECT_ID_PROD }}
+      
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker
+
+    - name: Build and push production Docker images
+      run: |
+        # Tag with release version
+        VERSION=${{ github.event.release.tag_name }}
+        
+        # Build and push engine image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-engine:$VERSION ./engine
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-engine:$VERSION
+        
+        # Build and push dashboard image
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-dashboard:$VERSION ./web-dashboard
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-dashboard:$VERSION
+
+    - name: Deploy to production Cloud Run
+      run: |
+        VERSION=${{ github.event.release.tag_name }}
+        
+        # Deploy engine service with production settings
+        gcloud run deploy reengine-engine \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-engine:$VERSION \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=1Gi \
+          --cpu=2 \
+          --timeout=300 \
+          --min-instances=1 \
+          --max-instances=10 \
+          --set-env-vars=DB_HOST=${{ secrets.DB_HOST_PROD }},DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }},JWT_SECRET=${{ secrets.JWT_SECRET_PROD }} \
+          --quiet
+
+        # Deploy dashboard service with production settings
+        gcloud run deploy reengine-dashboard \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID_PROD }}/reengine-dashboard:$VERSION \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --memory=512Mi \
+          --cpu=1 \
+          --timeout=300 \
+          --min-instances=1 \
+          --max-instances=5 \
+          --quiet
+
+    - name: Production Health Check
+      run: |
+        # Wait for deployment to be ready
+        sleep 60
+        
+        # Get service URL
+        ENGINE_URL=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --format='value(status.url)')
+        
+        # Production health check with retry logic
+        for i in {1..10}; do
+          echo "Production health check attempt $i/10..."
+          if curl -f --max-time 15 "$ENGINE_URL/health" 2>/dev/null; then
+            echo "✅ Production deployment successful and healthy"
+            break
+          elif [ $i -eq 10 ]; then
+            echo "❌ Production health check failed after 10 attempts"
+            exit 1
+          else
+            echo "⏳ Production health check failed, retrying in 15 seconds..."
+            sleep 15
+          fi
+        done
+
+    - name: Production Rollback on Failure
+      if: failure()
+      run: |
+        echo "❌ Production deployment failed, initiating rollback..."
+        
+        # Get previous successful deployment
+        VERSION=${{ github.event.release.tag_name }}
+        PREVIOUS_REVISION=$(gcloud run services describe reengine-engine \
+          --region=${{ secrets.GCP_REGION_PROD }} \
+          --format='value(status.latestReadyRevision.name)' | head -n 2 | tail -n 1)
+        
+        if [ -n "$PREVIOUS_REVISION" ] && [ "$PREVIOUS_REVISION" != "$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.latestReadyRevision.name)')" ]; then
+          gcloud run services update-traffic reengine-engine \
+            --region=${{ secrets.GCP_REGION_PROD }} \
+            --to-revisions=$PREVIOUS_REVISION=100
+          echo "🔄 Production rollback completed to $PREVIOUS_REVISION"
+          
+          # Send Slack notification for production rollback
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"🚨 PRODUCTION ROLLBACK: Version '$VERSION' failed, rolled back to '$PREVIOUS_REVISION'"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }} || true
+        else
+          echo "⚠️ No previous revision found for production rollback"
+        fi
+
+    - name: Get production service URLs
+      id: prod-services
+      run: |
+        ENGINE_URL=$(gcloud run services describe reengine-engine --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.url)')
+        DASHBOARD_URL=$(gcloud run services describe reengine-dashboard --region=${{ secrets.GCP_REGION_PROD }} --format='value(status.url)')
+        echo "engine_url=$ENGINE_URL" >> $GITHUB_OUTPUT
+        echo "dashboard_url=$DASHBOARD_URL" >> $GITHUB_OUTPUT
+
+    - name: Run production smoke tests
+      run: |
+        curl -f ${{ steps.prod-services.outputs.engine_url }}/health || exit 1
+        curl -f ${{ steps.prod-services.outputs.dashboard_url }}/api/status || exit 1
+
+    - name: Notify production deployment
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Performance Tests
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-gcp]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run performance tests
+      run: |
+        echo "Running performance tests..."
+        # Add performance test commands here
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: performance-results/
