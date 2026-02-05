@@ -2,23 +2,23 @@ import path from "node:path";
 
 import { z } from "zod";
 
-import type { Approval, ContactMap, DncEntry, EventRow, Lead } from "../../domain/types.js";
+import type { Approval, ContactMap, DncEntry, EventRow, Lead } from "../../domain/types.ts";
 import {
   ApprovalSchema,
   ContactMapSchema,
   DncEntrySchema,
   EventRowSchema,
   LeadSchema,
-} from "../../domain/schemas.js";
-import type { Store } from "../store.js";
+} from "../../domain/schemas.ts";
+import type { Store } from "../store.ts";
 import {
   APPROVALS_HEADERS,
   CONTACTS_HEADERS,
   DNC_HEADERS,
   EVENTS_HEADERS,
   LEADS_HEADERS,
-} from "./csvHeaders.js";
-import { atomicWriteFile, fileExists, parseCsv, readText, toCsv } from "./csvIO.js";
+} from "./csvHeaders.ts";
+import { atomicWriteFile, fileExists, parseCsv, readText, toCsv } from "./csvIO.ts";
 
 function validateHeaders(found: string[], expected: readonly string[], file: string) {
   const same = found.length === expected.length && found.every((h, i) => h === expected[i]);

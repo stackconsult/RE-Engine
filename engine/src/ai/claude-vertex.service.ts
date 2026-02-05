@@ -4,7 +4,7 @@
  * Uses OAuth 2.0 authentication for secure desktop app deployment
  */
 
-import { logger, logSystemEvent, logError } from '../observability/logger.js';
+import { logger, logSystemEvent, logError } from '../observability/logger.ts';
 
 export interface ClaudeVertexConfig {
   projectId: string;
@@ -259,7 +259,7 @@ export class ClaudeVertexService {
       throw new Error(`Claude Vertex AI API error: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
+    const result = await response.tson();
 
     // Transform response to our interface
     return {

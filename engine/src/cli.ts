@@ -129,7 +129,7 @@ program
       
       // System information
       logger.info('🖥️  System Information:');
-      logger.info(`   Node.js: ${process.version}`);
+      logger.info(`   Node.ts: ${process.version}`);
       logger.info(`   Platform: ${process.platform}`);
       logger.info(`   Architecture: ${process.arch}`);
       logger.info(`   Memory: ${JSON.stringify(process.memoryUsage())}`);
@@ -185,9 +185,9 @@ program
       // This would create configuration files
       logger.info('📝 Creating configuration files...');
       logger.info('   - .env.example');
-      logger.info('   - config/default.json');
-      logger.info('   - config/development.json');
-      logger.info('   - config/production.json');
+      logger.info('   - config/default.tson');
+      logger.info('   - config/development.tson');
+      logger.info('   - config/production.tson');
 
       logger.info('🔑 Setting up environment variables...');
       logger.info('   - TINYFISH_API_KEY');

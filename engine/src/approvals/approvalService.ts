@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import type { Store } from "../store/store.js";
-import type { Approval, Channel } from "../domain/types.js";
-import { logger } from "../observability/logger.js";
+import type { Store } from "../store/store.ts";
+import type { Approval, Channel } from "../domain/types.ts";
+import { logger } from "../observability/logger.ts";
 
 export class ApprovalService {
   constructor(private readonly store: Store) {}

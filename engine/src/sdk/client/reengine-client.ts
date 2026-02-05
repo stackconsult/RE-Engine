@@ -7,8 +7,8 @@ import { Approval, CreateApprovalRequest, UpdateApprovalRequest, ApprovalFilter 
 import { Lead, CreateLeadRequest, UpdateLeadRequest, LeadFilter } from '../../a2d/models/lead.model';
 import { ApprovalsRepository } from '../../a2d/repositories/approvals.repository';
 import { LeadsRepository } from '../../a2d/repositories/leads.repository';
-import { createOllamaService, OllamaChatRequest, OllamaUnifiedService } from '../../services/ollama-unified.service.js';
-import { logSystemEvent } from '../../observability/logger.js';
+import { createOllamaService, OllamaChatRequest, OllamaUnifiedService } from '../../services/ollama-unified.service.ts';
+import { logSystemEvent } from '../../observability/logger.ts';
 
 export interface REEngineClientOptions {
   dataDir: string;

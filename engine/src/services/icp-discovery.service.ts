@@ -425,7 +425,7 @@ export class ICPDiscoveryService {
         throw new Error(`TinyFish API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.tson();
       const extractedData = this.parseTinyfishResults(data.content, target, icp);
       leads.push(...extractedData);
     } catch (error) {
@@ -459,7 +459,7 @@ export class ICPDiscoveryService {
         throw new Error(`Playwright API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.tson();
       const extractedData = this.parsePlaywrightResults(data.data, target, icp);
       leads.push(...extractedData);
     } catch (error) {

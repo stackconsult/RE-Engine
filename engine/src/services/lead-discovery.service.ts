@@ -193,7 +193,7 @@ export class LeadDiscoveryService {
         throw new Error(`TinyFish API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.tson();
       return data.links || [];
     } catch (error) {
       console.error('Error scraping listings:', error);
@@ -229,7 +229,7 @@ export class LeadDiscoveryService {
         throw new Error(`Failed to scrape listing: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.tson();
       const extracted = this.parseListingData(data.content, source);
       
       if (!extracted.name && !extracted.email && !extracted.phone) {

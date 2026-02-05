@@ -1,8 +1,8 @@
-import { BaseIngestService } from "./baseIngestService.js";
-import { IngestMessage, IngestResult } from "./types.js";
-import { Store } from "../store/store.js";
-import { ApprovalService } from "../approvals/approvalService.js";
-import { logger } from "../observability/logger.js";
+import { BaseIngestService } from "./baseIngestService.ts";
+import { IngestMessage, IngestResult } from "./types.ts";
+import { Store } from "../store/store.ts";
+import { ApprovalService } from "../approvals/approvalService.ts";
+import { logger } from "../observability/logger.ts";
 
 export class MockIngestService extends BaseIngestService {
   private mockMessages: IngestMessage[] = [];

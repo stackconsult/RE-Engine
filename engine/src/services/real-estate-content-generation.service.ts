@@ -3,8 +3,8 @@
  * Generates AI-powered content using real data and domain logic
  */
 
-import { realEstateCalculator } from '../domain/real-estate-calculator.service.js';
-import { Property, MarketData, ROIAnalysis, MarketScore, InvestmentRecommendation } from '../domain/real-estate-calculator.service.js';
+import { realEstateCalculator } from '../domain/real-estate-calculator.service.ts';
+import { Property, MarketData, ROIAnalysis, MarketScore, InvestmentRecommendation } from '../domain/real-estate-calculator.service.ts';
 
 export interface Lead {
   id: string;

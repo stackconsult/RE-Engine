@@ -1,8 +1,8 @@
-import { CsvStore } from "../store/csv/csvStore.js";
-import { ApprovalService } from "../approvals/approvalService.js";
-import { RouterService } from "../router/routerService.js";
-import type { Adapters } from "../router/adapters.js";
-import { logger } from "../observability/logger.js";
+import { CsvStore } from "../store/csv/csvStore.ts";
+import { ApprovalService } from "../approvals/approvalService.ts";
+import { RouterService } from "../router/routerService.ts";
+import type { Adapters } from "../router/adapters.ts";
+import { logger } from "../observability/logger.ts";
 
 // Production smoke test: draft → approve → route (with mocked adapters)
 

@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { logSystemEvent, logError } from '../observability/logger.js';
+import { logSystemEvent, logError } from '../observability/logger.ts';
 
 export interface OllamaConfig {
   baseUrl?: string;
@@ -162,7 +162,7 @@ export class OllamaUnifiedService extends EventEmitter {
       });
       
       if (response.ok) {
-        const version = await response.json();
+        const version = await response.tson();
         logSystemEvent('Ollama connection successful', 'info', { version });
         this.emit('connected', version);
         return true;
@@ -211,7 +211,7 @@ export class OllamaUnifiedService extends EventEmitter {
         throw new Error(`Chat request failed: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json() as OllamaChatResponse;
+      const result = await response.tson() as OllamaChatResponse;
       
       logSystemEvent('Chat response received', 'info', {
         model: result.model,
@@ -248,7 +248,7 @@ export class OllamaUnifiedService extends EventEmitter {
         throw new Error(`Embedding request failed: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json() as OllamaEmbedResponse;
+      const result = await response.tson() as OllamaEmbedResponse;
       return result.embedding;
 
     } catch (error) {
@@ -271,7 +271,7 @@ export class OllamaUnifiedService extends EventEmitter {
         throw new Error(`List models failed: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json() as { models: OllamaModel[] };
+      const result = await response.tson() as { models: OllamaModel[] };
       return result.models || [];
 
     } catch (error) {

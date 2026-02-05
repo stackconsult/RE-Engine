@@ -1,4 +1,4 @@
-import type { Approval } from "../domain/types.js";
+import type { Approval } from "../domain/types.ts";
 
 export interface SendResult {
   ok: boolean;

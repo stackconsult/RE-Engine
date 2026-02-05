@@ -1,4 +1,4 @@
-export * from "./types.js";
-export * from "./baseIngestService.js";
-export * from "./mockIngestService.js";
-// export * from "./imapIngestService.js"; // Uncomment when IMAP dependencies are resolved
+export * from "./types.ts";
+export * from "./baseIngestService.ts";
+export * from "./mockIngestService.ts";
+// export * from "./imapIngestService.ts"; // Uncomment when IMAP dependencies are resolved

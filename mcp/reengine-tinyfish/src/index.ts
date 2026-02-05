@@ -5,7 +5,52 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 import { scrape } from "./tools/scrape.js";
+
+// Authentication configuration
+const SERVICE_CONFIG = {
+  serviceId: process.env.SERVICE_ID || 'reengine-tinyfish',
+  apiKey: process.env.TINYFISH_API_KEY || process.env.DEFAULT_API_KEY || 'dev-key-placeholder',
+  authUrl: process.env.AUTH_URL || 'http://localhost:3001/auth/token'
+};
+
+// Get JWT token for service authentication
+async function getServiceToken(): Promise<string> {
+  try {
+    const response = await fetch(SERVICE_CONFIG.authUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': SERVICE_CONFIG.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Auth failed: ${response.status}`);
+    }
+
+    const { token } = await response.json();
+    return token;
+  } catch (error) {
+    console.error('Failed to get service token:', error);
+    throw error;
+  }
+}
+
+// Authenticated fetch wrapper
+async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getServiceToken();
+  
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+}
 
 const server = new Server(
   {

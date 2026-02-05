@@ -4,11 +4,11 @@
  */
 
 // Core client and service
-export { OllamaClient } from './ollama.client.js';
-export { OllamaService } from './ollama.service.js';
+export { OllamaClient } from './ollama.client.ts';
+export { OllamaService } from './ollama.service.ts';
 
 // Type definitions
-export * from './types.js';
+export * from './types.ts';
 
 // Re-export commonly used types for convenience
 export type {
@@ -27,7 +27,7 @@ export type {
   ScoringResponse,
   HealthCheck,
   Metrics
-} from './types.js';
+} from './types.ts';
 
 // Error classes
 export {
@@ -35,7 +35,7 @@ export {
   OllamaConnectionError,
   OllamaModelNotFoundError,
   OllamaTimeoutError
-} from './types.js';
+} from './types.ts';
 
 // Utility functions
 export {
@@ -43,4 +43,4 @@ export {
   isLeadAnalysisRequest,
   isOutreachRequest,
   isScoringRequest
-} from './types.js';
+} from './types.ts';

@@ -4,7 +4,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import { logger, logSystemEvent, logError } from '../observability/logger.js';
+import { logger, logSystemEvent, logError } from '../observability/logger.ts';
 import { existsSync, writeFileSync } from 'fs';
 import { mkdir } from 'fs/promises';
 
@@ -227,7 +227,7 @@ export class LiteLLMProxyService {
         throw new Error(`Failed to list models: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.tson();
       const models = data.data?.map((model: any) => model.id) || [];
       this.status.modelCount = models.length;
 

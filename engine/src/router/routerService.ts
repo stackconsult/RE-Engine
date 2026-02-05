@@ -1,6 +1,6 @@
-import type { Store } from "../store/store.js";
-import type { Adapters, ChannelAdapter } from "./adapters.js";
-import { logger } from "../observability/logger.js";
+import type { Store } from "../store/store.ts";
+import type { Adapters, ChannelAdapter } from "./adapters.ts";
+import { logger } from "../observability/logger.ts";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;

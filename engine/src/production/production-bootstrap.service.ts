@@ -7,7 +7,7 @@ import {
   HealthMonitor, CircuitBreaker, RateLimiter, SecurityManager, SelfHealingManager,
   EventBus, ServiceRegistry, OllamaService, OpenClawService, SupabaseService, RedisService,
   MessageQueue, AIOrchestrator, PerformanceOptimizer
-} from './types.js';
+} from './types.ts';
 
 export interface ProductionBootstrapDependencies {
   healthMonitor: HealthMonitor;

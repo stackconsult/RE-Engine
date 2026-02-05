@@ -1,4 +1,4 @@
-import { Lead, Approval, EventRow, Channel } from "../domain/types.js";
+import { Lead, Approval, EventRow, Channel } from "../domain/types.ts";
 
 export interface IngestMessage {
   id: string;

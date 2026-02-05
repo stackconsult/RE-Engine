@@ -198,11 +198,11 @@ export class OllamaClient {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const errorData = await response.tson().catch(() => ({ error: 'Unknown error' }));
       throw new Error(`Ollama API error: ${response.status} ${errorData.error || response.statusText}`);
     }
 
-    return response.json();
+    return response.tson();
   }
 
   /**

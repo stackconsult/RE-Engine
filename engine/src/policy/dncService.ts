@@ -1,6 +1,6 @@
-import { Store } from "../store/store.js";
-import { DncEntry, Lead, Approval } from "../domain/types.js";
-import { logger } from "../observability/logger.js";
+import { Store } from "../store/store.ts";
+import { DncEntry, Lead, Approval } from "../domain/types.ts";
+import { logger } from "../observability/logger.ts";
 
 export interface DncCheckResult {
   allowed: boolean;

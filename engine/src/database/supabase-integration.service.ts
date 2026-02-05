@@ -3,10 +3,10 @@
  * Complete integration with RE Engine operations and storage
  */
 
-import { SupabaseClientManager, getSupabaseClient, getSupabaseServiceClient } from './supabase-client-enhanced.js';
-import { Database } from './supabase.types.js';
-import { logSystemEvent, logError } from '../observability/logger.js';
-import { DomainLead, DomainApproval } from '../shared/types.js';
+import { SupabaseClientManager, getSupabaseClient, getSupabaseServiceClient } from './supabase-client-enhanced.ts';
+import { Database } from './supabase.types.ts';
+import { logSystemEvent, logError } from '../observability/logger.ts';
+import { DomainLead, DomainApproval } from '../shared/types.ts';
 
 export interface SupabaseIntegrationConfig {
   enableRealtime: boolean;

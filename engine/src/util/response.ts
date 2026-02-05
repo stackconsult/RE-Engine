@@ -3,7 +3,7 @@
  * Consistent API response patterns across the RE Engine
  */
 
-import { ServiceError, ErrorHandler } from './error-handler.js';
+import { ServiceError, ErrorHandler } from './error-handler.ts';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -305,7 +305,7 @@ export function errorHandlerMiddleware(
   const serviceError = ErrorHandler.normalizeError(error);
   const response = ResponseBuilder.error(serviceError);
   
-  return res.status(serviceError.statusCode || 500).json(response);
+  return res.status(serviceError.statusCode || 500).tson(response);
 }
 
 /**
