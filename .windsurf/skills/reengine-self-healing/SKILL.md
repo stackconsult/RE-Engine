@@ -1,16 +1,25 @@
 ---
 name: reengine-self-healing
-description: Add reliability mechanisms: retries, lockfiles, idempotency keys, diagnostics, and automated recovery steps.
+description: Enhanced reliability mechanisms with intelligent recovery, adaptive retry strategies, comprehensive monitoring, and automated remediation capabilities.
 ---
 
-# Self-Healing
+# Self-Healing System
 
-## Required mechanisms
-- lock to prevent overlapping cron runs
-- bounded retries with backoff
-- artifact capture (logs, traces)
-- classify failures (auth expired vs selector drift vs network)
+## Core Reliability Mechanisms
+- **Distributed Locking**: Prevent overlapping execution across multiple instances
+- **Adaptive Retry Logic**: Exponential backoff with jitter and circuit breaker patterns
+- **Comprehensive Artifact Capture**: Structured logging, distributed tracing, error snapshots
+- **Intelligent Failure Classification**: ML-driven categorization of root causes
+- **Health Monitoring**: Real-time system health checks and predictive failure detection
 
-## Outputs
-- a recovery playbook
-- automated remediation scripts (safe, no auto-send)
+## Recovery & Remediation
+- **Dynamic Recovery Playbook**: Context-aware recovery strategies based on failure patterns
+- **Safe Automated Remediation**: Non-destructive auto-fixes with human approval gates
+- **Rollback Capabilities**: Automatic state restoration on failed recoveries
+- **Incident Correlation**: Cross-system failure analysis and impact assessment
+
+## Monitoring & Diagnostics
+- **Performance Metrics**: Latency, throughput, error rates with trend analysis
+- **Resource Utilization**: CPU, memory, network monitoring with alerting
+- **Dependency Health**: External service monitoring and cascade failure prevention
+- **Audit Trail**: Complete execution history for compliance and debugging
