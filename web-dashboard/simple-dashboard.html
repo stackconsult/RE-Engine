@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE Engine Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .status-pending { border-left: 4px solid #f59e0b; }
+        .status-urgent { border-left: 4px solid #ef4444; }
+        .status-approved { border-left: 4px solid #10b981; }
+        .status-rejected { border-left: 4px solid #6b7280; }
+        .lead-high { border-left: 4px solid #3b82f6; }
+        .lead-medium { border-left: 4px solid #8b5cf6; }
+        .lead-low { border-left: 4px solid #6b7280; }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification.success { background: #10b981; }
+        .notification.error { background: #ef4444; }
+        .notification.info { background: #3b82f6; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">RE Engine</h1>
+                    <span class="ml-2 text-sm text-gray-500">Dashboard</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="status-indicator" class="text-sm text-gray-600">
+                        <span class="loading"></span> Loading...
+                    </span>
+                    <button onclick="refreshData()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Refresh
+                    </button>
+                    <button onclick="showSettings()" class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
+                        Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="text-2xl font-bold text-blue-600" id="pending-approvals">0</div>
+                <div class="text-sm text-gray-600">Pending Approvals</div>
+                <div class="text-xs text-orange-500" id="urgent-approvals">0 urgent</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="text-2xl font-bold text-green-600" id="completed-approvals">0</div>
+                <div class="text-sm text-gray-600">Completed Today</div>
+                <div class="text-xs text-green-500">On track</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="text-2xl font-bold text-purple-600" id="new-leads">0</div>
+                <div class="text-sm text-gray-600">New Leads</div>
+                <div class="text-xs text-blue-500" id="hot-leads">0 hot leads</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="text-2xl font-bold text-orange-600" id="active-campaigns">0</div>
+                <div class="text-sm text-gray-600">Active Campaigns</div>
+                <div class="text-xs text-green-500">Running</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Approvals Section -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold">Approvals Queue</h2>
+                        <div class="flex space-x-2 mt-2">
+                            <button onclick="filterApprovals('all')" class="filter-btn px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded">All</button>
+                            <button onclick="filterApprovals('urgent')" class="filter-btn px-3 py-1 text-sm bg-red-100 text-red-700 rounded">Urgent</button>
+                            <button onclick="filterApprovals('pending')" class="filter-btn px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded">Pending</button>
+                        </div>
+                    </div>
+                    <div id="approvals-list" class="divide-y">
+                        <!-- Approvals will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leads Section -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold">Recent Leads</h2>
+                    </div>
+                    <div id="leads-list" class="divide-y">
+                        <!-- Leads will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campaigns Section -->
+        <div class="mt-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b">
+                    <h2 class="text-lg font-semibold">Campaign Performance</h2>
+                </div>
+                <div id="campaigns-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                    <!-- Campaigns will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-96">
+            <h3 class="text-lg font-semibold mb-4">Settings</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Auto Refresh (seconds)</label>
+                    <input type="number" id="refresh-interval" value="30" min="5" max="300" placeholder="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Notifications</label>
+                    <input type="checkbox" id="enable-notifications" checked class="mt-1" title="Enable desktop notifications">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-6">
+                <button onclick="hideSettings()" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
+                <button onclick="saveSettings()" class="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let approvalsData = [];
+        let leadsData = [];
+        let campaignsData = [];
+        let currentFilter = 'all';
+        let autoRefreshInterval = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            startAutoRefresh();
+        });
+
+        // Load all dashboard data
+        async function loadDashboardData() {
+            try {
+                updateStatus('Loading data...');
+                
+                // Load all data in parallel
+                const [approvals, leads, campaigns] = await Promise.all([
+                    fetch('/api/approvals').then(r => r.json()),
+                    fetch('/api/leads').then(r => r.json()),
+                    fetch('/api/campaigns').then(r => r.json())
+                ]);
+
+                approvalsData = approvals || [];
+                leadsData = leads || [];
+                campaignsData = campaigns || [];
+
+                updateDashboard();
+                updateStatus('Data loaded');
+                setTimeout(() => updateStatus(''), 2000);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showNotification('Failed to load data', 'error');
+                updateStatus('Error loading data');
+            }
+        }
+
+        // Update dashboard display
+        function updateDashboard() {
+            updateStats();
+            renderApprovals();
+            renderLeads();
+            renderCampaigns();
+        }
+
+        // Update stats overview
+        function updateStats() {
+            const pendingApprovals = approvalsData.filter(a => a.status === 'pending');
+            const urgentApprovals = pendingApprovals.filter(a => a.priority === 'urgent');
+            const completedApprovals = approvalsData.filter(a => a.status === 'approved' && isToday(a.updated_at));
+            const hotLeads = leadsData.filter(l => l.score >= 90);
+            const activeCampaigns = campaignsData.filter(c => c.status === 'active');
+
+            document.getElementById('pending-approvals').textContent = pendingApprovals.length;
+            document.getElementById('urgent-approvals').textContent = urgentApprovals.length + ' urgent';
+            document.getElementById('completed-approvals').textContent = completedApprovals.length;
+            document.getElementById('new-leads').textContent = leadsData.length;
+            document.getElementById('hot-leads').textContent = hotLeads.length + ' hot leads';
+            document.getElementById('active-campaigns').textContent = activeCampaigns.length;
+        }
+
+        // Render approvals list
+        function renderApprovals() {
+            const container = document.getElementById('approvals-list');
+            let filteredApprovals = approvalsData;
+
+            if (currentFilter === 'urgent') {
+                filteredApprovals = approvalsData.filter(a => a.priority === 'urgent');
+            } else if (currentFilter === 'pending') {
+                filteredApprovals = approvalsData.filter(a => a.status === 'pending');
+            }
+
+            if (filteredApprovals.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-500">No approvals found</div>';
+                return;
+            }
+
+            container.innerHTML = filteredApprovals.map(approval => `
+                <div class="p-6 hover:bg-gray-50 status-${approval.status} ${approval.priority === 'urgent' ? 'status-urgent' : ''}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="text-sm font-medium">${approval.type || 'Message'}</span>
+                                <span class="text-xs px-2 py-1 rounded ${getStatusClass(approval.status)}">${approval.status}</span>
+                                ${approval.priority === 'urgent' ? '<span class="text-xs px-2 py-1 rounded bg-red-100 text-red-700">URGENT</span>' : ''}
+                            </div>
+                            <div class="text-sm text-gray-600 mb-2">${approval.content || 'No content'}</div>
+                            <div class="text-xs text-gray-500">
+                                From: ${approval.from || 'Unknown'} • ${formatDate(approval.created_at)}
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            ${approval.status === 'pending' ? `
+                                <button onclick="approveApproval('${approval.id}')" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Approve</button>
+                                <button onclick="rejectApproval('${approval.id}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">Reject</button>
+                            ` : ''}
+                            <button onclick="viewDetails('${approval.id}')" class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">Details</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render leads list
+        function renderLeads() {
+            const container = document.getElementById('leads-list');
+            
+            if (leadsData.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-500">No leads found</div>';
+                return;
+            }
+
+            container.innerHTML = leadsData.slice(0, 10).map(lead => `
+                <div class="p-4 hover:bg-gray-50 lead-${getLeadCategory(lead.score)}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">${lead.name || 'Unknown'}</div>
+                            <div class="text-xs text-gray-600">${lead.email || 'No email'}</div>
+                            <div class="text-xs text-gray-500 mt-1">Score: ${lead.score || 0}</div>
+                        </div>
+                        <div class="text-xs px-2 py-1 rounded ${getLeadScoreClass(lead.score)}">
+                            ${getLeadCategory(lead.score)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render campaigns list
+        function renderCampaigns() {
+            const container = document.getElementById('campaigns-list');
+            
+            if (campaignsData.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">No campaigns found</div>';
+                return;
+            }
+
+            container.innerHTML = campaignsData.map(campaign => `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium">${campaign.name || 'Unnamed Campaign'}</h3>
+                        <span class="text-xs px-2 py-1 rounded ${getCampaignStatusClass(campaign.status)}">${campaign.status}</span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2">${campaign.description || 'No description'}</div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>Sent: ${campaign.sent || 0}</div>
+                        <div>Opened: ${campaign.opened || 0}</div>
+                        <div>Clicked: ${campaign.clicked || 0}</div>
+                        <div>Converted: ${campaign.converted || 0}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Action functions
+        async function approveApproval(id) {
+            try {
+                const response = await fetch('/api/approvals/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                if (response.ok) {
+                    showNotification('Approval approved successfully', 'success');
+                    loadDashboardData();
+                } else {
+                    showNotification('Failed to approve', 'error');
+                }
+            } catch (error) {
+                console.error('Error approving:', error);
+                showNotification('Error approving approval', 'error');
+            }
+        }
+
+        async function rejectApproval(id) {
+            try {
+                const response = await fetch('/api/approvals/reject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                if (response.ok) {
+                    showNotification('Approval rejected', 'info');
+                    loadDashboardData();
+                } else {
+                    showNotification('Failed to reject', 'error');
+                }
+            } catch (error) {
+                console.error('Error rejecting:', error);
+                showNotification('Error rejecting approval', 'error');
+            }
+        }
+
+        function viewDetails(id) {
+            const approval = approvalsData.find(a => a.id === id);
+            if (approval) {
+                alert(`Approval Details:\n\nID: ${approval.id}\nType: ${approval.type}\nStatus: ${approval.status}\nPriority: ${approval.priority}\nContent: ${approval.content}\nFrom: ${approval.from}\nCreated: ${formatDate(approval.created_at)}`);
+            }
+        }
+
+        // Filter functions
+        function filterApprovals(filter) {
+            currentFilter = filter;
+            renderApprovals();
+            
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-blue-500');
+            });
+            event.target.classList.add('ring-2', 'ring-blue-500');
+        }
+
+        // Settings functions
+        function showSettings() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function hideSettings() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            const interval = parseInt(document.getElementById('refresh-interval').value);
+            const notifications = document.getElementById('enable-notifications').checked;
+            
+            localStorage.setItem('refresh-interval', interval);
+            localStorage.setItem('enable-notifications', notifications);
+            
+            restartAutoRefresh(interval);
+            hideSettings();
+            showNotification('Settings saved', 'success');
+        }
+
+        // Utility functions
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        function showNotification(message, type = 'info') {
+            const notificationsEnabled = localStorage.getItem('enable-notifications') !== 'false';
+            if (!notificationsEnabled) return;
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function updateStatus(message) {
+            const indicator = document.getElementById('status-indicator');
+            if (message) {
+                indicator.innerHTML = `<span class="loading"></span> ${message}`;
+            } else {
+                indicator.innerHTML = '✅ Connected';
+            }
+        }
+
+        function startAutoRefresh() {
+            const interval = parseInt(localStorage.getItem('refresh-interval') || '30');
+            restartAutoRefresh(interval);
+        }
+
+        function restartAutoRefresh(interval) {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(loadDashboardData, interval * 1000);
+        }
+
+        // Helper functions
+        function getStatusClass(status) {
+            const classes = {
+                'pending': 'bg-yellow-100 text-yellow-700',
+                'approved': 'bg-green-100 text-green-700',
+                'rejected': 'bg-gray-100 text-gray-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        }
+
+        function getLeadCategory(score) {
+            if (score >= 90) return 'high';
+            if (score >= 70) return 'medium';
+            return 'low';
+        }
+
+        function getLeadScoreClass(score) {
+            if (score >= 90) return 'bg-blue-100 text-blue-700';
+            if (score >= 70) return 'bg-purple-100 text-purple-700';
+            return 'bg-gray-100 text-gray-700';
+        }
+
+        function getCampaignStatusClass(status) {
+            const classes = {
+                'active': 'bg-green-100 text-green-700',
+                'paused': 'bg-yellow-100 text-yellow-700',
+                'completed': 'bg-gray-100 text-gray-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        function isToday(dateString) {
+            if (!dateString) return false;
+            const date = new Date(dateString);
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+    </script>
+</body>
+</html>

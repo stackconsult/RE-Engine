@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE Engine Adaptive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/framer-motion@11.11.17/dist/framer-motion.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.15.0/umd/Recharts.js"></script>
+    <style>
+        /* Adaptive Intelligence Styles */
+        :root {
+            --base-spacing: 1rem;
+            --importance-multiplier: 1;
+            --breathing-intensity: 1;
+            --stress-level: 1;
+        }
+
+        .breathing-space {
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .zen-mode {
+            --importance-multiplier: 2;
+            --breathing-intensity: 0.5;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+
+        .focused-mode {
+            --importance-multiplier: 1.2;
+            --breathing-intensity: 1;
+        }
+
+        .expanded-mode {
+            --importance-multiplier: 0.8;
+            --breathing-intensity: 1.5;
+        }
+
+        .intelligent-whitespace {
+            padding: calc(var(--base-spacing) * var(--importance-multiplier));
+            margin: calc(var(--base-spacing) * var(--importance-multiplier) * 0.5);
+        }
+
+        .breathing-animation {
+            animation: gentle-breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes gentle-breathe {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% { 
+                transform: scale(1.02);
+                opacity: 1;
+            }
+        }
+
+        .contextual-highlight {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .contextual-highlight::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+            animation: gentle-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .emotional-element {
+            transition: all 0.3s ease;
+        }
+
+        .celebration-mode {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+        }
+
+        .concern-mode {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+        }
+
+        .neutral-mode {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 2px solid #6b7280;
+        }
+
+        .workflow-action {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .workflow-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .storytelling-element {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .storytelling-element::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            animation: story-progress 2s ease-in-out infinite;
+        }
+
+        @keyframes story-progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .conversational-element {
+            background: linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%);
+            border-radius: 16px;
+            position: relative;
+        }
+
+        .conversational-element::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            transform: rotate(45deg);
+        }
+
+        .adaptive-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-glassmorphism {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Adaptive Intelligence Controller -->
+    <script>
+        class AdaptiveDashboardController {
+            constructor() {
+                this.userState = {
+                    role: 'agent',
+                    workPattern: 'morning',
+                    stressLevel: 'calm',
+                    focusAreas: ['approvals', 'leads'],
+                    preferredDensity: 'balanced',
+                    emotionalState: 'neutral'
+                };
+                this.layoutMode = 'focused';
+                this.init();
+            }
+
+            init() {
+                this.detectUserState();
+                this.adaptLayout();
+                this.startBreathingAnimation();
+                this.setupIntelligentWhitespace();
+            }
+
+            detectUserState() {
+                // Detect time of day
+                const hour = new Date().getHours();
+                if (hour < 12) this.userState.workPattern = 'morning';
+                else if (hour < 17) this.userState.workPattern = 'afternoon';
+                else this.userState.workPattern = 'evening';
+
+                // Detect stress level based on interaction patterns
+                this.detectStressLevel();
+
+                // Adapt based on detected state
+                this.adaptToUserState();
+            }
+
+            detectStressLevel() {
+                // Simple heuristic: check for rapid interactions
+                const interactions = this.getInteractionSpeed();
+                if (interactions > 10) {
+                    this.userState.stressLevel = 'overwhelmed';
+                    this.layoutMode = 'zen';
+                } else if (interactions > 5) {
+                    this.userState.stressLevel = 'busy';
+                    this.layoutMode = 'focused';
+                } else {
+                    this.userState.stressLevel = 'calm';
+                    this.layoutMode = 'expanded';
+                }
+            }
+
+            adaptToUserState() {
+                const body = document.body;
+                body.className = body.className.replace(/\bzen-mode|focused-mode|expanded-mode\b/g, '');
+                body.classList.add(`${this.layoutMode}-mode`);
+            }
+
+            adaptLayout() {
+                // Reorganize content based on user state
+                this.reorganizeContent();
+                this.adjustSpacing();
+                this.highlightImportantElements();
+            }
+
+            reorganizeContent() {
+                const container = document.getElementById('dashboard-container');
+                if (!container) return;
+
+                // Get all cards
+                const cards = container.querySelectorAll('.adaptive-card');
+                
+                // Sort by importance based on user state
+                const sortedCards = this.sortCardsByImportance(cards);
+                
+                // Re-append in new order
+                sortedCards.forEach(card => {
+                    container.appendChild(card);
+                });
+            }
+
+            sortCardsByImportance(cards) {
+                const importanceMap = {
+                    'approval-card': this.userState.focusAreas.includes('approvals') ? 10 : 5,
+                    'lead-card': this.userState.focusAreas.includes('leads') ? 9 : 4,
+                    'campaign-card': this.userState.focusAreas.includes('campaigns') ? 8 : 3,
+                    'analytics-card': this.userState.focusAreas.includes('analytics') ? 7 : 2,
+                    'settings-card': 1
+                };
+
+                return Array.from(cards).sort((a, b) => {
+                    const aImportance = importanceMap[a.dataset.type] || 0;
+                    const bImportance = importanceMap[b.dataset.type] || 0;
+                    return bImportance - aImportance;
+                });
+            }
+
+            adjustSpacing() {
+                const root = document.documentElement;
+                const multiplier = this.getImportanceMultiplier();
+                root.style.setProperty('--importance-multiplier', multiplier);
+            }
+
+            getImportanceMultiplier() {
+                switch (this.layoutMode) {
+                    case 'zen': return '2';
+                    case 'focused': return '1.2';
+                    case 'expanded': return '0.8';
+                    default: return '1';
+                }
+            }
+
+            highlightImportantElements() {
+                const importantElements = document.querySelectorAll('[data-importance="high"]');
+                importantElements.forEach(element => {
+                    element.classList.add('contextual-highlight');
+                });
+            }
+
+            startBreathingAnimation() {
+                const breathingElements = document.querySelectorAll('.breathing-space');
+                breathingElements.forEach(element => {
+                    element.classList.add('breathing-animation');
+                });
+            }
+
+            setupIntelligentWhitespace() {
+                // Monitor user interactions and adjust spacing dynamically
+                this.setupInteractionMonitoring();
+            }
+
+            setupInteractionMonitoring() {
+                let interactionCount = 0;
+                let lastInteraction = Date.now();
+
+                document.addEventListener('click', () => {
+                    interactionCount++;
+                    const now = Date.now();
+                    const timeDiff = now - lastInteraction;
+                    
+                    if (timeDiff < 5000) { // Rapid interactions
+                        this.userState.stressLevel = 'busy';
+                        this.layoutMode = 'focused';
+                    } else {
+                        this.userState.stressLevel = 'calm';
+                        this.layoutMode = 'expanded';
+                    }
+                    
+                    lastInteraction = now;
+                    this.adaptToUserState();
+                    this.adaptLayout();
+                });
+            }
+
+            // Contextual Intelligence Methods
+            generateContextualInsights(data) {
+                return data.map(item => ({
+                    ...item,
+                    context: this.generateContext(item),
+                    emotionalTone: this.getEmotionalTone(item),
+                    recommendedAction: this.getRecommendedAction(item)
+                }));
+            }
+
+            generateContext(item) {
+                // Generate business context for metrics
+                if (item.type === 'approval') {
+                    return `${item.pending} approvals pending, ${item.overdue} overdue`;
+                } else if (item.type === 'lead') {
+                    return `Lead score: ${item.score}, conversion probability: ${item.probability}%`;
+                }
+                return item.context || 'No context available';
+            }
+
+            getEmotionalTone(item) {
+                if (item.trend === 'improving') return 'celebration';
+                if (item.trend === 'declining') return 'concern';
+                return 'neutral';
+            }
+
+            getRecommendedAction(item) {
+                if (item.type === 'approval' && item.urgent) {
+                    return 'Review urgent approvals immediately';
+                } else if (item.type === 'lead' && item.score > 80) {
+                    return 'Contact high-value lead today';
+                }
+                return 'Monitor for changes';
+            }
+
+            // Emotional Design Methods
+            addEmotionalElements() {
+                this.addCelebrations();
+                this.addMotivation();
+                this.addGamification();
+            }
+
+            addCelebrations() {
+                const milestones = this.findMilestones();
+                milestones.forEach(milestone => {
+                    this.createCelebrationElement(milestone);
+                });
+            }
+
+            findMilestones() {
+                // Find achievements worth celebrating
+                return [
+                    { type: 'approvals_completed', value: 10, message: '10 approvals completed!' },
+                    { type: 'leads_converted', value: 5, message: '5 leads converted!' },
+                    { type: 'streak_days', value: 7, message: '7-day streak!' }
+                ];
+            }
+
+            createCelebrationElement(milestone) {
+                const element = document.createElement('div');
+                element.className = 'emotional-element celebration-mode p-4 mb-4 rounded-lg';
+                element.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="text-2xl mr-3">🎉</div>
+                        <div>
+                            <div class="font-semibold">${milestone.message}</div>
+                            <div class="text-sm opacity-75">Great job!</div>
+                        </div>
+                    </div>
+                `;
+                
+                const container = document.getElementById('celebrations');
+                if (container) {
+                    container.appendChild(element);
+                }
+            }
+
+            // Workflow Integration Methods
+            embedWorkflowActions() {
+                const actionableElements = document.querySelectorAll('[data-actionable="true"]');
+                actionableElements.forEach(element => {
+                    this.addWorkflowActions(element);
+                });
+            }
+
+            addWorkflowActions(element) {
+                const actions = this.getWorkflowActions(element);
+                const actionContainer = document.createElement('div');
+                actionContainer.className = 'workflow-actions flex gap-2 mt-4';
+                
+                actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.className = 'workflow-action px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600';
+                    button.textContent = action.label;
+                    button.onclick = () => this.executeAction(action);
+                    actionContainer.appendChild(button);
+                });
+                
+                element.appendChild(actionContainer);
+            }
+
+            getWorkflowActions(element) {
+                const type = element.dataset.type;
+                if (type === 'approval') {
+                    return [
+                        { label: 'Approve', action: 'approve', id: element.dataset.id },
+                        { label: 'Reject', action: 'reject', id: element.dataset.id },
+                        { label: 'Edit', action: 'edit', id: element.dataset.id }
+                    ];
+                }
+                return [];
+            }
+
+            executeAction(action) {
+                console.log('Executing action:', action);
+                // Integrate with RE Engine API
+                this.callEngineAPI(action);
+            }
+
+            async callEngineAPI(action) {
+                try {
+                    const response = await fetch('/api/workflow/execute', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(action)
+                    });
+                    
+                    const result = await response.json();
+                    this.handleActionResult(result);
+                } catch (error) {
+                    console.error('API call failed:', error);
+                }
+            }
+
+            handleActionResult(result) {
+                if (result.success) {
+                    this.showSuccessNotification(result.message);
+                    this.refreshData();
+                } else {
+                    this.showErrorNotification(result.error);
+                }
+            }
+
+            showSuccessNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            showErrorNotification(error) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg';
+                notification.textContent = error;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            refreshData() {
+                // Refresh dashboard data
+                this.loadDashboardData();
+            }
+
+            async loadDashboardData() {
+                try {
+                    const response = await fetch('/api/dashboard/data');
+                    const data = await response.json();
+                    this.updateDashboard(data);
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                }
+            }
+
+            updateDashboard(data) {
+                // Update dashboard with new data
+                this.renderCards(data);
+                this.addEmotionalElements();
+                this.embedWorkflowActions();
+            }
+
+            renderCards(data) {
+                const container = document.getElementById('dashboard-container');
+                if (!container) return;
+
+                container.innerHTML = '';
+                
+                data.forEach(item => {
+                    const card = this.createAdaptiveCard(item);
+                    container.appendChild(card);
+                });
+            }
+
+            createAdaptiveCard(item) {
+                const card = document.createElement('div');
+                card.className = `adaptive-card glassmorphism p-6 rounded-xl breathing-space storytelling-element`;
+                card.dataset.type = item.type;
+                card.dataset.importance = item.importance || 'medium';
+                card.dataset.actionable = item.actionable || 'false';
+                
+                const emotionalClass = this.getEmotionalClass(item);
+                card.classList.add(emotionalClass);
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-semibold">${item.title}</h3>
+                        <span class="text-2xl">${this.getEmoji(item.type)}</span>
+                    </div>
+                    <div class="mb-4">
+                        <div class="text-3xl font-bold mb-2">${item.value}</div>
+                        <div class="text-sm opacity-75">${item.context}</div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="text-sm font-medium mb-1">Recommended Action:</div>
+                        <div class="text-sm">${item.recommendedAction}</div>
+                    </div>
+                    ${item.trend ? `
+                        <div class="flex items-center">
+                            <span class="text-sm ${item.trend === 'improving' ? 'text-green-500' : 'text-red-500'}">
+                                ${item.trend === 'improving' ? '↑' : '↓'} ${item.change}%
+                            </span>
+                        </div>
+                    ` : ''}
+                `;
+                
+                return card;
+            }
+
+            getEmoji(type) {
+                const emojis = {
+                    'approval': '📋',
+                    'lead': '👤',
+                    'campaign': '🚀',
+                    'analytics': '📊',
+                    'settings': '⚙️'
+                };
+                return emojis[type] || '📊';
+            }
+
+            getEmotionalClass(item) {
+                const tone = this.getEmotionalTone(item);
+                return `${tone}-mode`;
+            }
+        }
+
+        // Initialize the adaptive dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            const dashboard = new AdaptiveDashboardController();
+            
+            // Load initial data
+            dashboard.loadDashboardData();
+            
+            // Set up periodic updates
+            setInterval(() => {
+                dashboard.loadDashboardData();
+            }, 30000); // Update every 30 seconds
+        });
+    </script>
+</head>
+<body>
+    <!-- Header with Conversational Interface -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">RE Engine</h1>
+                    <span class="ml-2 text-sm text-gray-500">Adaptive Intelligence Dashboard</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="conversational-element px-4 py-2">
+                        <span class="text-sm">Good morning! You have <strong>3 approvals</strong> waiting</span>
+                    </div>
+                    <button onclick="dashboard.layoutMode = 'zen'" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">
+                        Zen Mode
+                    </button>
+                    <button onclick="dashboard.layoutMode = 'focused'" class="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200">
+                        Focus Mode
+                    </button>
+                    <button onclick="dashboard.layoutMode = 'expanded'" class="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200">
+                        Expanded Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Celebrations Container -->
+        <div id="celebrations" class="mb-6"></div>
+        
+        <!-- Storytelling Hero Section -->
+        <section class="mb-8">
+            <div class="contextual-highlight p-6 rounded-xl">
+                <h2 class="text-xl font-semibold mb-2">Today's Story</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600">23</div>
+                        <div class="text-sm text-gray-600">Leads Contacted</div>
+                        <div class="text-xs text-green-500">↑ 15% from yesterday</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600">8</div>
+                        <div class="text-sm text-gray-600">Approvals Completed</div>
+                        <div class="text-xs text-green-500">On track</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">2</div>
+                        <div class="text-sm text-gray-600">Campaigns Active</div>
+                        <div class="text-xs text-blue-500">Performing well</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-orange-600">94%</div>
+                        <div class="text-sm text-gray-600">Satisfaction Rate</div>
+                        <div class="text-xs text-green-500">↑ 3% this week</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Adaptive Dashboard Container -->
+        <div id="dashboard-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <!-- Sample Data for Demo -->
+    <script>
+        // Sample dashboard data
+        const sampleData = [
+            {
+                type: 'approval',
+                title: 'Pending Approvals',
+                value: '12',
+                context: '3 urgent, 9 pending review',
+                recommendedAction: 'Review urgent approvals first',
+                importance: 'high',
+                actionable: 'true',
+                trend: 'declining',
+                change: 8
+            },
+            {
+                type: 'lead',
+                title: 'New Leads Today',
+                value: '23',
+                context: 'Lead score: 85, High conversion probability',
+                recommendedAction: 'Contact high-value leads today',
+                importance: 'high',
+                actionable: 'true',
+                trend: 'improving',
+                change: 15
+            },
+            {
+                type: 'campaign',
+                title: 'Active Campaigns',
+                value: '2',
+                context: 'Morning outreach performing 23% better',
+                recommendedAction: 'Monitor campaign performance',
+                importance: 'medium',
+                actionable: 'true',
+                trend: 'stable',
+                change: 0
+            },
+            {
+                type: 'analytics',
+                title: 'Response Rate',
+                value: '94%',
+                context: 'Above industry average of 78%',
+                recommendedAction: 'Maintain current strategy',
+                importance: 'medium',
+                actionable: 'false',
+                trend: 'improving',
+                change: 3
+            },
+            {
+                type: 'approval',
+                title: 'Overdue Approvals',
+                value: '3',
+                context: 'Requires immediate attention',
+                recommendedAction: 'Review overdue approvals now',
+                importance: 'high',
+                actionable: 'true',
+                trend: 'declining',
+                change: 12
+            },
+            {
+                type: 'lead',
+                title: 'Hot Leads',
+                value: '8',
+                context: 'Score > 90, Contact immediately',
+                recommendedAction: 'Priority contact today',
+                importance: 'high',
+                actionable: 'true',
+                trend: 'improving',
+                change: 25
+            }
+        ];
+
+        // Override the loadDashboardData method for demo
+        AdaptiveDashboardController.prototype.loadDashboardData = function() {
+            this.updateDashboard(this.generateContextualInsights(sampleData));
+        };
+
+        // Initialize with sample data
+        setTimeout(() => {
+            if (window.dashboard) {
+                dashboard.loadDashboardData();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
