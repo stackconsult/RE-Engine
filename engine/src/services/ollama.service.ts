@@ -113,7 +113,7 @@ export class OllamaService extends EventEmitter {
 
   constructor(config: Partial<OllamaConfig> = {}) {
     super();
-    
+
     this.config = {
       baseUrl: config.baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
       apiKey: config.apiKey || process.env.OLLAMA_API_KEY,
@@ -157,14 +157,14 @@ export class OllamaService extends EventEmitter {
         method: 'GET',
         timeout: 5000
       });
-      
+
       if (response.ok) {
         const version = await response.json();
         logSystemEvent('Ollama connection successful', 'info', { version });
         this.emit('connected', version);
         return true;
       }
-      
+
       logSystemEvent('Ollama connection failed', 'error', { status: response.status });
       return false;
     } catch (error) {
@@ -189,7 +189,7 @@ export class OllamaService extends EventEmitter {
       const data = await response.json();
       return data.models || [];
     } catch (error) {
-      logger.error('Failed to list models', { error: error.message });
+      logger.error({ error: error.message }, 'Failed to list models');
       throw error;
     }
   }
@@ -202,10 +202,10 @@ export class OllamaService extends EventEmitter {
       const models = await this.listModels();
       return models.some(model => model.name === modelName);
     } catch (error) {
-      logger.error('Failed to check model availability', { 
-        model: modelName, 
-        error: error.message 
-      });
+      logger.error({
+        model: modelName,
+        error: error.message
+      }, 'Failed to check model availability');
       return false;
     }
   }
@@ -215,7 +215,7 @@ export class OllamaService extends EventEmitter {
    */
   async pullModel(modelName: string, onProgress?: (progress: { status: string; completed?: number; total?: number }) => void): Promise<void> {
     try {
-      logger.info('Pulling model', { model: modelName });
+      logger.info({ model: modelName }, 'Pulling model');
 
       const response = await this.fetch('/api/pull', {
         method: 'POST',
@@ -236,7 +236,7 @@ export class OllamaService extends EventEmitter {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -248,9 +248,9 @@ export class OllamaService extends EventEmitter {
             try {
               const progress = JSON.parse(line);
               onProgress?.(progress);
-              
+
               if (progress.status === 'success') {
-                logger.info('Model pull completed', { model: modelName });
+                logger.info({ model: modelName }, 'Model pull completed');
                 return;
               }
             } catch (e) {
@@ -260,10 +260,10 @@ export class OllamaService extends EventEmitter {
         }
       }
     } catch (error) {
-      logger.error('Failed to pull model', { 
-        model: modelName, 
-        error: error.message 
-      });
+      logger.error({
+        model: modelName,
+        error: error.message
+      }, 'Failed to pull model');
       throw error;
     }
   }
@@ -285,11 +285,11 @@ export class OllamaService extends EventEmitter {
         ...request
       };
 
-      logger.debug('Chat request', { 
-        model: mergedRequest.model, 
+      logger.debug({
+        model: mergedRequest.model,
         messageCount: mergedRequest.messages.length,
         hasTools: !!mergedRequest.tools
-      });
+      }, 'Chat request');
 
       const response = await this.fetch('/api/chat', {
         method: 'POST',
@@ -301,20 +301,20 @@ export class OllamaService extends EventEmitter {
       }
 
       const result = await response.json();
-      
-      logger.debug('Chat response', { 
+
+      logger.debug({
         model: result.model,
         done: result.done,
         hasToolCalls: !!result.message.tool_calls
-      });
+      }, 'Chat response');
 
       this.emit('chat:response', result);
       return result;
     } catch (error) {
-      logger.error('Chat request failed', {
+      logger.error({
         model: request.model,
-        error: error.message 
-      });
+        error: error.message
+      }, 'Chat request failed');
       throw error;
     }
   }
@@ -336,10 +336,10 @@ export class OllamaService extends EventEmitter {
         ...request
       };
 
-      logger.debug('Stream chat request', { 
-        model: mergedRequest.model, 
+      logger.debug({
+        model: mergedRequest.model,
         messageCount: mergedRequest.messages.length
-      });
+      }, 'Stream chat request');
 
       const response = await this.fetch('/api/chat', {
         method: 'POST',
@@ -360,7 +360,7 @@ export class OllamaService extends EventEmitter {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -373,7 +373,7 @@ export class OllamaService extends EventEmitter {
               const chunk = JSON.parse(line);
               this.emit('chat:chunk', chunk);
               yield chunk;
-              
+
               if (chunk.done) {
                 return;
               }
@@ -384,10 +384,10 @@ export class OllamaService extends EventEmitter {
         }
       }
     } catch (error) {
-      logger.error('Stream chat request failed', { 
+      logger.error({
         model: request.model,
-        error: error.message 
-      });
+        error: error.message
+      }, 'Stream chat request failed');
       throw error;
     }
   }
@@ -412,10 +412,10 @@ export class OllamaService extends EventEmitter {
       const result = await response.json();
       return result.embeddings;
     } catch (error) {
-      logger.error('Embedding request failed', { 
+      logger.error({
         model,
-        error: error.message 
-      });
+        error: error.message
+      }, 'Embedding request failed');
       throw error;
     }
   }
@@ -445,10 +445,10 @@ export class OllamaService extends EventEmitter {
       const result = await response.json();
       return result.response;
     } catch (error) {
-      logger.error('Generate request failed', { 
+      logger.error({
         model,
-        error: error.message 
-      });
+        error: error.message
+      }, 'Generate request failed');
       throw error;
     }
   }
@@ -469,10 +469,10 @@ export class OllamaService extends EventEmitter {
 
       return await response.json();
     } catch (error) {
-      logger.error('Show model request failed', { 
+      logger.error({
         model: modelName,
-        error: error.message 
-      });
+        error: error.message
+      }, 'Show model request failed');
       throw error;
     }
   }
@@ -491,12 +491,12 @@ export class OllamaService extends EventEmitter {
         throw new Error(`Delete model request failed: ${response.status}`);
       }
 
-      logger.info('Model deleted', { model: modelName });
+      logger.info({ model: modelName }, 'Model deleted');
     } catch (error) {
-      logger.error('Delete model request failed', { 
+      logger.error({
         model: modelName,
-        error: error.message 
-      });
+        error: error.message
+      }, 'Delete model request failed');
       throw error;
     }
   }
@@ -507,9 +507,9 @@ export class OllamaService extends EventEmitter {
   private async fetch(path: string, options: RequestInit & { timeout?: number; body?: string }): Promise<Response> {
     const url = `${this.baseUrl}${path}`;
     const timeout = options.timeout || this.config.timeout;
-    
+
     let lastError: Error;
-    
+
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         const controller = new AbortController();
@@ -532,12 +532,12 @@ export class OllamaService extends EventEmitter {
         return response;
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt < this.config.maxRetries) {
-          logger.warn(`Request attempt ${attempt} failed, retrying...`, {
+          logger.warn({
             path,
             error: error.message
-          });
+          }, `Request attempt ${attempt} failed, retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
       }
@@ -553,7 +553,7 @@ export class OllamaService extends EventEmitter {
     try {
       const is_connected = await this.testConnection();
       const models = await this.listModels();
-      
+
       return {
         status: is_connected ? 'healthy' : 'unhealthy',
         details: {

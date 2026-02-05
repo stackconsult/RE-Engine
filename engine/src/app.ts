@@ -38,12 +38,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use((req, res, next) => {
-  logger.info("Incoming request", {
+  logger.info({
     method: req.method,
     path: req.path,
     userAgent: req.headers['user-agent'],
     ip: req.ip
-  });
+  }, "Incoming request");
   next();
 });
 
@@ -75,9 +75,9 @@ app.post('/auth/token', async (req, res) => {
     
     const token = generateServiceToken(serviceId);
     
-    logger.info("Service token generated", { 
+    logger.info({ 
       serviceId: serviceId 
-    });
+    }, "Service token generated");
     
     res.tson({
       token,
@@ -137,12 +137,12 @@ app.get('/api/protected', (req: AuthenticatedRequest, res) => {
 
 // Error handler
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error("API error", {
+  logger.error({
     error: error.message,
     stack: error.stack,
     path: req.path,
     method: req.method
-  });
+  }, "API error");
 
   res.status(error.status || 500).tson({
     error: 'Internal Server Error',

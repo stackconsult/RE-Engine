@@ -13,7 +13,7 @@ try {
     logger.info("Database authentication service initialized");
   }
 } catch (error) {
-  logger.warn("Database authentication not available, using fallback", { error: error.message });
+  logger.warn({ error: error.message }, "Database authentication not available, using fallback");
 }
 
 export interface ServiceAuth {
@@ -69,10 +69,10 @@ async function getServiceAuth(serviceId: string): Promise<ServiceAuth | null> {
         return service;
       }
     } catch (error) {
-      logger.warn("Database auth lookup failed, using fallback", { 
+      logger.warn({ 
         serviceId, 
         error: error.message 
-      });
+      }, "Database auth lookup failed, using fallback");
     }
   }
   
@@ -85,10 +85,10 @@ async function validateApiKey(serviceId: string, apiKey: string): Promise<boolea
     try {
       return await dbAuthService.validateApiKey(serviceId, apiKey);
     } catch (error) {
-      logger.warn("Database API key validation failed, using fallback", { 
+      logger.warn({ 
         serviceId, 
         error: error.message 
-      });
+      }, "Database API key validation failed, using fallback");
     }
   }
   
@@ -110,15 +110,15 @@ async function logAuthAttempt(
     try {
       await dbAuthService.logAuthAttempt(serviceId, action, resource, success, ipAddress, userAgent, errorMessage);
     } catch (error) {
-      logger.warn("Failed to log auth attempt to database", { 
+      logger.warn({ 
         serviceId, 
         error: error.message 
-      });
+      }, "Failed to log auth attempt to database");
     }
   }
   
   // Always log to application logger
-  logger.info("Authentication attempt", {
+  logger.info({
     serviceId,
     action,
     resource,
@@ -126,7 +126,7 @@ async function logAuthAttempt(
     ipAddress,
     userAgent,
     errorMessage
-  });
+  }, "Authentication attempt");
 }
 
 export function generateServiceToken(service: ServiceAuth): string {
@@ -147,13 +147,13 @@ export function validateServiceToken(token: string): ServiceAuth | null {
     
     const service = SERVICE_REGISTRY[decoded.serviceId];
     if (!service) {
-      logger.warn('Unknown service in token', { serviceId: decoded.serviceId });
+      logger.warn({ serviceId: decoded.serviceId }, 'Unknown service in token');
       return null;
     }
     
     return service;
   } catch (error) {
-    logger.error('Token validation failed', { error: error.message });
+    logger.error({ error: error.message }, 'Token validation failed');
     return null;
   }
 }
@@ -177,10 +177,10 @@ export function serviceAuthMiddleware(requiredPermission?: string) {
         }
         
         req.service = service;
-        logger.info('Service authenticated via JWT', { 
+        logger.info({ 
           serviceId: service.serviceId,
           permission: requiredPermission 
-        });
+        }, 'Service authenticated via JWT');
         return next();
       }
     }
@@ -198,18 +198,18 @@ export function serviceAuthMiddleware(requiredPermission?: string) {
         }
         
         req.service = service;
-        logger.info('Service authenticated via API key', { 
+        logger.info({ 
           serviceId: service.serviceId,
           permission: requiredPermission 
-        });
+        }, 'Service authenticated via API key');
         return next();
       }
     }
     
-    logger.warn('Authentication failed', { 
+    logger.warn({ 
       hasToken: !!authHeader,
       hasApiKey: !!apiKey 
-    });
+    }, 'Authentication failed');
     
     res.status(401).tson({
       error: 'Unauthorized',

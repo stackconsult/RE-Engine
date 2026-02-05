@@ -43,11 +43,11 @@ export function createWorkflowAPIRouter(
     try {
       const request: WorkflowAPIRequest = req.body;
       
-      logger.info('🔄 API: Execute workflow request', {
+      logger.info({
         workflowId: request.workflowId,
         priority: request.priority,
         userId: req.headers['x-user-id']
-      });
+      }, '🔄 API: Execute workflow request');
 
       // Validate request
       if (!request.workflowId) {
@@ -99,10 +99,10 @@ export function createWorkflowAPIRouter(
         timestamp: new Date().toISOString()
       };
 
-      logger.info('✅ API: Workflow execution queued', {
+      logger.info({
         executionId,
         workflowId: request.workflowId
-      });
+      }, '✅ API: Workflow execution queued');
 
       res.status(202).tson(response);
 
@@ -125,7 +125,7 @@ export function createWorkflowAPIRouter(
     try {
       const { executionId } = req.params;
       
-      logger.info('🔍 API: Get execution status', { executionId });
+      logger.info({ executionId }, '🔍 API: Get execution status');
 
       const status = workflowService.getExecutionStatus(executionId);
       
@@ -173,7 +173,7 @@ export function createWorkflowAPIRouter(
     try {
       const { executionId } = req.params;
       
-      logger.info('🛑 API: Cancel execution', { executionId });
+      logger.info({ executionId }, '🛑 API: Cancel execution');
 
       const cancelled = await workflowService.cancelExecution(executionId);
       
@@ -191,7 +191,7 @@ export function createWorkflowAPIRouter(
         timestamp: new Date().toISOString()
       };
 
-      logger.info('✅ API: Execution cancelled', { executionId });
+      logger.info({ executionId }, '✅ API: Execution cancelled');
       res.tson(response);
 
     } catch (error) {
@@ -213,7 +213,7 @@ export function createWorkflowAPIRouter(
     try {
       const category = req.query.category as string;
       
-      logger.info('📋 API: Get workflows', { category });
+      logger.info({ category }, '📋 API: Get workflows');
 
       let workflows;
       if (category) {
@@ -257,7 +257,7 @@ export function createWorkflowAPIRouter(
     try {
       const { workflowId } = req.params;
       
-      logger.info('🔍 API: Get workflow details', { workflowId });
+      logger.info({ workflowId }, '🔍 API: Get workflow details');
 
       const workflow = workflowService.getWorkflow(workflowId);
       
@@ -391,10 +391,10 @@ export function createWorkflowAPIRouter(
     try {
       const request: WorkflowAPIRequest = req.body;
       
-      logger.info('🚀 API: Execute workflow immediately', {
+      logger.info({
         workflowId: request.workflowId,
         userId: req.headers['x-user-id']
-      });
+      }, '🚀 API: Execute workflow immediately');
 
       // Validate request
       if (!request.workflowId) {
@@ -445,11 +445,11 @@ export function createWorkflowAPIRouter(
         timestamp: new Date().toISOString()
       };
 
-      logger.info('✅ API: Workflow executed immediately', {
+      logger.info({
         workflowId: request.workflowId,
         success: result.success,
         executionTime: result.executionTime
-      });
+      }, '✅ API: Workflow executed immediately');
 
       res.tson(response);
 
