@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
-import { ServiceAuth } from './service-auth.ts';
+import { ServiceAuth } from './service-auth.js';
 
 export class DatabaseAuthService {
   private pool: Pool;

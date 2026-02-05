@@ -5,7 +5,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { logger, logSystemEvent, logError } from '../observability/logger.ts';
+import { logger, logSystemEvent, logError } from '../observability/logger.js';
 
 const execAsync = promisify(exec);
 

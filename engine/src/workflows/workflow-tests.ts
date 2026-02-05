@@ -263,6 +263,14 @@ async function testClientOnboardingWorkflow(workflowService: WorkflowService): P
  */
 async function testWorkflowRegistry(): Promise<void> {
   const logger = new Logger('WorkflowRegistryTest', true);
+  const orchestrator = new MasterOrchestrator({
+    maxConcurrentWorkflows: 5,
+    defaultTimeout: 300000,
+    healthCheckInterval: 30000,
+    enableAutoScaling: false,
+    enableDetailedLogging: true
+  });
+  const workflowService = new WorkflowService(orchestrator);
   
   logger.info('🧪 Testing Workflow Registry...');
 

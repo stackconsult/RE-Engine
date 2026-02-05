@@ -2,7 +2,7 @@
  * Ollama AI Service
  * Native Ollama client for RE Engine integration
  */
-import { logger, logSystemEvent } from '../observability/logger.js';
+import { logger, logSystemEvent } from '../observability/logger.ts';
 import { EventEmitter } from 'events';
 export class OllamaService extends EventEmitter {
     config;

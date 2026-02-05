@@ -3,9 +3,9 @@
  * Handles automated build, deployment, and infrastructure management
  */
 
-import { ProductionBootstrapService, ProductionBootstrapDependencies } from '../production/production-bootstrap.service.ts';
-import { productionDependencies } from '../production/dependencies.ts';
-import { HealthMonitor, CircuitBreaker, SelfHealingManager } from '../production/types.ts';
+import { ProductionBootstrapService, ProductionBootstrapDependencies } from '../production/production-bootstrap.service.js';
+import { productionDependencies } from '../production/dependencies.js';
+import { HealthMonitor, CircuitBreaker, SelfHealingManager } from '../production/types.js';
 
 export interface ProductionBuildAgent {
   id: string;
@@ -177,7 +177,7 @@ export class BuildAgent implements ProductionBuildAgent {
     return {
       buildId: `build-${Date.now()}`,
       steps: buildResults,
-      artifacts: ['app.ts', 'styles.css', 'index.html'],
+      artifacts: ['app.js', 'styles.css', 'index.html'],
       size: '2.5MB',
       checksum: 'abc123'
     };

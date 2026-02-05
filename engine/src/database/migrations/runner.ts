@@ -5,7 +5,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { getDatabase } from '../index.ts';
+import { getDatabase } from '../index.js';
 
 export interface Migration {
   id: string;

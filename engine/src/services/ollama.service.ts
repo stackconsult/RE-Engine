@@ -159,7 +159,7 @@ export class OllamaService extends EventEmitter {
       });
       
       if (response.ok) {
-        const version = await response.tson();
+        const version = await response.json();
         logSystemEvent('Ollama connection successful', 'info', { version });
         this.emit('connected', version);
         return true;
@@ -186,7 +186,7 @@ export class OllamaService extends EventEmitter {
         throw new Error(`Failed to list models: ${response.status}`);
       }
 
-      const data = await response.tson();
+      const data = await response.json();
       return data.models || [];
     } catch (error) {
       logger.error('Failed to list models', { error: error.message });
@@ -300,7 +300,7 @@ export class OllamaService extends EventEmitter {
         throw new Error(`Chat request failed: ${response.status}`);
       }
 
-      const result = await response.tson();
+      const result = await response.json();
       
       logger.debug('Chat response', { 
         model: result.model,
@@ -311,7 +311,7 @@ export class OllamaService extends EventEmitter {
       this.emit('chat:response', result);
       return result;
     } catch (error) {
-      logger.error('Chat request failed', { 
+      logger.error('Chat request failed', {
         model: request.model,
         error: error.message 
       });
@@ -409,7 +409,7 @@ export class OllamaService extends EventEmitter {
         throw new Error(`Embedding request failed: ${response.status}`);
       }
 
-      const result = await response.tson();
+      const result = await response.json();
       return result.embeddings;
     } catch (error) {
       logger.error('Embedding request failed', { 
@@ -442,7 +442,7 @@ export class OllamaService extends EventEmitter {
         throw new Error(`Generate request failed: ${response.status}`);
       }
 
-      const result = await response.tson();
+      const result = await response.json();
       return result.response;
     } catch (error) {
       logger.error('Generate request failed', { 
@@ -467,7 +467,7 @@ export class OllamaService extends EventEmitter {
         throw new Error(`Show model request failed: ${response.status}`);
       }
 
-      return await response.tson();
+      return await response.json();
     } catch (error) {
       logger.error('Show model request failed', { 
         model: modelName,

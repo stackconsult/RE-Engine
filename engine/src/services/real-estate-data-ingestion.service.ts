@@ -91,7 +91,7 @@ export class RealEstateDataIngestionService extends EventEmitter {
     return new Promise((resolve, reject) => {
       try {
         // Start TinyFish MCP server
-        this.mcpProcess = spawn('node', ['dist/index.ts'], {
+        this.mcpProcess = spawn('node', ['dist/index.js'], {
           cwd: '/Users/kirtissiemens/Documents/re-engine/RE-Engine/mcp/reengine-tinyfish',
           stdio: ['pipe', 'pipe', 'pipe']
         });

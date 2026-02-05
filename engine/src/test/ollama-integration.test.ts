@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { createREEngineClient, REEngineClient } from '../../sdk/client/reengine-client.ts';
-import { Lead } from '../../a2d/models/lead.model.ts';
-import { getOllamaService } from '../../services/ollama.service.ts';
+import { createREEngineClient, REEngineClient } from '../../sdk/client/reengine-client.js';
+import { Lead } from '../../a2d/models/lead.model.js';
+import { getOllamaService } from '../../services/ollama.service.js';
 
 describe('Ollama Integration', () => {
   let client: REEngineClient;

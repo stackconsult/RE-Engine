@@ -1,1 +1,1 @@
-export * from "./classifierService.ts";
+export * from "./classifierService.js";

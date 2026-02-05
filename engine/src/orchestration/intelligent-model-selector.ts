@@ -337,7 +337,7 @@ export class IntelligentModelSelector extends EventEmitter {
       try {
         const response = await fetch('http://localhost:11434/api/tags');
         if (response.ok) {
-          const data = await response.tson();
+          const data = await response.json();
           const isRunning = data.models.some((m: any) => m.name === model.name);
           return isRunning ? 1.0 : 0.0;
         }

@@ -4,8 +4,8 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Database } from './supabase.types.ts';
-import { logSystemEvent, logError } from '../observability/logger.ts';
+import { Database } from './supabase.types.js';
+import { logSystemEvent, logError } from '../observability/logger.js';
 
 export interface SupabaseConfig {
   url: string;

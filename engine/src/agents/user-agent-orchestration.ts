@@ -3,8 +3,8 @@
  * Handles user-facing operations, workflows, and interactive tasks
  */
 
-import { productionAgentManager } from './production-build-agents.ts';
-import { AIOrchestrator, AIRequest, AIResponse } from '../production/types.ts';
+import { productionAgentManager } from './production-build-agents.js';
+import { AIOrchestrator, AIRequest, AIResponse } from '../production/types.js';
 
 export interface UserAgent {
   id: string;

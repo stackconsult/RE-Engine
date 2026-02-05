@@ -292,7 +292,7 @@ export class LeadSearchService {
     /**
      * Generate search facets
      */
-    async generateFacets(leads) {
+    generateFacets(leads) {
         const facets = {
             statuses: {},
             sources: {},

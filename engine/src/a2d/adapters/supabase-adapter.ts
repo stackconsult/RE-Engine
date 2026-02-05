@@ -5,8 +5,8 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '../../database/supabase.types.ts';
-import { logSystemEvent, logError } from '../../observability/logger.ts';
+import { Database } from '../../database/supabase.types.js';
+import { logSystemEvent, logError } from '../../observability/logger.js';
 
 export interface SupabaseAdapterOptions {
   client: SupabaseClient<Database, 'public'>;

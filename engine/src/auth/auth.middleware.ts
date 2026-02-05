@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { AuthService, AuthToken } from './auth.service.ts';
+import { AuthService, AuthToken } from './auth.service.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: AuthToken;

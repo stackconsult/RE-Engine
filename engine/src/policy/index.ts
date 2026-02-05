@@ -1,2 +1,2 @@
-export * from "./policy.ts";
-export * from "./dncService.ts";
+export * from "./policy.js";
+export * from "./dncService.js";

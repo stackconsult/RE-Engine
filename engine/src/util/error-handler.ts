@@ -3,7 +3,7 @@
  * Consistent error patterns across the RE Engine
  */
 
-import { logError } from '../observability/logger.ts';
+import { logError } from '../observability/logger.js';
 
 export interface ErrorContext {
   operation?: string;

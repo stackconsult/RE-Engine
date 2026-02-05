@@ -3,10 +3,10 @@
  * Orchestrates complete real estate automation workflows
  */
 
-import { realEstateDataIngestion } from './real-estate-data-ingestion.service.ts';
-import { realEstateContentGenerator } from './real-estate-content-generation.service.ts';
-import { Property, MarketData, ROIAnalysis, MarketScore, InvestmentRecommendation } from '../domain/real-estate-calculator.service.ts';
-import { PropertyAnalysis, OutreachMessage, MarketReport, Lead } from './real-estate-content-generation.service.ts';
+import { realEstateDataIngestion } from './real-estate-data-ingestion.service.js';
+import { realEstateContentGenerator } from './real-estate-content-generation.service.js';
+import { Property, MarketData, ROIAnalysis, MarketScore, InvestmentRecommendation } from '../domain/real-estate-calculator.service.js';
+import { PropertyAnalysis, OutreachMessage, MarketReport, Lead } from './real-estate-content-generation.service.js';
 
 export interface WorkflowConfig {
   location: string;

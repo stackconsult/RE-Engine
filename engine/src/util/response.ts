@@ -3,7 +3,7 @@
  * Consistent API response patterns across the RE Engine
  */
 
-import { ServiceError, ErrorHandler } from './error-handler.ts';
+import { ServiceError, ErrorHandler } from './error-handler.js';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;

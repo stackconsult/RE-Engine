@@ -9,13 +9,13 @@
  * 5. Performance monitoring and optimization
  */
 
-import { OllamaService, OllamaServiceConfig } from '../ollama/ollama.service.ts';
-import { VertexAIService, VertexAIConfig } from './vertex-ai.service.ts';
-import { ClaudeVertexService, ClaudeVertexConfig } from './claude-vertex.service.ts';
-import { AIServiceManager, AIServiceConfig } from './ai-service-manager.ts';
-import { logSystemEvent } from '../observability/logger.ts';
-import { ErrorHandler, BaseError } from '../util/error-handler.ts';
-import { ResponseBuilder } from '../util/response.ts';
+import { OllamaService, OllamaServiceConfig } from '../ollama/ollama.service.js';
+import { VertexAIService, VertexAIConfig } from './vertex-ai.service.js';
+import { ClaudeVertexService, ClaudeVertexConfig } from './claude-vertex.service.js';
+import { AIServiceManager, AIServiceConfig } from './ai-service-manager.js';
+import { logSystemEvent } from '../observability/logger.js';
+import { ErrorHandler, BaseError } from '../util/error-handler.js';
+import { ResponseBuilder } from '../util/response.js';
 
 export interface HybridAIConfig {
   ollamaConfig?: Partial<OllamaServiceConfig>;

@@ -3,7 +3,7 @@
  * Complete type definitions for production foundation services */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '../database/supabase.types.ts';
+import { Database } from '../database/supabase.types.js';
 
 // JWT Management Interface
 export interface JWTManager {

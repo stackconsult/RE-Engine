@@ -1,5 +1,5 @@
-import { MessageClassifier, IngestMessage } from "../ingest/types.ts";
-import { logger } from "../observability/logger.ts";
+import { MessageClassifier, IngestMessage } from "../ingest/types.js";
+import { logger } from "../observability/logger.js";
 
 export interface ClassificationResult {
   isHotReply: boolean;

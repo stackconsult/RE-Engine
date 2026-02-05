@@ -1,6 +1,6 @@
-import { Store } from "../store/store.ts";
-import { Channel } from "../domain/types.ts";
-import { logger } from "../observability/logger.ts";
+import { Store } from "../store/store.js";
+import { Channel } from "../domain/types.js";
+import { logger } from "../observability/logger.js";
 
 export interface RateLimitConfig {
   per_hour: number;

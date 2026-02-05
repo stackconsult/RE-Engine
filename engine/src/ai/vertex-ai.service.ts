@@ -3,7 +3,7 @@
  * Integration with Google Vertex AI for AI/LLM completion services
  */
 
-import { logger, logSystemEvent, logError } from '../observability/logger.ts';
+import { logger, logSystemEvent, logError } from '../observability/logger.js';
 
 export interface VertexAIConfig {
   projectId: string;
@@ -275,7 +275,7 @@ export class VertexAIService {
         return;
       }
 
-      const tokenData = await response.tson();
+      const tokenData = await response.json();
       this.accessToken = tokenData.access_token;
       this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
 
@@ -359,7 +359,7 @@ export class VertexAIService {
       throw new Error(`Vertex AI API error: ${response.status} - ${errorText}`);
     }
 
-    return response.tson();
+    return response.json();
   }
 
   private formatCompletionResponse(response: any, modelId: string): CompletionResponse {

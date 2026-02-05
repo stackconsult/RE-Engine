@@ -3,8 +3,8 @@
  * Manages multiple AI providers (Ollama, Vertex AI) with fallback capabilities
  */
 
-import { logger, logSystemEvent, logError } from '../observability/logger.ts';
-import VertexAIService, { VertexAIConfig, CompletionRequest, CompletionResponse, EmbeddingRequest, EmbeddingResponse } from './vertex-ai.service.ts';
+import { logger, logSystemEvent, logError } from '../observability/logger.js';
+import VertexAIService, { VertexAIConfig, CompletionRequest, CompletionResponse, EmbeddingRequest, EmbeddingResponse } from './vertex-ai.service.js';
 
 // Ollama service interface (assuming it exists)
 interface OllamaService {

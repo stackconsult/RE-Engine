@@ -4,7 +4,7 @@
  */
 
 import pg from 'pg';
-import { DatabaseConnection } from './csv.ts';
+import { DatabaseConnection } from './csv.js';
 
 export class PostgreSQLConnection implements DatabaseConnection {
   private pool: pg.Pool;

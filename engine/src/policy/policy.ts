@@ -1,4 +1,4 @@
-import type { Channel } from "../domain/types.ts";
+import type { Channel } from "../domain/types.js";
 
 export interface SendPolicy {
   approvalRequired: boolean;

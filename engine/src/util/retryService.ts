@@ -1,6 +1,6 @@
-import { Store } from "../store/store.ts";
-import { Approval } from "../domain/types.ts";
-import { logger } from "../observability/logger.ts";
+import { Store } from "../store/store.js";
+import { Approval } from "../domain/types.js";
+import { logger } from "../observability/logger.js";
 import { v4 as uuidv4 } from "uuid";
 
 export interface FailedSend {

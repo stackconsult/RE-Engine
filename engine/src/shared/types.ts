@@ -10,13 +10,13 @@ export type {
   ApprovalStatus, 
   LeadStatus, 
   ApprovalActionType 
-} from '../domain/types.ts';
+} from '../domain/types.js';
 
 // Re-export specific domain types with aliases to avoid conflicts
-export type { Lead as DomainLead, Approval as DomainApproval } from '../domain/types.ts';
+export type { Lead as DomainLead, Approval as DomainApproval } from '../domain/types.js';
 
 // Re-export database types
-export * from '../database/supabase.types.ts';
+export * from '../database/supabase.types.js';
 
 // Common utility types
 export interface ResourceUsage {

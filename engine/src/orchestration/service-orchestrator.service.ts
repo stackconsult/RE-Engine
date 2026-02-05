@@ -6,8 +6,8 @@
 import { 
   ServiceDefinition, ServiceCriteria, ServiceRequest, ServiceResponse, ServiceEvent,
   HealthCheckResult, ResourceUsage, EventHandler, DomainEvent
-} from '../shared/types.ts';
-import { productionDependencies } from '../production/dependencies.ts';
+} from '../shared/types.js';
+import { productionDependencies } from '../production/dependencies.js';
 
 export interface ServiceOrchestratorConfig {
   discoveryInterval: number;

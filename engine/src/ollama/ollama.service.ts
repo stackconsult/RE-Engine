@@ -4,9 +4,9 @@
  * Supports both direct Ollama access and LiteLLM proxy for Claude Code compatibility
  */
 
-import { OllamaClient, OllamaConfig, OllamaMessage, OllamaRequest } from './ollama.client.ts';
-import { LiteLLMProxyService, LiteLLMConfig } from '../ai/litellm-proxy.service.ts';
-import { logPerformance, logError, logSystemEvent } from '../observability/logger.ts';
+import { OllamaClient, OllamaConfig, OllamaMessage, OllamaRequest } from './ollama.client.js';
+import { LiteLLMProxyService, LiteLLMConfig } from '../ai/litellm-proxy.service.js';
+import { logPerformance, logError, logSystemEvent } from '../observability/logger.js';
 
 export interface AIRequest {
   prompt: string;
@@ -149,7 +149,7 @@ export class OllamaService {
       throw new Error(`Embedding request failed: ${response.statusText}`);
     }
 
-    const result = await response.tson();
+    const result = await response.json();
     return result.data[0].embedding;
   }
 
@@ -257,7 +257,7 @@ export class OllamaService {
       throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.tson();
+    const data = await response.json();
 
     return {
       content: data.content?.[0]?.text || '',

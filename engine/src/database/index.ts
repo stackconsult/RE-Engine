@@ -3,7 +3,7 @@
  * Supports both PostgreSQL (production) and CSV (development) storage
  */
 
-import { DatabaseConnection } from './csv.ts';
+import { DatabaseConnection } from './csv.js';
 
 export interface DatabaseConfig {
   type: 'postgresql' | 'csv';
@@ -30,10 +30,10 @@ export class DatabaseManager {
 
   async initialize(): Promise<void> {
     if (this.config.type === 'postgresql') {
-      const { PostgreSQLConnection } = await import('./postgresql.ts');
+      const { PostgreSQLConnection } = await import('./postgresql.js');
       this.connection = new PostgreSQLConnection(this.config.postgresql!);
     } else {
-      const { CSVConnection } = await import('./csv.ts');
+      const { CSVConnection } = await import('./csv.js');
       this.connection = new CSVConnection(this.config.csv!);
     }
 

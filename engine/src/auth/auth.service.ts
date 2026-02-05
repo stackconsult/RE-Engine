@@ -5,7 +5,7 @@
 
 import * as jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { getDatabase } from '../database/index.ts';
+import { getDatabase } from '../database/index.js';
 
 export interface JWTPayload {
   user_id: string;

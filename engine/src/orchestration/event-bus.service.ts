@@ -6,7 +6,7 @@
 import { EventEmitter } from 'events';
 import { 
   DomainEvent, EventHandler, EventFilter, EventAggregation
-} from '../shared/types.ts';
+} from '../shared/types.js';
 
 export interface EventBusConfig {
   maxEventHistory: number;

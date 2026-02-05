@@ -1,9 +1,9 @@
-import { IngestService, IngestResult, IngestMessage } from "./types.ts";
-import { Store } from "../store/store.ts";
-import { ApprovalService } from "../approvals/approvalService.ts";
+import { IngestService, IngestResult, IngestMessage } from "./types.js";
+import { Store } from "../store/store.js";
+import { ApprovalService } from "../approvals/approvalService.js";
 import { v4 as uuidv4 } from "uuid";
-import { logger } from "../observability/logger.ts";
-import { EventRow } from "../domain/types.ts";
+import { logger } from "../observability/logger.js";
+import { EventRow } from "../domain/types.js";
 
 export abstract class BaseIngestService implements IngestService {
   protected store: Store;

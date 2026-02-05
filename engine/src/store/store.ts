@@ -1,4 +1,4 @@
-import type { Approval, ContactMap, DncEntry, EventRow, Lead } from "../domain/types.ts";
+import type { Approval, ContactMap, DncEntry, EventRow, Lead } from "../domain/types.js";
 
 export interface Store {
   // Leads

@@ -216,7 +216,7 @@ export class ResponseBuilder {
 export function errorHandlerMiddleware(error, _req, res, _next) {
     const serviceError = ErrorHandler.normalizeError(error);
     const response = ResponseBuilder.error(serviceError);
-    return res.status(serviceError.statusCode || 500).json(response);
+    return res.status(serviceError.statusCode || 500).tson(response);
 }
 /**
  * Utility for measuring operation performance
