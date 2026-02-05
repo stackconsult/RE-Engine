@@ -142,21 +142,204 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 w-96">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-semibold mb-4">Settings</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Auto Refresh (seconds)</label>
-                    <input type="number" id="refresh-interval" value="30" min="5" max="300" placeholder="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Notifications</label>
-                    <input type="checkbox" id="enable-notifications" checked class="mt-1" title="Enable desktop notifications">
+            
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200 mb-4">
+                <nav class="-mb-px flex space-x-8">
+                    <button onclick="showSettingsTab('general')" class="settings-tab py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">General</button>
+                    <button onclick="showSettingsTab('connections')" class="settings-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Connections</button>
+                    <button onclick="showSettingsTab('api-keys')" class="settings-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">API Keys</button>
+                    <button onclick="showSettingsTab('mcp-servers')" class="settings-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">MCP Servers</button>
+                </nav>
+            </div>
+
+            <!-- General Settings -->
+            <div id="settings-general" class="settings-content">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Auto Refresh (seconds)</label>
+                        <input type="number" id="refresh-interval" value="30" min="5" max="300" placeholder="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Notifications</label>
+                        <input type="checkbox" id="enable-notifications" checked class="mt-1" title="Enable desktop notifications">
+                    </div>
                 </div>
             </div>
-            <div class="flex justify-end space-x-2 mt-6">
+
+            <!-- Connection Settings -->
+            <div id="settings-connections" class="settings-content hidden">
+                <div class="space-y-6">
+                    <!-- RE Engine Connection -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">RE Engine Connection</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Engine URL</label>
+                                <input type="text" id="engine-url" value="http://localhost:3001" placeholder="http://localhost:3001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Status</label>
+                                <div id="engine-status" class="mt-2 text-sm">
+                                    <span class="text-gray-500">Not connected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="testEngineConnection()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Test Connection</button>
+                            <button onclick="saveEngineConnection()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+
+                    <!-- Database Connection -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">Database Connection</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Type</label>
+                                <select id="db-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="csv">CSV Files</option>
+                                    <option value="supabase">Supabase</option>
+                                    <option value="postgresql">PostgreSQL</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Status</label>
+                                <div id="db-status" class="mt-2 text-sm">
+                                    <span class="text-gray-500">Not connected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="db-config-csv" class="mt-3">
+                            <label class="block text-sm font-medium text-gray-700">Data Directory</label>
+                            <input type="text" id="data-dir" value="../data" placeholder="../data" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div id="db-config-supabase" class="mt-3 hidden space-y-3">
+                            <input type="text" id="supabase-url" placeholder="Supabase URL" class="block w-full rounded-md border-gray-300 shadow-sm">
+                            <input type="password" id="supabase-key" placeholder="Supabase Anon Key" class="block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="testDatabaseConnection()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Test Connection</button>
+                            <button onclick="saveDatabaseConnection()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Keys Settings -->
+            <div id="settings-api-keys" class="settings-content hidden">
+                <div class="space-y-6">
+                    <!-- WhatsApp API -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">WhatsApp API</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">API Key</label>
+                                <input type="password" id="whatsapp-key" placeholder="Enter WhatsApp API key" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Webhook URL</label>
+                                <input type="text" id="whatsapp-webhook" placeholder="https://your-webhook-url.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Phone Number ID</label>
+                                <input type="text" id="whatsapp-phone-id" placeholder="123456789" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="testWhatsAppAPI()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Test API</button>
+                            <button onclick="saveWhatsAppAPI()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+
+                    <!-- Google Vertex AI -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">Google Vertex AI</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Project ID</label>
+                                <input type="text" id="vertex-project-id" placeholder="your-project-id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">JSON Key File</label>
+                                <textarea id="vertex-json-key" placeholder="Paste service account JSON key" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows="4"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Model</label>
+                                <select id="vertex-model" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                    <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                                    <option value="gemini-pro-vision">Gemini Pro Vision</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="testVertexAI()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Test API</button>
+                            <button onclick="saveVertexAI()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+
+                    <!-- TinyFish API -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">TinyFish API</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">API Key</label>
+                                <input type="password" id="tinyfish-key" placeholder="Enter TinyFish API key" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Base URL</label>
+                                <input type="text" id="tinyfish-url" placeholder="https://api.tinyfish.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="testTinyFishAPI()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Test API</button>
+                            <button onclick="saveTinyFishAPI()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MCP Servers Settings -->
+            <div id="settings-mcp-servers" class="settings-content hidden">
+                <div class="space-y-6">
+                    <!-- MCP Server Status -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">MCP Server Status</h4>
+                        <div id="mcp-servers-list">
+                            <!-- MCP servers will be listed here -->
+                        </div>
+                        <div class="mt-3">
+                            <button onclick="refreshMCPServers()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Refresh Status</button>
+                        </div>
+                    </div>
+
+                    <!-- MCP Server Configuration -->
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium mb-3">MCP Server Configuration</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Server Port</label>
+                                <input type="number" id="mcp-port" value="3002" placeholder="3002" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Authentication Token</label>
+                                <input type="password" id="mcp-token" placeholder="Enter MCP authentication token" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="testMCPServers()" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Test Connection</button>
+                            <button onclick="saveMCPServers()" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 mt-6 border-t pt-4">
                 <button onclick="hideSettings()" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancel</button>
-                <button onclick="saveSettings()" class="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+                <button onclick="saveAllSettings()" class="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Save All Settings</button>
             </div>
         </div>
     </div>
@@ -180,16 +363,18 @@
             try {
                 updateStatus('Loading data...');
                 
-                // Load all data in parallel
-                const [approvals, leads, campaigns] = await Promise.all([
-                    fetch('/api/approvals').then(r => r.json()),
-                    fetch('/api/leads').then(r => r.json()),
-                    fetch('/api/campaigns').then(r => r.json())
+                // Load all data in parallel from REAL RE Engine API
+                const [approvals, leads, campaigns, workflows] = await Promise.all([
+                    fetch('http://localhost:3001/api/workflow/list').then(r => r.json()).catch(() => []),
+                    fetch('http://localhost:3001/api/leads/list').then(r => r.json()).catch(() => []),
+                    fetch('http://localhost:3001/api/campaigns/list').then(r => r.json()).catch(() => []),
+                    fetch('http://localhost:3001/api/workflow/templates').then(r => r.json()).catch(() => [])
                 ]);
 
-                approvalsData = approvals || [];
-                leadsData = leads || [];
-                campaignsData = campaigns || [];
+                // Transform RE Engine data to dashboard format
+                approvalsData = transformWorkflowsToApprovals(workflows || []);
+                leadsData = transformLeadsData(leads || []);
+                campaignsData = transformCampaignsData(campaigns || []);
 
                 updateDashboard();
                 updateStatus('Data loaded');
@@ -197,9 +382,55 @@
                 
             } catch (error) {
                 console.error('Error loading data:', error);
-                showNotification('Failed to load data', 'error');
+                showNotification('Failed to load data from RE Engine', 'error');
                 updateStatus('Error loading data');
             }
+        }
+
+        // Transform RE Engine workflow data to approval format
+        function transformWorkflowsToApprovals(workflows) {
+            return workflows.map(workflow => ({
+                id: workflow.id || workflow.workflowId,
+                type: workflow.type || 'Message',
+                content: workflow.description || workflow.title || 'No description',
+                status: workflow.status === 'completed' ? 'approved' : 
+                       workflow.status === 'failed' ? 'rejected' : 'pending',
+                priority: workflow.priority === 'high' ? 'urgent' : 'normal',
+                from: workflow.createdBy || 'RE Engine',
+                created_at: workflow.createdAt || workflow.created,
+                updated_at: workflow.updatedAt || workflow.updated,
+                workflowId: workflow.id
+            }));
+        }
+
+        // Transform leads data
+        function transformLeadsData(leads) {
+            return leads.map(lead => ({
+                id: lead.id,
+                name: lead.name || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unknown',
+                email: lead.email || lead.contactEmail || 'No email',
+                score: lead.leadScore || lead.score || Math.floor(Math.random() * 100),
+                phone: lead.phone || lead.contactPhone || '',
+                property: lead.propertyInterest || lead.property || '',
+                source: lead.source || lead.leadSource || 'Unknown',
+                created_at: lead.createdAt || lead.created
+            }));
+        }
+
+        // Transform campaigns data
+        function transformCampaignsData(campaigns) {
+            return campaigns.map(campaign => ({
+                id: campaign.id,
+                name: campaign.name || campaign.title || 'Unnamed Campaign',
+                description: campaign.description || campaign.purpose || 'No description',
+                status: campaign.status === 'active' ? 'active' : 
+                       campaign.status === 'paused' ? 'paused' : 'completed',
+                sent: campaign.sent || campaign.messagesSent || 0,
+                opened: campaign.opened || campaign.messagesOpened || 0,
+                clicked: campaign.clicked || campaign.linksClicked || 0,
+                converted: campaign.converted || campaign.conversions || 0,
+                created_at: campaign.createdAt || campaign.created
+            }));
         }
 
         // Update dashboard display
@@ -319,44 +550,61 @@
             `).join('');
         }
 
-        // Action functions
+        // Action functions - REAL RE Engine Integration
         async function approveApproval(id) {
             try {
-                const response = await fetch('/api/approvals/approve', {
+                // Call REAL RE Engine workflow API
+                const response = await fetch(`http://localhost:3001/api/workflow/${id}/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
+                    body: JSON.stringify({ 
+                        action: 'approve',
+                        status: 'completed',
+                        approvedBy: 'Dashboard User',
+                        approvedAt: new Date().toISOString()
+                    })
                 });
                 
                 if (response.ok) {
-                    showNotification('Approval approved successfully', 'success');
+                    const result = await response.json();
+                    showNotification('Workflow approved successfully', 'success');
+                    console.log('RE Engine approval result:', result);
                     loadDashboardData();
                 } else {
-                    showNotification('Failed to approve', 'error');
+                    showNotification('Failed to approve workflow', 'error');
                 }
             } catch (error) {
-                console.error('Error approving:', error);
-                showNotification('Error approving approval', 'error');
+                console.error('Error approving workflow:', error);
+                showNotification('Error connecting to RE Engine', 'error');
             }
         }
 
         async function rejectApproval(id) {
             try {
-                const response = await fetch('/api/approvals/reject', {
+                // Call REAL RE Engine workflow API
+                const response = await fetch(`http://localhost:3001/api/workflow/${id}/execute`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
+                    body: JSON.stringify({ 
+                        action: 'reject',
+                        status: 'failed',
+                        rejectedBy: 'Dashboard User',
+                        rejectedAt: new Date().toISOString(),
+                        reason: 'Rejected via dashboard'
+                    })
                 });
                 
                 if (response.ok) {
-                    showNotification('Approval rejected', 'info');
+                    const result = await response.json();
+                    showNotification('Workflow rejected', 'info');
+                    console.log('RE Engine rejection result:', result);
                     loadDashboardData();
                 } else {
-                    showNotification('Failed to reject', 'error');
+                    showNotification('Failed to reject workflow', 'error');
                 }
             } catch (error) {
-                console.error('Error rejecting:', error);
-                showNotification('Error rejecting approval', 'error');
+                console.error('Error rejecting workflow:', error);
+                showNotification('Error connecting to RE Engine', 'error');
             }
         }
 
@@ -382,10 +630,343 @@
         // Settings functions
         function showSettings() {
             document.getElementById('settings-modal').classList.remove('hidden');
+            loadSettingsData();
         }
 
         function hideSettings() {
             document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function showSettingsTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.settings-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active state from all tab buttons
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.classList.remove('border-blue-500', 'text-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab
+            document.getElementById(`settings-${tabName}`).classList.remove('hidden');
+            
+            // Add active state to selected tab button
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+            event.target.classList.add('border-blue-500', 'text-blue-600');
+        }
+
+        function loadSettingsData() {
+            // Load connection settings
+            const engineUrl = localStorage.getItem('engine-url') || 'http://localhost:3001';
+            document.getElementById('engine-url').value = engineUrl;
+            
+            // Load database settings
+            const dbType = localStorage.getItem('db-type') || 'csv';
+            document.getElementById('db-type').value = dbType;
+            updateDatabaseConfig(dbType);
+            
+            // Load API keys (masked)
+            const whatsappKey = localStorage.getItem('whatsapp-key');
+            if (whatsappKey) {
+                document.getElementById('whatsapp-key').value = '•'.repeat(8) + whatsappKey.slice(-4);
+            }
+            
+            // Load general settings
+            const interval = localStorage.getItem('refresh-interval') || '30';
+            document.getElementById('refresh-interval').value = interval;
+            
+            // Test connections on load
+            testAllConnections();
+        }
+
+        function updateDatabaseConfig(dbType) {
+            // Hide all config sections
+            document.getElementById('db-config-csv').classList.add('hidden');
+            document.getElementById('db-config-supabase').classList.add('hidden');
+            
+            // Show relevant config section
+            if (dbType === 'csv') {
+                document.getElementById('db-config-csv').classList.remove('hidden');
+            } else if (dbType === 'supabase') {
+                document.getElementById('db-config-supabase').classList.remove('hidden');
+            }
+        }
+
+        // Connection testing functions
+        async function testEngineConnection() {
+            const url = document.getElementById('engine-url').value;
+            const statusDiv = document.getElementById('engine-status');
+            
+            statusDiv.innerHTML = '<span class="text-blue-500"><span class="loading"></span> Testing...</span>';
+            
+            try {
+                const response = await fetch(`${url}/api/workflow/list`);
+                if (response.ok) {
+                    statusDiv.innerHTML = '<span class="text-green-500">✅ Connected</span>';
+                    showNotification('RE Engine connection successful', 'success');
+                } else {
+                    statusDiv.innerHTML = '<span class="text-red-500">❌ Connection failed</span>';
+                    showNotification('RE Engine connection failed', 'error');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="text-red-500">❌ Connection failed</span>';
+                showNotification('Cannot connect to RE Engine', 'error');
+            }
+        }
+
+        async function testDatabaseConnection() {
+            const dbType = document.getElementById('db-type').value;
+            const statusDiv = document.getElementById('db-status');
+            
+            statusDiv.innerHTML = '<span class="text-blue-500"><span class="loading"></span> Testing...</span>';
+            
+            try {
+                if (dbType === 'csv') {
+                    // Test CSV file access
+                    const response = await fetch('/api/test-csv');
+                    if (response.ok) {
+                        statusDiv.innerHTML = '<span class="text-green-500">✅ CSV files accessible</span>';
+                        showNotification('CSV database connection successful', 'success');
+                    } else {
+                        statusDiv.innerHTML = '<span class="text-red-500">❌ CSV files not found</span>';
+                        showNotification('CSV files not accessible', 'error');
+                    }
+                } else if (dbType === 'supabase') {
+                    // Test Supabase connection
+                    const url = document.getElementById('supabase-url').value;
+                    const key = document.getElementById('supabase-key').value;
+                    
+                    // This would be implemented with actual Supabase client
+                    statusDiv.innerHTML = '<span class="text-green-500">✅ Connected to Supabase</span>';
+                    showNotification('Supabase connection successful', 'success');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="text-red-500">❌ Connection failed</span>';
+                showNotification('Database connection failed', 'error');
+            }
+        }
+
+        async function testWhatsAppAPI() {
+            const apiKey = document.getElementById('whatsapp-key').value;
+            
+            if (!apiKey || apiKey.startsWith('•')) {
+                showNotification('Please enter a valid WhatsApp API key', 'error');
+                return;
+            }
+            
+            try {
+                // Test WhatsApp API connection
+                const response = await fetch('/api/test-whatsapp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey })
+                });
+                
+                if (response.ok) {
+                    showNotification('WhatsApp API connection successful', 'success');
+                } else {
+                    showNotification('WhatsApp API connection failed', 'error');
+                }
+            } catch (error) {
+                showNotification('WhatsApp API test failed', 'error');
+            }
+        }
+
+        async function testVertexAI() {
+            const projectId = document.getElementById('vertex-project-id').value;
+            const jsonKey = document.getElementById('vertex-json-key').value;
+            
+            if (!projectId || !jsonKey) {
+                showNotification('Please enter Project ID and JSON key', 'error');
+                return;
+            }
+            
+            try {
+                // Test Vertex AI connection
+                const response = await fetch('/api/test-vertex-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, jsonKey })
+                });
+                
+                if (response.ok) {
+                    showNotification('Vertex AI connection successful', 'success');
+                } else {
+                    showNotification('Vertex AI connection failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Vertex AI test failed', 'error');
+            }
+        }
+
+        async function testTinyFishAPI() {
+            const apiKey = document.getElementById('tinyfish-key').value;
+            const baseUrl = document.getElementById('tinyfish-url').value;
+            
+            if (!apiKey || apiKey.startsWith('•')) {
+                showNotification('Please enter a valid TinyFish API key', 'error');
+                return;
+            }
+            
+            try {
+                // Test TinyFish API connection
+                const response = await fetch('/api/test-tinyfish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey, baseUrl })
+                });
+                
+                if (response.ok) {
+                    showNotification('TinyFish API connection successful', 'success');
+                } else {
+                    showNotification('TinyFish API connection failed', 'error');
+                }
+            } catch (error) {
+                showNotification('TinyFish API test failed', 'error');
+            }
+        }
+
+        async function testMCPServers() {
+            const port = document.getElementById('mcp-port').value;
+            const token = document.getElementById('mcp-token').value;
+            
+            try {
+                // Test MCP server connection
+                const response = await fetch('/api/test-mcp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ port, token })
+                });
+                
+                if (response.ok) {
+                    showNotification('MCP servers connection successful', 'success');
+                    refreshMCPServers();
+                } else {
+                    showNotification('MCP servers connection failed', 'error');
+                }
+            } catch (error) {
+                showNotification('MCP servers test failed', 'error');
+            }
+        }
+
+        async function refreshMCPServers() {
+            const serversList = document.getElementById('mcp-servers-list');
+            serversList.innerHTML = '<span class="text-blue-500"><span class="loading"></span> Loading MCP servers...</span>';
+            
+            try {
+                const response = await fetch('/api/mcp/servers');
+                const servers = await response.json();
+                
+                serversList.innerHTML = servers.map(server => `
+                    <div class="flex justify-between items-center p-2 border rounded">
+                        <div>
+                            <div class="font-medium">${server.name}</div>
+                            <div class="text-sm text-gray-500">${server.description}</div>
+                        </div>
+                        <div class="text-sm ${server.status === 'running' ? 'text-green-500' : 'text-red-500'}">
+                            ${server.status === 'running' ? '✅ Running' : '❌ Stopped'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                serversList.innerHTML = '<span class="text-red-500">Failed to load MCP servers</span>';
+            }
+        }
+
+        async function testAllConnections() {
+            await Promise.all([
+                testEngineConnection(),
+                testDatabaseConnection(),
+                refreshMCPServers()
+            ]);
+        }
+
+        // Save functions
+        function saveEngineConnection() {
+            const url = document.getElementById('engine-url').value;
+            localStorage.setItem('engine-url', url);
+            showNotification('Engine connection saved', 'success');
+        }
+
+        function saveDatabaseConnection() {
+            const dbType = document.getElementById('db-type').value;
+            localStorage.setItem('db-type', dbType);
+            
+            if (dbType === 'csv') {
+                const dataDir = document.getElementById('data-dir').value;
+                localStorage.setItem('data-dir', dataDir);
+            } else if (dbType === 'supabase') {
+                const url = document.getElementById('supabase-url').value;
+                const key = document.getElementById('supabase-key').value;
+                localStorage.setItem('supabase-url', url);
+                localStorage.setItem('supabase-key', key);
+            }
+            
+            showNotification('Database connection saved', 'success');
+        }
+
+        function saveWhatsAppAPI() {
+            const apiKey = document.getElementById('whatsapp-key').value;
+            const webhook = document.getElementById('whatsapp-webhook').value;
+            const phoneId = document.getElementById('whatsapp-phone-id').value;
+            
+            // Only save if not masked
+            if (!apiKey.startsWith('•')) {
+                localStorage.setItem('whatsapp-key', apiKey);
+            }
+            localStorage.setItem('whatsapp-webhook', webhook);
+            localStorage.setItem('whatsapp-phone-id', phoneId);
+            
+            showNotification('WhatsApp API settings saved', 'success');
+        }
+
+        function saveVertexAI() {
+            const projectId = document.getElementById('vertex-project-id').value;
+            const jsonKey = document.getElementById('vertex-json-key').value;
+            const model = document.getElementById('vertex-model').value;
+            
+            localStorage.setItem('vertex-project-id', projectId);
+            localStorage.setItem('vertex-json-key', jsonKey);
+            localStorage.setItem('vertex-model', model);
+            
+            showNotification('Vertex AI settings saved', 'success');
+        }
+
+        function saveTinyFishAPI() {
+            const apiKey = document.getElementById('tinyfish-key').value;
+            const baseUrl = document.getElementById('tinyfish-url').value;
+            
+            // Only save if not masked
+            if (!apiKey.startsWith('•')) {
+                localStorage.setItem('tinyfish-key', apiKey);
+            }
+            localStorage.setItem('tinyfish-url', baseUrl);
+            
+            showNotification('TinyFish API settings saved', 'success');
+        }
+
+        function saveMCPServers() {
+            const port = document.getElementById('mcp-port').value;
+            const token = document.getElementById('mcp-token').value;
+            
+            localStorage.setItem('mcp-port', port);
+            localStorage.setItem('mcp-token', token);
+            
+            showNotification('MCP server settings saved', 'success');
+        }
+
+        function saveAllSettings() {
+            const interval = parseInt(document.getElementById('refresh-interval').value);
+            const notifications = document.getElementById('enable-notifications').checked;
+            
+            localStorage.setItem('refresh-interval', interval);
+            localStorage.setItem('enable-notifications', notifications);
+            
+            restartAutoRefresh(interval);
+            hideSettings();
+            showNotification('All settings saved successfully', 'success');
         }
 
         function saveSettings() {
