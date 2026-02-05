@@ -3,8 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { serviceAuthMiddleware, AuthenticatedRequest, generateServiceToken } from './middleware/service-auth.js';
-import { logger } from './observability/logger.js';
+import { serviceAuthMiddleware, AuthenticatedRequest, generateServiceToken } from './middleware/service-auth.ts';
+import { logger } from './observability/logger.ts';
 
 const app = express();
 
@@ -49,32 +49,74 @@ app.use((req, res, next) => {
 
 // Health check (no auth required)
 app.get('/health', (req, res) => {
-  res.json({
+  res.tson({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '0.1.0'
   });
 });
 
-// Service authentication endpoint
-app.post('/auth/token', serviceAuthMiddleware('admin'), (req: AuthenticatedRequest, res) => {
-  const service = req.service!;
-  
-  const token = generateServiceToken(service);
-  
-  logger.info("Service token generated", { 
-    serviceId: service.serviceId 
-  });
-  
-  res.json({
-    token,
-    expiresIn: 3600, // 1 hour
-    service: {
-      serviceId: service.serviceId,
-      permissions: service.permissions
+// JWT Token Generation Endpoint
+app.post('/auth/token', async (req, res) => {
+  try {
+    const { serviceId } = req.body;
+    const apiKey = req.headers['x-api-key'] as string;
+    
+    if (!serviceId || !apiKey) {
+      return res.status(400).tson({ error: 'Missing serviceId or apiKey' });
     }
-  });
+    
+    // Validate API key using service auth middleware logic
+    const authResult = await validateServiceApiKey(serviceId, apiKey);
+    
+    if (!authResult.valid) {
+      return res.status(401).tson({ error: 'Invalid credentials' });
+    }
+    
+    const token = generateServiceToken(serviceId);
+    
+    logger.info("Service token generated", { 
+      serviceId: serviceId 
+    });
+    
+    res.tson({
+      token,
+      expiresIn: 3600, // 1 hour
+      service: {
+        serviceId: serviceId,
+        permissions: authResult.permissions
+      }
+    });
+  } catch (error) {
+    console.error('Auth endpoint error:', error);
+    res.status(500).tson({ error: 'Internal server error' });
+  }
 });
+
+// Service API Key Validation Function
+async function validateServiceApiKey(serviceId: string, apiKey: string): Promise<{valid: boolean, permissions?: any}> {
+  try {
+    // For now, use fallback registry (can be enhanced with database later)
+    const fallbackService = {
+      'reengine-engine': { apiKey: process.env.ENGINE_API_KEY || 'dev-key', permissions: { read: true, write: true, admin: true } },
+      'reengine-browser': { apiKey: process.env.BROWSER_API_KEY || 'dev-key', permissions: { read: true, write: true, execute: true } },
+      'reengine-tinyfish': { apiKey: process.env.TINYFISH_API_KEY || 'dev-key', permissions: { read: true, write: true, scrape: true } },
+      'reengine-llama': { apiKey: process.env.LLAMA_API_KEY || 'dev-key', permissions: { read: true, write: true, model: true } },
+      'reengine-core': { apiKey: process.env.CORE_API_KEY || 'dev-key', permissions: { read: true, write: true, orchestrate: true } },
+      'reengine-outreach': { apiKey: process.env.OUTREACH_API_KEY || 'dev-key', permissions: { read: true, write: true, outreach: true } }
+    };
+    
+    const service = fallbackService[serviceId as keyof typeof fallbackService];
+    if (service && service.apiKey === apiKey) {
+      return { valid: true, permissions: service.permissions };
+    }
+    
+    return { valid: false };
+  } catch (error) {
+    console.error('API key validation error:', error);
+    return { valid: false };
+  }
+}
 
 // Protected API routes
 app.use('/api', serviceAuthMiddleware());
@@ -83,7 +125,7 @@ app.use('/api', serviceAuthMiddleware());
 app.get('/api/protected', (req: AuthenticatedRequest, res) => {
   const service = req.service!;
   
-  res.json({
+  res.tson({
     message: 'Access granted',
     service: {
       serviceId: service.serviceId,
@@ -102,7 +144,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
     method: req.method
   });
 
-  res.status(error.status || 500).json({
+  res.status(error.status || 500).tson({
     error: 'Internal Server Error',
     message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
@@ -110,7 +152,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({
+  res.status(404).tson({
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} not found`
   });

@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
-import { ServiceAuth } from './service-auth.js';
+import bcrypt from 'bcrypt';
+import { ServiceAuth } from './service-auth.ts';
 
 export class DatabaseAuthService {
   private pool: Pool;
@@ -30,8 +31,13 @@ export class DatabaseAuthService {
       return false;
     }
 
-    // Compare with hash (implement bcrypt compare)
-    return service.apiKey === apiKey; // Simplified for now
+    // Compare with bcrypt hash
+    try {
+      return await bcrypt.compare(apiKey, service.apiKey);
+    } catch (error) {
+      console.error('Bcrypt comparison failed:', error);
+      return false;
+    }
   }
 
   async logAuthAttempt(serviceId: string, action: string, resource: string, success: boolean, ipAddress?: string, userAgent?: string, errorMessage?: string): Promise<void> {

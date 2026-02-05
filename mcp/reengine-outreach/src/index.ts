@@ -11,6 +11,50 @@ import { v4 as uuidv4 } from 'uuid';
 import { WhapiIntegration, Lead, OutreachSequence, OutreachStep } from './whapi-integration.js';
 import { WorkflowAutomation, WorkflowRule } from './workflow-automation.js';
 
+// Authentication configuration
+const SERVICE_CONFIG = {
+  serviceId: process.env.SERVICE_ID || 'reengine-outreach',
+  apiKey: process.env.OUTREACH_API_KEY || '18b6e54296ae58d582ffe83b66ef45fa2de7057fc6d8d456fa891f7055727243',
+  authUrl: process.env.AUTH_URL || 'http://localhost:3001/auth/token'
+};
+
+// Get JWT token for service authentication
+async function getServiceToken(): Promise<string> {
+  try {
+    const response = await fetch(SERVICE_CONFIG.authUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': SERVICE_CONFIG.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Auth failed: ${response.status}`);
+    }
+
+    const { token } = await response.json();
+    return token;
+  } catch (error) {
+    console.error('Failed to get service token:', error);
+    throw error;
+  }
+}
+
+// Authenticated fetch wrapper
+async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getServiceToken();
+  
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 const logger = pino();
 
 // Initialize Whapi Integration

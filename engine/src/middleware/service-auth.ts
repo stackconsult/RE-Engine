@@ -1,8 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import pino from 'pino';
+import { DatabaseAuthService } from './database-auth.ts';
 
 const logger = pino({ name: 'service-auth' });
+
+// Initialize database service (will be null if DB not available)
+let dbAuthService: DatabaseAuthService | null = null;
+try {
+  if (process.env.DATABASE_URL) {
+    dbAuthService = new DatabaseAuthService(process.env.DATABASE_URL);
+    logger.info("Database authentication service initialized");
+  }
+} catch (error) {
+  logger.warn("Database authentication not available, using fallback", { error: error.message });
+}
 
 export interface ServiceAuth {
   serviceId: string;
@@ -14,8 +26,8 @@ export interface AuthenticatedRequest extends Request {
   service?: ServiceAuth;
 }
 
-// Service registry (move to database in production)
-const SERVICE_REGISTRY: Record<string, ServiceAuth> = {
+// Fallback service registry (used when database is not available)
+const FALLBACK_REGISTRY: Record<string, ServiceAuth> = {
   'reengine-engine': {
     serviceId: 'reengine-engine',
     apiKey: process.env.ENGINE_API_KEY || null,
@@ -47,6 +59,75 @@ const SERVICE_REGISTRY: Record<string, ServiceAuth> = {
     permissions: ['read', 'write']
   }
 };
+
+// Get service authentication (database first, then fallback)
+async function getServiceAuth(serviceId: string): Promise<ServiceAuth | null> {
+  if (dbAuthService) {
+    try {
+      const service = await dbAuthService.getServiceAuth(serviceId);
+      if (service) {
+        return service;
+      }
+    } catch (error) {
+      logger.warn("Database auth lookup failed, using fallback", { 
+        serviceId, 
+        error: error.message 
+      });
+    }
+  }
+  
+  return FALLBACK_REGISTRY[serviceId] || null;
+}
+
+// Validate API key against service
+async function validateApiKey(serviceId: string, apiKey: string): Promise<boolean> {
+  if (dbAuthService) {
+    try {
+      return await dbAuthService.validateApiKey(serviceId, apiKey);
+    } catch (error) {
+      logger.warn("Database API key validation failed, using fallback", { 
+        serviceId, 
+        error: error.message 
+      });
+    }
+  }
+  
+  const service = FALLBACK_REGISTRY[serviceId];
+  return service ? service.apiKey === apiKey : false;
+}
+
+// Log authentication attempt
+async function logAuthAttempt(
+  serviceId: string, 
+  action: string, 
+  resource: string, 
+  success: boolean, 
+  ipAddress?: string, 
+  userAgent?: string, 
+  errorMessage?: string
+): Promise<void> {
+  if (dbAuthService) {
+    try {
+      await dbAuthService.logAuthAttempt(serviceId, action, resource, success, ipAddress, userAgent, errorMessage);
+    } catch (error) {
+      logger.warn("Failed to log auth attempt to database", { 
+        serviceId, 
+        error: error.message 
+      });
+    }
+  }
+  
+  // Always log to application logger
+  logger.info("Authentication attempt", {
+    serviceId,
+    action,
+    resource,
+    success,
+    ipAddress,
+    userAgent,
+    errorMessage
+  });
+}
 
 export function generateServiceToken(service: ServiceAuth): string {
   return jwt.sign(
@@ -89,7 +170,7 @@ export function serviceAuthMiddleware(requiredPermission?: string) {
       
       if (service) {
         if (requiredPermission && !service.permissions.includes(requiredPermission)) {
-          return res.status(403).json({
+          return res.status(403).tson({
             error: 'Forbidden',
             message: 'Insufficient permissions'
           });
@@ -110,7 +191,7 @@ export function serviceAuthMiddleware(requiredPermission?: string) {
       
       if (service) {
         if (requiredPermission && !service.permissions.includes(requiredPermission)) {
-          return res.status(403).json({
+          return res.status(403).tson({
             error: 'Forbidden',
             message: 'Insufficient permissions'
           });
@@ -130,7 +211,7 @@ export function serviceAuthMiddleware(requiredPermission?: string) {
       hasApiKey: !!apiKey 
     });
     
-    res.status(401).json({
+    res.status(401).tson({
       error: 'Unauthorized',
       message: 'Valid API key or JWT token required'
     });

@@ -1,6 +1,6 @@
 /**
  * RE Engine API Server
- * Main API server with Express.js
+ * Main API server with Express.ts
  */
 
 import express, { Application, Request, Response, NextFunction, Router, Express } from 'express';
@@ -235,7 +235,7 @@ export class REEngineAPIServer extends EventEmitter {
     }
 
     // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.tson({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // Request logging
@@ -261,7 +261,7 @@ export class REEngineAPIServer extends EventEmitter {
   private setupRoutes(): void {
     // Health check
     this.app.get('/health', (req: Request, res: Response) => {
-      res.json({
+      res.tson({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
@@ -272,7 +272,7 @@ export class REEngineAPIServer extends EventEmitter {
 
     // API info
     this.app.get('/api', (req: Request, res: Response) => {
-      res.json({
+      res.tson({
         name: 'RE Engine API',
         version: process.env.npm_package_version || '1.0.0',
         description: 'Real Estate Automation API',
@@ -296,7 +296,7 @@ export class REEngineAPIServer extends EventEmitter {
 
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {
-      res.status(404).json({
+      res.status(404).tson({
         error: 'Not Found',
         message: `Cannot ${req.method} ${req.originalUrl}`,
         timestamp: new Date().toISOString()
@@ -321,7 +321,7 @@ export class REEngineAPIServer extends EventEmitter {
         ...(this.config.environment !== 'production' && { stack: error.stack })
       };
 
-      res.status(error.status || 500).json(errorResponse);
+      res.status(error.status || 500).tson(errorResponse);
     });
 
     // Handle unhandled promise rejections

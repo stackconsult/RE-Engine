@@ -1,11 +1,57 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
+  Tool,
+} from "@modelcontextprotocol/sdk/types.js";
 import pino from 'pino';
+import { z } from "zod";
+
+// Authentication configuration
+const SERVICE_CONFIG = {
+  serviceId: process.env.SERVICE_ID || 'reengine-llama',
+  apiKey: process.env.LLAMA_API_KEY || 'ed5d3985bc222140465acc648be2b2154fa519d31a2a04611d8d244084cdc393',
+  authUrl: process.env.AUTH_URL || 'http://localhost:3001/auth/token'
+};
+
+// Get JWT token for service authentication
+async function getServiceToken(): Promise<string> {
+  try {
+    const response = await fetch(SERVICE_CONFIG.authUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': SERVICE_CONFIG.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Auth failed: ${response.status}`);
+    }
+
+    const { token } = await response.json();
+    return token;
+  } catch (error) {
+    console.error('Failed to get service token:', error);
+    throw error;
+  }
+}
+
+// Authenticated fetch wrapper
+async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getServiceToken();
+  
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 import { v4 as uuidv4 } from 'uuid';
 import fetch from 'node-fetch';
 
