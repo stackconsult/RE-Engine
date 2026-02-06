@@ -2,6 +2,45 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 import { scrape } from "./tools/scrape.js";
+// Authentication configuration
+const SERVICE_CONFIG = {
+    serviceId: process.env.SERVICE_ID || 'reengine-tinyfish',
+    apiKey: process.env.TINYFISH_API_KEY || process.env.DEFAULT_API_KEY || 'dev-key-placeholder',
+    authUrl: process.env.AUTH_URL || 'http://localhost:3001/auth/token'
+};
+// Get JWT token for service authentication
+async function getServiceToken() {
+    try {
+        const response = await fetch(SERVICE_CONFIG.authUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': SERVICE_CONFIG.apiKey
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Auth failed: ${response.status}`);
+        }
+        const { token } = await response.json();
+        return token;
+    }
+    catch (error) {
+        console.error('Failed to get service token:', error);
+        throw error;
+    }
+}
+// Authenticated fetch wrapper
+async function authenticatedFetch(url, options = {}) {
+    const token = await getServiceToken();
+    return fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+}
 const server = new Server({
     name: "reengine-tinyfish",
     version: "0.1.0",
@@ -138,6 +177,7 @@ const tools = [
     },
 ];
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+    console.error("DEBUG: Received ListToolsRequest");
     return { tools };
 });
 server.setRequestHandler(CallToolRequestSchema, async (request) => {

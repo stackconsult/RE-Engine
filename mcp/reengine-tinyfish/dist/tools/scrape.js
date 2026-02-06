@@ -1,4 +1,4 @@
-import { pino } from "pino";
+import pino from "pino";
 import { v4 as uuidv4 } from "uuid";
 // Logger configuration for audit compliance
 const logger = pino({
@@ -8,7 +8,7 @@ const logger = pino({
         hostname: process.env.HOSTNAME || 'localhost',
         service: 'reengine-tinyfish'
     }
-});
+}, pino.destination(2));
 // Helper function for mock data fallback
 async function getMockFallback(args, auditEvent, startTime) {
     const fallbackAuditEvent = {

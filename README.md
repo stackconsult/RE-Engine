@@ -321,7 +321,7 @@ interface LeadAnalytics {
 
 ```
 RE-Engine/
-├── engine/           # Core Node.js engine
+├── engine/           # Core Node.js engine (TypeScript)
 ├── playwright/       # Browser automation harness
 ├── mcp/             # MCP servers for tool integration
 │   ├── reengine-outreach/    # WhatsApp integration (35+ tools)
@@ -329,7 +329,6 @@ RE-Engine/
 │   ├── reengine-llama/        # Local LLAMA integration (11 tools)
 │   ├── reengine-tinyfish/     # Web scraping server
 │   └── whapi-mcp-optimal/      # Official Whapi.Cloud server
-├── web-dashboard/   # React-based approval dashboard
 ├── docs/           # Documentation and specs
 ├── tests/          # Unit and integration tests
 └── scripts/        # Deployment and utility scripts
@@ -578,48 +577,33 @@ Add to `~/.openclaw/openclaw.json`:
 
 ## 🚀 Quick Start
 
-### 1. Initialize data storage
+### 1. Initialize
 ```bash
-mkdir -p data
-# The system will create CSV files automatically
+git clone https://github.com/stackconsult/RE-Engine.git
+cd RE-Engine
+npm install
 ```
 
-### 2. Set up WhatsApp integration
+### 2. Configure Credentials
+Copy the example env file and fill in your keys:
 ```bash
-# Get your Whapi.Cloud API token and channel ID
-# Configure in .env as shown above
-
-# Test WhatsApp connection
-node mcp/reengine-outreach/dist/index.js
+cp .env.example .env
+# Edit .env:
+# - WHATSAPP_API_KEY (from Whapi.Cloud)
+# - OLLAMA_API_KEY (optional, for local AI)
 ```
 
-### 3. Link communication channels
+### 3. Start Development Mode
+This starts the engine, all MCP servers, and the orchestration layer:
 ```bash
-# WhatsApp (QR scan)
-openclaw channels login
-
-# Approve WhatsApp pairing
-openclaw pairing approve whatsapp <code>
-
-# Approve Telegram pairing
-openclaw pairing approve telegram <code>
+npm run dev
 ```
 
-### 4. Start the web dashboard
+### 4. Verify Installation
+Check system health and connected components:
 ```bash
-npm run dashboard
-```
-
-### 5. Set up automated workflows
-```bash
-# Daily outreach drafts (150/day at 8:00 AM)
-npm run schedule:daily
-
-# IMAP polling (every 15 minutes)
-npm run schedule:imap
-
-# Approval processing (every 5 minutes)
-npm run schedule:approvals
+# In a separate terminal
+npm run smoke
 ```
 
 ## 📊 Usage
