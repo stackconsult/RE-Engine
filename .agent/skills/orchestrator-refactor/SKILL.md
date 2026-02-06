@@ -1,30 +1,49 @@
 ---
 name: orchestrator-refactor
-description: Break down monolithic orchestrators using Strategy Pattern
+description: Break down monolithic orchestrators using Strategy Pattern and Dependency Injection
 ---
 
 # Orchestrator Refactoring Skill
 
-Decomposes complex orchestrator classes into manageable, testable strategies.
+This skill provides the capability to systematically refactor the legacy `MasterOrchestrator` into a testable, modular system using Dependency Injection.
 
-## Steps
+## Context
+The `MasterOrchestrator` currently instantiates its own dependencies (`new ComponentManager()`, etc.), which makes it tightly coupled and hard to test. We need to inject these dependencies from the `ProductionBootstrapService`.
 
-1.  **Identify Responsibilities**:
-    -   Analyze `MasterOrchestrator` or `WorkflowExecutionEngine`.
-    -   Identify distinct chunks of logic (e.g., "Resource Allocation", "Error Recovery", "Step Execution").
+## Instructions
 
-2.  **Define Strategy Interface**:
-    -   Create interfaces for the extracted logic.
-    -   Example: `IWorkflowExecutor`, `IResourceAllocator`.
+### 1. Analyze Injection Points
+Before changing code, identify which services need to be injected.
+- Look for `this.service = new Service()` in constructors.
+- Map them to `ProductionBootstrapResult` properties.
 
-3.  **Extract Implementation**:
-    -   Move logic to new files in `src/orchestration/strategies/` or `src/orchestration/components/`.
-    -   Ensure strict typing for inputs/outputs.
+### 2. Create Interfaces First
+Do not modify the class until the dependency interface is defined.
+```typescript
+export interface OrchestratorDependencies {
+  logger: Logger;
+  db: UnifiedDatabaseManager;
+  // ... other deps
+}
+```
 
-4.  **Inject Dependencies**:
-    -   Update the main Orchestrator to accept these strategies via constructor (Dependency Injection).
-    -   Remove the inline logic.
+### 3. Implement Factory Pattern
+Use a Factory to bridge the gap. Do not make `master-orchestrator.ts` depend on `production-bootstrap.service.ts` directly if avoid circular deps.
+```typescript
+export class OrchestratorFactory {
+  static create(deps: OrchestratorDependencies): MasterOrchestrator {
+    return new MasterOrchestrator(config, deps);
+  }
+}
+```
 
-5.  **Strict Typing**:
-    -   Ensure the new components do not use `any`.
-    -   Remove `@ts-nocheck` from the main file.
+### 4. Step-by-Step Refactor
+Refactor one service at a time to minimize compilation errors.
+1. Add service to `OrchestratorDependencies` interface.
+2. Add service to Constructor arguments.
+3. Remove `new Service()` instantiation.
+4. Update `OrchestratorFactory`.
+
+## Verification
+- Run `npm run build` frequently.
+- Ensure `@ts-nocheck` is removed from the file header upon completion.

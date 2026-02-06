@@ -1,15 +1,20 @@
-// @ts-nocheck - Requires dedicated refactoring (import conflicts, missing orchestrator field)
+// @ts-check
 /**
  * Workflow Execution Engine
  * Executes workflows with perfect synchronicity, dependency resolution, and intelligent retry
  */
 
 import { EventEmitter } from 'events';
-import { MasterOrchestrator } from './master-orchestrator.js';
 import { Workflow, WorkflowStep, WorkflowResult, ExecutionContext, StepResult, StepQueue, ResultCollector } from '../types/orchestration.types.js';
 import { Logger } from '../utils/logger.js';
+import { MasterOrchestratorConfig } from './master-orchestrator.js';
+import { ComponentManager } from './component-manager.js';
+import { IntelligentModelSelector } from './intelligent-model-selector.js';
+import { FallbackManager } from './fallback-manager.js';
+import { GuardrailSystem } from './guardrail-system.js';
+import { OrchestratorDependencies } from '../types/orchestration.types.js';
 
-export interface WorkflowExecutionConfig {
+export interface WorkflowExecutionConfig extends Partial<MasterOrchestratorConfig> {
   maxConcurrentSteps: number;
   defaultStepTimeout: number;
   enableDetailedLogging: boolean;
@@ -17,22 +22,35 @@ export interface WorkflowExecutionConfig {
 }
 
 export class WorkflowExecutionEngine extends EventEmitter {
-  private orchestrator: MasterOrchestrator;
-  private config: WorkflowExecutionConfig;
+  private config: MasterOrchestratorConfig;
   private logger: Logger;
   private activeExecutions: Map<string, WorkflowExecution> = new Map();
 
-  constructor(orchestrator: MasterOrchestrator, config?: Partial<WorkflowExecutionConfig>) {
+  // Core Managers
+  private componentManager: ComponentManager;
+  private fallbackManager: FallbackManager;
+  private modelSelector: IntelligentModelSelector;
+  private guardrails: GuardrailSystem;
+  private dependencies?: OrchestratorDependencies;
+
+  constructor(
+    config: MasterOrchestratorConfig,
+    componentManager: ComponentManager,
+    fallbackManager: FallbackManager,
+    modelSelector: IntelligentModelSelector,
+    guardrails: GuardrailSystem,
+    dependencies?: OrchestratorDependencies
+  ) {
     super();
-    this.orchestrator = orchestrator;
-    this.config = {
-      maxConcurrentSteps: 10,
-      defaultStepTimeout: 30000,
-      enableDetailedLogging: true,
-      enablePerformanceTracking: true,
-      ...config
-    };
-    this.logger = new Logger('WorkflowExecutionEngine', this.config.enableDetailedLogging);
+    this.config = config;
+    this.componentManager = componentManager;
+    this.fallbackManager = fallbackManager;
+    this.modelSelector = modelSelector;
+    this.guardrails = guardrails;
+    this.dependencies = dependencies;
+
+    // Use injected logger if available
+    this.logger = dependencies?.logger || new Logger('WorkflowExecutionEngine', this.config.enableDetailedLogging);
   }
 
   /**
@@ -40,7 +58,17 @@ export class WorkflowExecutionEngine extends EventEmitter {
    */
   async executeWorkflow(workflow: Workflow, context: ExecutionContext): Promise<WorkflowResult> {
     const executionId = this.generateExecutionId();
-    const execution = new WorkflowExecution(executionId, workflow, context, this.config);
+    const execution = new WorkflowExecution(
+      executionId,
+      workflow,
+      context,
+      this.config,
+      {
+        componentManager: this.componentManager,
+        modelSelector: this.modelSelector,
+        guardrails: this.guardrails
+      }
+    );
 
     this.activeExecutions.set(executionId, execution);
     this.logger.info(`🔄 Starting workflow execution ${executionId}`, {
@@ -139,7 +167,7 @@ export class WorkflowExecutionEngine extends EventEmitter {
 
   private async handleExecutionFailure(execution: WorkflowExecution, error: any): Promise<any> {
     // Try to recover from the failure
-    const recoveryResult = await this.orchestrator.fallbackManager.handleFailure({
+    const recoveryResult = await this.fallbackManager.handleFailure({
       workflowId: execution.workflow.id,
       stepId: execution.getCurrentStepId(),
       error: error.message,
@@ -171,12 +199,31 @@ class WorkflowExecution {
   private isCancelled: boolean = false;
   private currentStepId: string | null = null;
 
-  constructor(executionId: string, workflow: Workflow, context: ExecutionContext, config: WorkflowExecutionConfig) {
+  // Dependencies
+  private componentManager: ComponentManager;
+  private modelSelector: IntelligentModelSelector;
+  private guardrails: GuardrailSystem;
+
+  constructor(
+    executionId: string,
+    workflow: Workflow,
+    context: ExecutionContext,
+    config: WorkflowExecutionConfig,
+    dependencies: {
+      componentManager: ComponentManager;
+      modelSelector: IntelligentModelSelector;
+      guardrails: GuardrailSystem;
+    }
+  ) {
     this.executionId = executionId;
     this.workflow = workflow;
     this.context = context;
     this.config = config;
     this.logger = new Logger(`WorkflowExecution-${executionId}`, config.enableDetailedLogging);
+
+    this.componentManager = dependencies.componentManager;
+    this.modelSelector = dependencies.modelSelector;
+    this.guardrails = dependencies.guardrails;
 
     this.stepQueue = new StepQueue(workflow.steps);
     this.resultCollector = new ResultCollector();
@@ -258,7 +305,7 @@ class WorkflowExecution {
         await this.checkStepGuardrails(step);
 
         // Get component
-        const component = this.orchestrator.getComponent(step.component);
+        const component = this.componentManager.getComponent(step.component);
         if (!component) {
           throw new Error(`Component ${step.component} not found`);
         }
@@ -347,7 +394,7 @@ class WorkflowExecution {
   }
 
   private async executeLLMStep(component: any, step: WorkflowStep): Promise<any> {
-    const model = await this.orchestrator.modelSelector.selectOptimalModel(
+    const model = await this.modelSelector.selectOptimalModel(
       step.parameters.taskType || 'general',
       {
         minContextWindow: step.parameters.minContextWindow || 4096,
@@ -457,7 +504,7 @@ class WorkflowExecution {
   }
 
   private async tryComponentReplacement(fallback: any, step: WorkflowStep): Promise<StepResult> {
-    const replacementComponent = this.orchestrator.getComponent(fallback.replacementComponent);
+    const replacementComponent = this.componentManager.getComponent(fallback.replacementComponent);
     if (!replacementComponent) {
       throw new Error(`Replacement component ${fallback.replacementComponent} not found`);
     }
@@ -473,7 +520,7 @@ class WorkflowExecution {
       parameters: { ...step.parameters, ...fallback.adjustments }
     };
 
-    const component = this.orchestrator.getComponent(step.component);
+    const component = this.componentManager.getComponent(step.component);
     return await this.executeStepAction(component, adjustedStep);
   }
 
@@ -492,7 +539,7 @@ class WorkflowExecution {
   private async validateWorkflow(): Promise<void> {
     // Validate workflow against guardrails
     for (const guardrail of this.workflow.guardrails || []) {
-      const result = await this.orchestrator.guardrails.validateWorkflow(this.workflow, this.context);
+      const result = await this.guardrails.validateWorkflow(this.workflow, this.context);
       if (!result.compliant) {
         throw new Error(`Workflow validation failed: ${result.reason}`);
       }
@@ -501,7 +548,7 @@ class WorkflowExecution {
 
   private async checkStepGuardrails(step: WorkflowStep): Promise<void> {
     for (const guardrail of step.guardrails || []) {
-      const result = await this.orchestrator.guardrails.validateStep(step, this.context);
+      const result = await this.guardrails.validateStep(step, this.context);
       if (!result.compliant) {
         throw new Error(`Step validation failed: ${result.reason}`);
       }

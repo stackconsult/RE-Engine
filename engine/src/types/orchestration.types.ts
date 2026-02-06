@@ -95,19 +95,32 @@ export interface ExecutionContext {
   metadata?: Record<string, any>;
 }
 
-// AI Model Types
+// Orchestrator Dependencies (DI)
+import { HealthMonitor, SupabaseService, MessageQueue, PerformanceOptimizer } from '../production/types.js';
+import { Logger } from '../utils/logger.js';
+import { UnifiedDatabaseManager } from '../database/unified-database-manager.js';
+
+export interface OrchestratorDependencies {
+  logger: Logger;
+  db: UnifiedDatabaseManager;
+  healthMonitor: HealthMonitor;
+  supabase: SupabaseService;
+  messageQueue: MessageQueue;
+  performanceOptimizer: PerformanceOptimizer;
+}
+
 export interface AIModel {
   id: string;
-  name: string;
-  type: 'local' | 'cloud';
-  provider: string;
-  contextWindow: number;
-  costPerToken: number;
-  isLocal: boolean;
-  capabilities: string[];
-  specialties?: string[];
-  performance: ModelPerformance;
-  _rankingScore?: number; // Internal use for debugging
+name: string;
+type: 'local' | 'cloud';
+provider: string;
+contextWindow: number;
+costPerToken: number;
+isLocal: boolean;
+capabilities: string[];
+specialties ?: string[];
+performance: ModelPerformance;
+_rankingScore ?: number; // Internal use for debugging
 }
 
 export interface ModelRequirements {

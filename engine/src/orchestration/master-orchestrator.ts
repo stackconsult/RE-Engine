@@ -14,6 +14,7 @@ import { GuardrailSystem } from './guardrail-system.js';
 import { ResourceManager } from './resource-manager.js';
 import { PerformanceMonitor } from './performance-monitor.js';
 import { Logger } from '../utils/logger.js';
+import { OrchestratorDependencies } from '../types/orchestration.types.js';
 
 export interface MasterOrchestratorConfig {
   maxConcurrentWorkflows: number;
@@ -35,24 +36,34 @@ export class MasterOrchestrator extends EventEmitter {
   private guardrails: GuardrailSystem;
   private resourceManager: ResourceManager;
   private performanceMonitor: PerformanceMonitor;
+  // Dependencies
+  private dependencies?: OrchestratorDependencies;
 
-  private config: MasterOrchestratorConfig;
-  private logger: Logger;
-  private isInitialized: boolean = false;
-  private healthCheckTimer: NodeJS.Timeout;
-
-  constructor(config: MasterOrchestratorConfig) {
+  constructor(config: MasterOrchestratorConfig, dependencies?: OrchestratorDependencies) {
     super();
     this.config = config;
-    this.logger = new Logger('MasterOrchestrator', config.enableDetailedLogging);
+    this.dependencies = dependencies;
 
+    // Use injected logger or fallback to new instance
+    this.logger = dependencies?.logger || new Logger('MasterOrchestrator', config.enableDetailedLogging);
+
+    // Initialize core managers first
     this.componentManager = new ComponentManager();
-    this.workflowEngine = new WorkflowExecutionEngine(this);
     this.modelSelector = new IntelligentModelSelector();
     this.fallbackManager = new FallbackManager();
     this.guardrails = new GuardrailSystem();
     this.resourceManager = new ResourceManager();
     this.performanceMonitor = new PerformanceMonitor();
+
+    // Initialize engine with dependencies
+    this.workflowEngine = new WorkflowExecutionEngine(
+      this.config,             // Use config, or this.config
+      this.componentManager,   // Pass component manager
+      this.fallbackManager,    // Pass fallback manager
+      this.modelSelector,      // Pass model selector
+      this.guardrails,         // Pass guardrails
+      this.dependencies        // Pass system dependencies
+    );
   }
 
   /**
