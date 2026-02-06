@@ -1,0 +1,802 @@
+{
+  "summary": {
+    "totalFiles": 113,
+    "totalIssues": 59,
+    "filesWithIssues": [
+      {
+        "path": "engine/src/ai/fixes-and-optimizations.ts",
+        "issueCount": 4,
+        "lines": [
+          146,
+          232,
+          270,
+          471
+        ]
+      },
+      {
+        "path": "engine/src/ai/magical-automation-engine.ts",
+        "issueCount": 2,
+        "lines": [
+          158,
+          185
+        ]
+      },
+      {
+        "path": "engine/src/ai/operational-agents.ts",
+        "issueCount": 1,
+        "lines": [
+          170
+        ]
+      },
+      {
+        "path": "engine/src/api/server.ts",
+        "issueCount": 1,
+        "lines": [
+          247
+        ]
+      },
+      {
+        "path": "engine/src/api/workflow-api.ts",
+        "issueCount": 9,
+        "lines": [
+          46,
+          102,
+          128,
+          176,
+          194,
+          216,
+          260,
+          394,
+          448
+        ]
+      },
+      {
+        "path": "engine/src/app.ts",
+        "issueCount": 3,
+        "lines": [
+          41,
+          78,
+          140
+        ]
+      },
+      {
+        "path": "engine/src/middleware/service-auth.ts",
+        "issueCount": 10,
+        "lines": [
+          16,
+          72,
+          88,
+          113,
+          121,
+          150,
+          156,
+          180,
+          201,
+          209
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/fallback-manager.ts",
+        "issueCount": 1,
+        "lines": [
+          39
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/master-orchestrator.ts",
+        "issueCount": 2,
+        "lines": [
+          133,
+          144
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/performance-monitor.ts",
+        "issueCount": 1,
+        "lines": [
+          344
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/resource-manager.ts",
+        "issueCount": 1,
+        "lines": [
+          112
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/workflow-execution-engine.ts",
+        "issueCount": 3,
+        "lines": [
+          45,
+          54,
+          271
+        ]
+      },
+      {
+        "path": "engine/src/services/ollama.service.ts",
+        "issueCount": 16,
+        "lines": [
+          192,
+          205,
+          218,
+          253,
+          263,
+          288,
+          305,
+          314,
+          339,
+          387,
+          415,
+          448,
+          472,
+          494,
+          496,
+          537
+        ]
+      },
+      {
+        "path": "engine/src/services/workflow-service.ts",
+        "issueCount": 5,
+        "lines": [
+          72,
+          99,
+          126,
+          141,
+          183
+        ]
+      }
+    ]
+  },
+  "issues": [
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 146,
+      "column": 10,
+      "method": "warn",
+      "currentCode": "logger.warn(`⚠️ Issue reported: ${issueWithId.type} - ${issueWithId.description}`, {\n      severity: issueWithId.severity,\n      category: issueWithId.category,\n      location: issueWithId.location\n    })",
+      "message": "⚠️ Issue reported: ${issueWithId.type} - ${issueWithId.description}",
+      "dataObject": "{\n      severity: issueWithId.severity,\n      category: issueWithId.category,\n      location: issueWithId.location\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 232,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Fix applied successfully: ${issueId}`, {\n        action: result.action,\n        duration: result.duration,\n        improvements: result.improvements.length\n      })",
+      "message": "✅ Fix applied successfully: ${issueId}",
+      "dataObject": "{\n        action: result.action,\n        duration: result.duration,\n        improvements: result.improvements.length\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 270,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Optimization applied successfully: ${optimizationId}`, {\n        improvement: result.improvement,\n        duration: result.duration,\n        details: result.details\n      })",
+      "message": "✅ Optimization applied successfully: ${optimizationId}",
+      "dataObject": "{\n        improvement: result.improvement,\n        duration: result.duration,\n        details: result.details\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 471,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Auto-fix successful: ${issue.id}`, {\n          action: result.action,\n          improvements: result.improvements.length\n        })",
+      "message": "✅ Auto-fix successful: ${issue.id}",
+      "dataObject": "{\n          action: result.action,\n          improvements: result.improvements.length\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/magical-automation-engine.ts",
+      "line": 158,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('🪄 Executing magical automation:', {\n      type: request.type,\n      complexity: request.complexity,\n      magicLevel: this.config.magicLevel\n    })",
+      "message": "🪄 Executing magical automation:",
+      "dataObject": "{\n      type: request.type,\n      complexity: request.complexity,\n      magicLevel: this.config.magicLevel\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/magical-automation-engine.ts",
+      "line": 185,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✨ Magical automation completed successfully', {\n        agent: agent.name,\n        executionTime: optimizedResult.executionTime,\n        magicScore: optimizedResult.magicScore\n      })",
+      "message": "✨ Magical automation completed successfully",
+      "dataObject": "{\n        agent: agent.name,\n        executionTime: optimizedResult.executionTime,\n        magicScore: optimizedResult.magicScore\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/operational-agents.ts",
+      "line": 170,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Training completed: ${agentId} - ${skillId}`, {\n        success: trainingResult.success,\n        performance: trainingResult.performance,\n        improvements: trainingResult.improvements.length\n      })",
+      "message": "✅ Training completed: ${agentId} - ${skillId}",
+      "dataObject": "{\n        success: trainingResult.success,\n        performance: trainingResult.performance,\n        improvements: trainingResult.improvements.length\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/server.ts",
+      "line": 247,
+      "column": 14,
+      "method": "debug",
+      "currentCode": "logger.debug(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {\n          method: req.method,\n          path: req.path,\n          statusCode: res.statusCode,\n          duration,\n          userAgent: req.get('User-Agent'),\n          ip: req.ip\n        })",
+      "message": "${req.method} ${req.path} - ${res.statusCode} (${duration}ms)",
+      "dataObject": "{\n          method: req.method,\n          path: req.path,\n          statusCode: res.statusCode,\n          duration,\n          userAgent: req.get('User-Agent'),\n          ip: req.ip\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 46,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🔄 API: Execute workflow request', {\n        workflowId: request.workflowId,\n        priority: request.priority,\n        userId: req.headers['x-user-id']\n      })",
+      "message": "🔄 API: Execute workflow request",
+      "dataObject": "{\n        workflowId: request.workflowId,\n        priority: request.priority,\n        userId: req.headers['x-user-id']\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 102,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('✅ API: Workflow execution queued', {\n        executionId,\n        workflowId: request.workflowId\n      })",
+      "message": "✅ API: Workflow execution queued",
+      "dataObject": "{\n        executionId,\n        workflowId: request.workflowId\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 128,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🔍 API: Get execution status', { executionId })",
+      "message": "🔍 API: Get execution status",
+      "dataObject": "{ executionId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 176,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🛑 API: Cancel execution', { executionId })",
+      "message": "🛑 API: Cancel execution",
+      "dataObject": "{ executionId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 194,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('✅ API: Execution cancelled', { executionId })",
+      "message": "✅ API: Execution cancelled",
+      "dataObject": "{ executionId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 216,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('📋 API: Get workflows', { category })",
+      "message": "📋 API: Get workflows",
+      "dataObject": "{ category }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 260,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🔍 API: Get workflow details', { workflowId })",
+      "message": "🔍 API: Get workflow details",
+      "dataObject": "{ workflowId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 394,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🚀 API: Execute workflow immediately', {\n        workflowId: request.workflowId,\n        userId: req.headers['x-user-id']\n      })",
+      "message": "🚀 API: Execute workflow immediately",
+      "dataObject": "{\n        workflowId: request.workflowId,\n        userId: req.headers['x-user-id']\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 448,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('✅ API: Workflow executed immediately', {\n        workflowId: request.workflowId,\n        success: result.success,\n        executionTime: result.executionTime\n      })",
+      "message": "✅ API: Workflow executed immediately",
+      "dataObject": "{\n        workflowId: request.workflowId,\n        success: result.success,\n        executionTime: result.executionTime\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/app.ts",
+      "line": 41,
+      "column": 3,
+      "method": "info",
+      "currentCode": "logger.info(\"Incoming request\", {\n    method: req.method,\n    path: req.path,\n    userAgent: req.headers['user-agent'],\n    ip: req.ip\n  })",
+      "message": "Incoming request",
+      "dataObject": "{\n    method: req.method,\n    path: req.path,\n    userAgent: req.headers['user-agent'],\n    ip: req.ip\n  }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/app.ts",
+      "line": 78,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info(\"Service token generated\", { \n      serviceId: serviceId \n    })",
+      "message": "Service token generated",
+      "dataObject": "{ \n      serviceId: serviceId \n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/app.ts",
+      "line": 140,
+      "column": 3,
+      "method": "error",
+      "currentCode": "logger.error(\"API error\", {\n    error: error.message,\n    stack: error.stack,\n    path: req.path,\n    method: req.method\n  })",
+      "message": "API error",
+      "dataObject": "{\n    error: error.message,\n    stack: error.stack,\n    path: req.path,\n    method: req.method\n  }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 16,
+      "column": 3,
+      "method": "warn",
+      "currentCode": "logger.warn(\"Database authentication not available, using fallback\", { error: error.message })",
+      "message": "Database authentication not available, using fallback",
+      "dataObject": "{ error: error.message }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 72,
+      "column": 7,
+      "method": "warn",
+      "currentCode": "logger.warn(\"Database auth lookup failed, using fallback\", { \n        serviceId, \n        error: error.message \n      })",
+      "message": "Database auth lookup failed, using fallback",
+      "dataObject": "{ \n        serviceId, \n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 88,
+      "column": 7,
+      "method": "warn",
+      "currentCode": "logger.warn(\"Database API key validation failed, using fallback\", { \n        serviceId, \n        error: error.message \n      })",
+      "message": "Database API key validation failed, using fallback",
+      "dataObject": "{ \n        serviceId, \n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 113,
+      "column": 7,
+      "method": "warn",
+      "currentCode": "logger.warn(\"Failed to log auth attempt to database\", { \n        serviceId, \n        error: error.message \n      })",
+      "message": "Failed to log auth attempt to database",
+      "dataObject": "{ \n        serviceId, \n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 121,
+      "column": 3,
+      "method": "info",
+      "currentCode": "logger.info(\"Authentication attempt\", {\n    serviceId,\n    action,\n    resource,\n    success,\n    ipAddress,\n    userAgent,\n    errorMessage\n  })",
+      "message": "Authentication attempt",
+      "dataObject": "{\n    serviceId,\n    action,\n    resource,\n    success,\n    ipAddress,\n    userAgent,\n    errorMessage\n  }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 150,
+      "column": 7,
+      "method": "warn",
+      "currentCode": "logger.warn('Unknown service in token', { serviceId: decoded.serviceId })",
+      "message": "Unknown service in token",
+      "dataObject": "{ serviceId: decoded.serviceId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 156,
+      "column": 5,
+      "method": "error",
+      "currentCode": "logger.error('Token validation failed', { error: error.message })",
+      "message": "Token validation failed",
+      "dataObject": "{ error: error.message }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 180,
+      "column": 9,
+      "method": "info",
+      "currentCode": "logger.info('Service authenticated via JWT', { \n          serviceId: service.serviceId,\n          permission: requiredPermission \n        })",
+      "message": "Service authenticated via JWT",
+      "dataObject": "{ \n          serviceId: service.serviceId,\n          permission: requiredPermission \n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 201,
+      "column": 9,
+      "method": "info",
+      "currentCode": "logger.info('Service authenticated via API key', { \n          serviceId: service.serviceId,\n          permission: requiredPermission \n        })",
+      "message": "Service authenticated via API key",
+      "dataObject": "{ \n          serviceId: service.serviceId,\n          permission: requiredPermission \n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/middleware/service-auth.ts",
+      "line": 209,
+      "column": 5,
+      "method": "warn",
+      "currentCode": "logger.warn('Authentication failed', { \n      hasToken: !!authHeader,\n      hasApiKey: !!apiKey \n    })",
+      "message": "Authentication failed",
+      "dataObject": "{ \n      hasToken: !!authHeader,\n      hasApiKey: !!apiKey \n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/fallback-manager.ts",
+      "line": 39,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Handling failure for workflow ${failure.workflowId}`, {\n      stepId: failure.stepId,\n      error: failure.error,\n      severity: failure.severity\n    })",
+      "message": "🔄 Handling failure for workflow ${failure.workflowId}",
+      "dataObject": "{\n      stepId: failure.stepId,\n      error: failure.error,\n      severity: failure.severity\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/master-orchestrator.ts",
+      "line": 133,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Starting workflow ${workflowId}`, { traceId: executionContext.traceId })",
+      "message": "🔄 Starting workflow ${workflowId}",
+      "dataObject": "{ traceId: executionContext.traceId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/master-orchestrator.ts",
+      "line": 144,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Workflow ${workflowId} completed successfully`, {\n        traceId: executionContext.traceId,\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      })",
+      "message": "✅ Workflow ${workflowId} completed successfully",
+      "dataObject": "{\n        traceId: executionContext.traceId,\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/performance-monitor.ts",
+      "line": 344,
+      "column": 10,
+      "method": "debug",
+      "currentCode": "logger.debug('📊 Metrics aggregated:', {\n      dataPoints: recentData.length,\n      workflowSuccessRate: this.metrics.workflowExecution.successRate,\n      modelSelectionTime: this.metrics.modelSelection.selectionTime\n    })",
+      "message": "📊 Metrics aggregated:",
+      "dataObject": "{\n      dataPoints: recentData.length,\n      workflowSuccessRate: this.metrics.workflowExecution.successRate,\n      modelSelectionTime: this.metrics.modelSelection.selectionTime\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/resource-manager.ts",
+      "line": 112,
+      "column": 10,
+      "method": "debug",
+      "currentCode": "logger.debug('Resource check:', { available, needed })",
+      "message": "Resource check:",
+      "dataObject": "{ available, needed }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/workflow-execution-engine.ts",
+      "line": 45,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Starting workflow execution ${executionId}`, {\n      workflowId: workflow.id,\n      workflowName: workflow.name,\n      stepCount: workflow.steps.length\n    })",
+      "message": "🔄 Starting workflow execution ${executionId}",
+      "dataObject": "{\n      workflowId: workflow.id,\n      workflowName: workflow.name,\n      stepCount: workflow.steps.length\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/workflow-execution-engine.ts",
+      "line": 54,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Workflow execution ${executionId} completed`, {\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      })",
+      "message": "✅ Workflow execution ${executionId} completed",
+      "dataObject": "{\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/workflow-execution-engine.ts",
+      "line": 271,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Step ${step.id} completed successfully`, {\n          attempt: attempt + 1,\n          executionTime: Date.now() - startTime\n        })",
+      "message": "✅ Step ${step.id} completed successfully",
+      "dataObject": "{\n          attempt: attempt + 1,\n          executionTime: Date.now() - startTime\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 192,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Failed to list models', { error: error.message })",
+      "message": "Failed to list models",
+      "dataObject": "{ error: error.message }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 205,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Failed to check model availability', { \n        model: modelName, \n        error: error.message \n      })",
+      "message": "Failed to check model availability",
+      "dataObject": "{ \n        model: modelName, \n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 218,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Pulling model', { model: modelName })",
+      "message": "Pulling model",
+      "dataObject": "{ model: modelName }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 253,
+      "column": 17,
+      "method": "info",
+      "currentCode": "logger.info('Model pull completed', { model: modelName })",
+      "message": "Model pull completed",
+      "dataObject": "{ model: modelName }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 263,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Failed to pull model', { \n        model: modelName, \n        error: error.message \n      })",
+      "message": "Failed to pull model",
+      "dataObject": "{ \n        model: modelName, \n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 288,
+      "column": 7,
+      "method": "debug",
+      "currentCode": "logger.debug('Chat request', { \n        model: mergedRequest.model, \n        messageCount: mergedRequest.messages.length,\n        hasTools: !!mergedRequest.tools\n      })",
+      "message": "Chat request",
+      "dataObject": "{ \n        model: mergedRequest.model, \n        messageCount: mergedRequest.messages.length,\n        hasTools: !!mergedRequest.tools\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 305,
+      "column": 7,
+      "method": "debug",
+      "currentCode": "logger.debug('Chat response', { \n        model: result.model,\n        done: result.done,\n        hasToolCalls: !!result.message.tool_calls\n      })",
+      "message": "Chat response",
+      "dataObject": "{ \n        model: result.model,\n        done: result.done,\n        hasToolCalls: !!result.message.tool_calls\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 314,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Chat request failed', { \n        model: request.model,\n        error: error.message \n      })",
+      "message": "Chat request failed",
+      "dataObject": "{ \n        model: request.model,\n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 339,
+      "column": 7,
+      "method": "debug",
+      "currentCode": "logger.debug('Stream chat request', { \n        model: mergedRequest.model, \n        messageCount: mergedRequest.messages.length\n      })",
+      "message": "Stream chat request",
+      "dataObject": "{ \n        model: mergedRequest.model, \n        messageCount: mergedRequest.messages.length\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 387,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Stream chat request failed', { \n        model: request.model,\n        error: error.message \n      })",
+      "message": "Stream chat request failed",
+      "dataObject": "{ \n        model: request.model,\n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 415,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Embedding request failed', { \n        model,\n        error: error.message \n      })",
+      "message": "Embedding request failed",
+      "dataObject": "{ \n        model,\n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 448,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Generate request failed', { \n        model,\n        error: error.message \n      })",
+      "message": "Generate request failed",
+      "dataObject": "{ \n        model,\n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 472,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Show model request failed', { \n        model: modelName,\n        error: error.message \n      })",
+      "message": "Show model request failed",
+      "dataObject": "{ \n        model: modelName,\n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 494,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Model deleted', { model: modelName })",
+      "message": "Model deleted",
+      "dataObject": "{ model: modelName }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 496,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Delete model request failed', { \n        model: modelName,\n        error: error.message \n      })",
+      "message": "Delete model request failed",
+      "dataObject": "{ \n        model: modelName,\n        error: error.message \n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/ollama.service.ts",
+      "line": 537,
+      "column": 11,
+      "method": "warn",
+      "currentCode": "logger.warn(`Request attempt ${attempt} failed, retrying...`, {\n            path,\n            error: error.message\n          })",
+      "message": "Request attempt ${attempt} failed, retrying...",
+      "dataObject": "{\n            path,\n            error: error.message\n          }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 72,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Queueing workflow execution: ${request.workflowId}`, {\n      executionId,\n      priority: request.priority || 'medium'\n    })",
+      "message": "🔄 Queueing workflow execution: ${request.workflowId}",
+      "dataObject": "{\n      executionId,\n      priority: request.priority || 'medium'\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 99,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🚀 Executing workflow immediately: ${request.workflowId}`, {\n      executionId\n    })",
+      "message": "🚀 Executing workflow immediately: ${request.workflowId}",
+      "dataObject": "{\n      executionId\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 126,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Workflow execution completed: ${request.workflowId}`, {\n        executionId,\n        executionTime: result.executionTime,\n        success: result.success\n      })",
+      "message": "✅ Workflow execution completed: ${request.workflowId}",
+      "dataObject": "{\n        executionId,\n        executionTime: result.executionTime,\n        success: result.success\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 141,
+      "column": 12,
+      "method": "error",
+      "currentCode": "logger.error(`❌ Workflow execution failed: ${request.workflowId}`, {\n        executionId,\n        error: executionStatus.error\n      })",
+      "message": "❌ Workflow execution failed: ${request.workflowId}",
+      "dataObject": "{\n        executionId,\n        error: executionStatus.error\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 183,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🛑 Cancelling workflow execution: ${execution.workflowId}`, {\n      executionId\n    })",
+      "message": "🛑 Cancelling workflow execution: ${execution.workflowId}",
+      "dataObject": "{\n      executionId\n    }",
+      "severity": "high",
+      "fixable": true
+    }
+  ]
+}
