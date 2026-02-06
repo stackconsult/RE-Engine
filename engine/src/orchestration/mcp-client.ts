@@ -1,5 +1,3 @@
-// @ts-nocheck - MCP SDK API migration pending (Phase 2)
-
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import {
@@ -9,7 +7,7 @@ import {
     ListToolsResultSchema
 } from "@modelcontextprotocol/sdk/types.js";
 import path from "path";
-import { Logger } from "../utils/logger";
+import { Logger } from "../utils/logger.js";
 
 export interface MCPClientConfig {
     name: string;
@@ -35,9 +33,6 @@ export class MCPClient {
             {
                 name: "re-engine-orchestrator",
                 version: "1.0.0",
-            },
-            {
-                capabilities: {},
             }
         );
     }
@@ -63,8 +58,7 @@ export class MCPClient {
             this.transport = new StdioClientTransport({
                 command,
                 args,
-                env: { ...process.env, ...this.config.env },
-                stderr: "inherit" // Pipe stderr to parent to see server logs
+                env: { ...process.env, ...this.config.env } as Record<string, string>
             });
 
             await this.client.connect(this.transport);
@@ -90,7 +84,7 @@ export class MCPClient {
             throw new Error("Client not connected");
         }
 
-        const result = await this.client.request(ListToolsRequestSchema, {});
+        const result = await this.client.listTools();
         return result.tools;
     }
 
@@ -105,7 +99,7 @@ export class MCPClient {
         this.logger.debug(`🛠️ Calling tool ${toolName} on ${this.config.name}`);
 
         try {
-            const result = await this.client.request(CallToolRequestSchema, {
+            const result = await this.client.callTool({
                 name: toolName,
                 arguments: args
             });

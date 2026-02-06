@@ -1,13 +1,13 @@
-// @ts-nocheck - MCP SDK API migration pending (Phase 2)
+// @ts-nocheck - Requires dedicated refactoring (import conflicts, missing orchestrator field)
 /**
  * Workflow Execution Engine
  * Executes workflows with perfect synchronicity, dependency resolution, and intelligent retry
  */
 
 import { EventEmitter } from 'events';
-import { MasterOrchestrator } from './master-orchestrator';
-import { Workflow, WorkflowStep, WorkflowResult, ExecutionContext, StepResult, StepQueue, ResultCollector } from '../types/orchestration.types';
-import { Logger } from '../utils/logger';
+import { MasterOrchestrator } from './master-orchestrator.js';
+import { Workflow, WorkflowStep, WorkflowResult, ExecutionContext, StepResult, StepQueue, ResultCollector } from '../types/orchestration.types.js';
+import { Logger } from '../utils/logger.js';
 
 export interface WorkflowExecutionConfig {
   maxConcurrentSteps: number;
@@ -41,7 +41,7 @@ export class WorkflowExecutionEngine extends EventEmitter {
   async executeWorkflow(workflow: Workflow, context: ExecutionContext): Promise<WorkflowResult> {
     const executionId = this.generateExecutionId();
     const execution = new WorkflowExecution(executionId, workflow, context, this.config);
-    
+
     this.activeExecutions.set(executionId, execution);
     this.logger.info(`🔄 Starting workflow execution ${executionId}`, {
       workflowId: workflow.id,
@@ -51,23 +51,23 @@ export class WorkflowExecutionEngine extends EventEmitter {
 
     try {
       const result = await execution.execute();
-      
+
       this.logger.info(`✅ Workflow execution ${executionId} completed`, {
         executionTime: result.executionTime,
         stepsCompleted: result.stepsCompleted,
         stepsFailed: result.stepsFailed
       });
-      
+
       this.emit('execution:completed', { executionId, result });
       return result;
-      
+
     } catch (error) {
       this.logger.error(`❌ Workflow execution ${executionId} failed:`, error);
-      
+
       const failureResult = await this.handleExecutionFailure(execution, error);
       this.emit('execution:failed', { executionId, error, result: failureResult });
       throw error;
-      
+
     } finally {
       this.activeExecutions.delete(executionId);
     }
@@ -101,7 +101,7 @@ export class WorkflowExecutionEngine extends EventEmitter {
     await execution.cancel();
     this.activeExecutions.delete(executionId);
     this.emit('execution:cancelled', { executionId });
-    
+
     return true;
   }
 
@@ -111,7 +111,7 @@ export class WorkflowExecutionEngine extends EventEmitter {
   async getHealthStatus(): Promise<any> {
     const activeExecutions = this.activeExecutions.size;
     const maxExecutions = this.config.maxConcurrentSteps;
-    
+
     return {
       status: activeExecutions < maxExecutions ? 'healthy' : 'degraded',
       activeExecutions,
@@ -125,13 +125,13 @@ export class WorkflowExecutionEngine extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.logger.info('🛑 Shutting down workflow execution engine...');
-    
+
     // Cancel all active executions
     const executionIds = Array.from(this.activeExecutions.keys());
     for (const executionId of executionIds) {
       await this.cancelExecution(executionId);
     }
-    
+
     this.logger.info('✅ Workflow execution engine shutdown complete');
   }
 
@@ -164,7 +164,7 @@ class WorkflowExecution {
   private context: ExecutionContext;
   private config: WorkflowExecutionConfig;
   private logger: Logger;
-  
+
   private stepQueue: StepQueue;
   private resultCollector: ResultCollector;
   private startTime: number;
@@ -177,7 +177,7 @@ class WorkflowExecution {
     this.context = context;
     this.config = config;
     this.logger = new Logger(`WorkflowExecution-${executionId}`, config.enableDetailedLogging);
-    
+
     this.stepQueue = new StepQueue(workflow.steps);
     this.resultCollector = new ResultCollector();
     this.startTime = Date.now();
@@ -185,19 +185,19 @@ class WorkflowExecution {
 
   async execute(): Promise<WorkflowResult> {
     this.logger.info(`🚀 Executing workflow ${this.workflow.id}`);
-    
+
     // Validate workflow against guardrails
     await this.validateWorkflow();
-    
+
     // Execute steps in dependency order
     while (!this.stepQueue.isEmpty() && !this.isCancelled) {
       const step = this.stepQueue.getNextReadyStep();
-      
+
       if (step) {
         this.currentStepId = step.id;
         const result = await this.executeStep(step);
         this.resultCollector.addResult(step.id, result);
-        
+
         // Check if workflow should continue
         if (result.shouldStop) {
           this.logger.info(`⏹️ Workflow stopped by step ${step.id}`);
@@ -222,7 +222,7 @@ class WorkflowExecution {
     const completedSteps = this.resultCollector.getCompletedSteps();
     const failedSteps = this.resultCollector.getFailedSteps();
     const remainingSteps = this.stepQueue.getRemainingSteps();
-    
+
     return {
       executionId: this.executionId,
       workflowId: this.workflow.id,
@@ -283,7 +283,7 @@ class WorkflowExecution {
 
       } catch (error) {
         attempt++;
-        
+
         this.logger.warn(`⚠️ Step ${step.id} attempt ${attempt} failed:`, error.message);
 
         if (attempt < maxAttempts && !this.isCancelled) {
@@ -291,7 +291,7 @@ class WorkflowExecution {
           const delay = this.calculateRetryDelay(step.retryPolicy, attempt, error);
           this.logger.info(`⏳ Retrying step ${step.id} in ${delay}ms`);
           await new Promise(resolve => setTimeout(resolve, delay));
-          
+
           // Try fallback if available
           if (step.fallbacks && step.fallbacks.length > 0) {
             const fallbackResult = await this.tryFallback(step, error);
@@ -303,7 +303,7 @@ class WorkflowExecution {
         } else {
           // All attempts failed
           this.logger.error(`❌ Step ${step.id} failed after ${maxAttempts} attempts:`, error);
-          
+
           return {
             success: false,
             error: error.message,
@@ -320,7 +320,7 @@ class WorkflowExecution {
 
   private async executeStepAction(component: any, step: WorkflowStep): Promise<any> {
     const timeout = step.timeout || this.config.defaultStepTimeout;
-    
+
     return await Promise.race([
       this.performStepAction(component, step),
       this.createTimeoutPromise(timeout, step.id)
@@ -356,7 +356,7 @@ class WorkflowExecution {
     );
 
     const prompt = this.buildPrompt(step.parameters, this.context);
-    
+
     const response = await model.complete({
       messages: [{ role: 'user', content: prompt }],
       temperature: step.parameters.temperature || 0.7,
@@ -436,7 +436,7 @@ class WorkflowExecution {
     for (const fallback of step.fallbacks || []) {
       try {
         this.logger.info(`🔄 Trying fallback strategy: ${fallback.type}`);
-        
+
         switch (fallback.type) {
           case 'component-replacement':
             return await this.tryComponentReplacement(fallback, step);
@@ -447,7 +447,7 @@ class WorkflowExecution {
           default:
             this.logger.warn(`Unknown fallback type: ${fallback.type}`);
         }
-        
+
       } catch (fallbackError) {
         this.logger.warn(`Fallback ${fallback.type} failed:`, fallbackError.message);
       }
@@ -480,7 +480,7 @@ class WorkflowExecution {
   private async tryWorkflowModification(fallback: any, step: WorkflowStep): Promise<StepResult> {
     // Modify workflow and continue
     this.logger.info(`🔄 Modifying workflow: ${fallback.modifications}`);
-    
+
     return {
       success: true,
       data: { workflowModified: true, modifications: fallback.modifications },
@@ -522,7 +522,7 @@ class WorkflowExecution {
     // Check for circular dependencies
     const remainingSteps = this.stepQueue.getRemainingSteps();
     const visited = new Set<string>();
-    
+
     for (const step of remainingSteps) {
       if (this.hasCircularDependency(step, visited, remainingSteps)) {
         throw new Error(`Circular dependency detected involving step ${step.id}`);
@@ -534,16 +534,16 @@ class WorkflowExecution {
     if (visited.has(step.id)) {
       return true;
     }
-    
+
     visited.add(step.id);
-    
+
     for (const dependency of step.dependencies || []) {
       const depStep = remainingSteps.find(s => s.id === dependency);
       if (depStep && this.hasCircularDependency(depStep, visited, remainingSteps)) {
         return true;
       }
     }
-    
+
     visited.delete(step.id);
     return false;
   }
@@ -552,9 +552,9 @@ class WorkflowExecution {
     const baseDelay = retryPolicy?.baseDelay || 1000;
     const maxDelay = retryPolicy?.maxDelay || 30000;
     const backoff = retryPolicy?.backoff || 'exponential';
-    
+
     let delay: number;
-    
+
     switch (backoff) {
       case 'exponential':
         delay = baseDelay * Math.pow(2, attempt - 1);
@@ -565,7 +565,7 @@ class WorkflowExecution {
       default:
         delay = baseDelay;
     }
-    
+
     return Math.min(delay, maxDelay);
   }
 
@@ -580,22 +580,22 @@ class WorkflowExecution {
   private buildPrompt(parameters: any, context: ExecutionContext): string {
     // Build LLM prompt from parameters and context
     let prompt = parameters.prompt || '';
-    
+
     // Replace template variables
     prompt = prompt.replace(/\{\{context\.(\w+)\}\}/g, (match, key) => {
       return context[key] || match;
     });
-    
+
     return prompt;
   }
 
   private parseLLMResponse(response: any, outputFormat?: string): any {
     const content = response.choices?.[0]?.message?.content;
-    
+
     if (!content) {
       throw new Error('Empty LLM response');
     }
-    
+
     if (outputFormat === 'json') {
       try {
         return JSON.parse(content);
@@ -603,13 +603,13 @@ class WorkflowExecution {
         throw new Error(`Failed to parse JSON response: ${error.message}`);
       }
     }
-    
+
     return content;
   }
 
   private async performWebInteraction(page: any, parameters: any): Promise<void> {
     const { action, selector, value } = parameters;
-    
+
     switch (action) {
       case 'click':
         await page.click(selector);
@@ -630,7 +630,7 @@ class WorkflowExecution {
 
   private async extractWebData(page: any, parameters: any): Promise<any> {
     const { selector, extractionType } = parameters;
-    
+
     switch (extractionType) {
       case 'text':
         return await page.$eval(selector, (el: any) => el.textContent);
@@ -650,11 +650,11 @@ class WorkflowExecution {
     if (expectedResult.type === 'exists' && !result) {
       return { valid: false, reason: 'Expected result to exist but it was null/undefined' };
     }
-    
+
     if (expectedResult.type === 'equals' && result !== expectedResult.value) {
       return { valid: false, reason: `Expected ${expectedResult.value} but got ${result}` };
     }
-    
+
     return { valid: true };
   }
 
@@ -662,7 +662,7 @@ class WorkflowExecution {
     const completedSteps = this.resultCollector.getCompletedSteps();
     const failedSteps = this.resultCollector.getFailedSteps();
     const executionTime = Date.now() - this.startTime;
-    
+
     return {
       workflowId: this.workflow.id,
       executionId: this.executionId,
@@ -695,17 +695,17 @@ class StepQueue {
       if (this.completed.has(step.id) || this.failed.has(step.id)) {
         continue;
       }
-      
+
       // Check if all dependencies are completed
-      const dependenciesMet = (step.dependencies || []).every(dep => 
+      const dependenciesMet = (step.dependencies || []).every(dep =>
         this.completed.has(dep)
       );
-      
+
       if (dependenciesMet) {
         return step;
       }
     }
-    
+
     return null;
   }
 
@@ -714,7 +714,7 @@ class StepQueue {
   }
 
   getRemainingSteps(): WorkflowStep[] {
-    return this.steps.filter(step => 
+    return this.steps.filter(step =>
       !this.completed.has(step.id) && !this.failed.has(step.id)
     );
   }

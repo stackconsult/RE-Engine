@@ -1,19 +1,19 @@
-// @ts-nocheck - MCP SDK API migration pending (Phase 2)
+// @ts-nocheck - Requires dedicated refactoring (AIModel vs Component types, missing methods)
 /**
  * Master Orchestrator - The Magical Next Layer
  * Coordinates all RE Engine components with perfect synchronicity
  */
 
 import { EventEmitter } from 'events';
-import { Component, Workflow, WorkflowResult, ExecutionContext, WorkflowFailure, RecoveryResult } from '../types/orchestration.types';
-import { ComponentManager } from './component-manager';
-import { WorkflowExecutionEngine } from './workflow-execution-engine';
-import { IntelligentModelSelector } from './intelligent-model-selector';
-import { FallbackManager } from './fallback-manager';
-import { GuardrailSystem } from './guardrail-system';
-import { ResourceManager } from './resource-manager';
-import { PerformanceMonitor } from './performance-monitor';
-import { Logger } from '../utils/logger';
+import { Component, Workflow, WorkflowResult, ExecutionContext, WorkflowFailure, RecoveryResult } from '../types/orchestration.types.js';
+import { ComponentManager } from './component-manager.js';
+import { WorkflowExecutionEngine } from './workflow-execution-engine.js';
+import { IntelligentModelSelector } from './intelligent-model-selector.js';
+import { FallbackManager } from './fallback-manager.js';
+import { GuardrailSystem } from './guardrail-system.js';
+import { ResourceManager } from './resource-manager.js';
+import { PerformanceMonitor } from './performance-monitor.js';
+import { Logger } from '../utils/logger.js';
 
 export interface MasterOrchestratorConfig {
   maxConcurrentWorkflows: number;
@@ -27,7 +27,7 @@ export class MasterOrchestrator extends EventEmitter {
   private components: Map<string, Component> = new Map();
   private workflows: Map<string, Workflow> = new Map();
   private activeWorkflows: Map<string, Promise<WorkflowResult>> = new Map();
-  
+
   private componentManager: ComponentManager;
   private workflowEngine: WorkflowExecutionEngine;
   private modelSelector: IntelligentModelSelector;
@@ -35,7 +35,7 @@ export class MasterOrchestrator extends EventEmitter {
   private guardrails: GuardrailSystem;
   private resourceManager: ResourceManager;
   private performanceMonitor: PerformanceMonitor;
-  
+
   private config: MasterOrchestratorConfig;
   private logger: Logger;
   private isInitialized: boolean = false;
@@ -45,7 +45,7 @@ export class MasterOrchestrator extends EventEmitter {
     super();
     this.config = config;
     this.logger = new Logger('MasterOrchestrator', config.enableDetailedLogging);
-    
+
     this.componentManager = new ComponentManager();
     this.workflowEngine = new WorkflowExecutionEngine(this);
     this.modelSelector = new IntelligentModelSelector();
@@ -66,38 +66,38 @@ export class MasterOrchestrator extends EventEmitter {
 
     try {
       this.logger.info('🚀 Initializing RE Engine Master Orchestrator...');
-      
+
       // Phase 1: Initialize core components
       await this.initializeCoreComponents();
-      
+
       // Phase 2: Initialize MCP servers
       await this.initializeMCPServers();
-      
+
       // Phase 3: Initialize AI models
       await this.initializeAIModels();
-      
+
       // Phase 4: Initialize mobile devices
       await this.initializeMobileDevices();
-      
+
       // Phase 5: Initialize web automation
       await this.initializeWebAutomation();
-      
+
       // Phase 6: Initialize guardrails
       await this.initializeGuardrails();
-      
+
       // Phase 7: Establish communication channels
       await this.establishCommunicationChannels();
-      
+
       // Phase 8: Start health monitoring
       await this.startHealthMonitoring();
-      
+
       // Phase 9: Load predefined workflows
       await this.loadPredefinedWorkflows();
-      
+
       this.isInitialized = true;
       this.logger.info('✅ RE Engine Master Orchestrator initialized successfully');
       this.emit('initialized', { timestamp: new Date().toISOString() });
-      
+
     } catch (error) {
       this.logger.error('❌ Failed to initialize orchestrator:', error);
       throw error;
@@ -135,26 +135,26 @@ export class MasterOrchestrator extends EventEmitter {
 
     // Execute workflow with full orchestration
     const workflowPromise = this.workflowEngine.executeWorkflow(workflow, executionContext);
-    
+
     // Track active workflow
     this.activeWorkflows.set(workflowId, workflowPromise);
-    
+
     try {
       const result = await workflowPromise;
-      
+
       this.logger.info(`✅ Workflow ${workflowId} completed successfully`, {
         traceId: executionContext.traceId,
         executionTime: result.executionTime,
         stepsCompleted: result.stepsCompleted,
         stepsFailed: result.stepsFailed
       });
-      
+
       this.emit('workflow:completed', { workflowId, result, context: executionContext });
       return result;
-      
+
     } catch (error) {
       this.logger.error(`❌ Workflow ${workflowId} failed:`, error);
-      
+
       // Handle failure with fallback
       const recoveryResult = await this.fallbackManager.handleFailure({
         workflowId,
@@ -163,10 +163,10 @@ export class MasterOrchestrator extends EventEmitter {
         context: executionContext,
         timestamp: Date.now()
       });
-      
+
       this.emit('workflow:failed', { workflowId, error, recoveryResult, context: executionContext });
       throw error;
-      
+
     } finally {
       // Clean up active workflow tracking
       this.activeWorkflows.delete(workflowId);
@@ -194,7 +194,7 @@ export class MasterOrchestrator extends EventEmitter {
     const componentHealth = await this.componentManager.getHealthStatus();
     const workflowHealth = await this.workflowEngine.getHealthStatus();
     const resourceHealth = await this.resourceManager.getHealthStatus();
-    
+
     return {
       status: this.calculateOverallHealth([componentHealth, workflowHealth, resourceHealth]),
       components: componentHealth,
@@ -211,32 +211,32 @@ export class MasterOrchestrator extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.logger.info('🛑 Shutting down RE Engine Master Orchestrator...');
-    
+
     // Stop health monitoring
     if (this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer);
     }
-    
+
     // Wait for active workflows to complete or timeout
     const shutdownTimeout = 30000; // 30 seconds
     const startTime = Date.now();
-    
+
     while (this.activeWorkflows.size > 0 && Date.now() - startTime < shutdownTimeout) {
       this.logger.info(`Waiting for ${this.activeWorkflows.size} active workflows to complete...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    
+
     // Force shutdown remaining workflows
     if (this.activeWorkflows.size > 0) {
       this.logger.warn(`Forcefully terminating ${this.activeWorkflows.size} active workflows`);
       this.activeWorkflows.clear();
     }
-    
+
     // Shutdown components
     await this.componentManager.shutdown();
     await this.workflowEngine.shutdown();
     await this.resourceManager.shutdown();
-    
+
     this.isInitialized = false;
     this.logger.info('✅ RE Engine Master Orchestrator shutdown complete');
     this.emit('shutdown', { timestamp: new Date().toISOString() });
@@ -285,13 +285,13 @@ export class MasterOrchestrator extends EventEmitter {
           type: 'mcp-server',
           name: serverName
         });
-        
+
         this.components.set(serverName, server);
         this.logger.info(`✅ MCP Server ${serverName} initialized`);
-        
+
       } catch (error) {
         this.logger.warn(`⚠️ MCP Server ${serverName} failed to initialize, using fallback`);
-        
+
         // Create fallback server
         const fallbackServer = await this.createFallbackServer(serverName);
         this.components.set(serverName, fallbackServer);
@@ -313,7 +313,7 @@ export class MasterOrchestrator extends EventEmitter {
         const model = await this.modelSelector.initializeLocalModel(modelName);
         this.components.set(`local-${modelName}`, model);
         this.logger.info(`✅ Local model ${modelName} initialized`);
-        
+
       } catch (error) {
         this.logger.warn(`⚠️ Local model ${modelName} failed, will use cloud fallback`);
       }
@@ -331,7 +331,7 @@ export class MasterOrchestrator extends EventEmitter {
         const model = await this.modelSelector.initializeCloudModel(modelName);
         this.components.set(`cloud-${modelName}`, model);
         this.logger.info(`✅ Cloud model ${modelName} initialized`);
-        
+
       } catch (error) {
         this.logger.warn(`⚠️ Cloud model ${modelName} failed to initialize`);
       }
@@ -345,10 +345,10 @@ export class MasterOrchestrator extends EventEmitter {
         android: { sms: true, googleMessages: true },
         fallback: { email: true, web: true }
       });
-      
+
       this.components.set('mobile', mobileManager);
       this.logger.info('✅ Mobile devices initialized');
-      
+
     } catch (error) {
       this.logger.warn('⚠️ Mobile initialization failed, using web fallbacks');
     }
@@ -365,7 +365,7 @@ export class MasterOrchestrator extends EventEmitter {
 
       this.components.set('web-automation', webAutomation);
       this.logger.info('✅ Web automation initialized');
-      
+
     } catch (error) {
       this.logger.warn('⚠️ Web automation initialization failed');
     }
@@ -393,7 +393,7 @@ export class MasterOrchestrator extends EventEmitter {
     this.componentManager.establishChannels();
     this.workflowEngine.establishChannels();
     this.modelSelector.establishChannels();
-    
+
     this.logger.info('✅ Communication channels established');
   }
 
@@ -402,12 +402,12 @@ export class MasterOrchestrator extends EventEmitter {
       try {
         const health = await this.getHealthStatus();
         this.emit('health:check', health);
-        
+
         if (health.status === 'unhealthy') {
           this.logger.warn('⚠️ System health check failed', health);
           this.emit('health:unhealthy', health);
         }
-        
+
       } catch (error) {
         this.logger.error('❌ Health check failed:', error);
       }
@@ -451,7 +451,7 @@ export class MasterOrchestrator extends EventEmitter {
   private calculateOverallHealth(healthReports: any[]): 'healthy' | 'degraded' | 'unhealthy' {
     const healthyCount = healthReports.filter(r => r.status === 'healthy').length;
     const totalCount = healthReports.length;
-    
+
     if (healthyCount === totalCount) return 'healthy';
     if (healthyCount > 0) return 'degraded';
     return 'unhealthy';

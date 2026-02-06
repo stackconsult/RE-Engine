@@ -1,4 +1,4 @@
-// @ts-nocheck - Production stub file, incomplete (Phase 2)
+
 /**
  * Production Dependencies Implementation
  * Basic implementations for production foundation services
@@ -6,9 +6,9 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '../database/supabase.types.js';
-import { logSystemEvent, logError } from '../observability/logger.js';
 
-import { 
+
+import {
   JWTManager, JWTConfig, RefreshTokenConfig, JWTPayload, TokenPair,
   EncryptionManager, EncryptionConfig, FieldEncryptionConfig,
   AuditLogger, SecurityEvent, SystemEvent, UserAction, DataAccessEvent, AuditFilters, AuditLogEntry,
@@ -27,8 +27,9 @@ import {
   SelfHealingManager, AutoRestartConfig, CircuitBreakerHealingConfig, DatabaseHealingConfig, AIHealingConfig, HealingStatus, HealingAction,
   ServiceRegistry, ServiceRegistryConfig, ServiceDefinition, ServiceEndpoint, HealthCheckEndpoint,
   MessageQueue, MessageQueueConfig, QueueDefinition, Message, MessageHandler, QueueStats, ConnectionStatus,
-  PerformanceOptimizer, MemoryConfig, CPUConfig, NetworkConfig, DatabaseConfig, PerformanceMetrics, OptimizationResult, OptimizationImprovement, ValidationResult as PerfValidationResult
-} from '../shared/types.js';
+  PerformanceOptimizer, MemoryConfig, CPUConfig, NetworkConfig, DatabaseConfig, PerformanceMetrics, OptimizationResult, OptimizationImprovement, ValidationResult as PerfValidationResult,
+  HealthStatus, PerformanceAnalysis
+} from './types.js';
 import {
   SupabaseService, SupabaseConfig, SupabaseConnectionConfig, SupabasePoolConfig, SupabaseHealthCheckResult, MigrationStatus, IndexOptimizationResult, SupabaseQuery, SupabaseQueryResult, SupabaseOperation, SupabaseTransactionResult, SupabaseSubscription, SupabaseChangePayload, SupabaseSubscriptionHandle, SupabaseMetrics, SupabaseStatistics, SupabaseRealtimeClient
 } from './types.js';
@@ -37,28 +38,28 @@ import {
 export class JWTManagerImpl implements JWTManager {
   private config: JWTConfig | null = null;
   private refreshConfig: RefreshTokenConfig | null = null;
-  
+
   async configure(config: JWTConfig): Promise<void> {
     this.config = config;
     // Implementation would use jsonwebtoken or similar library
   }
-  
+
   async configureRefreshTokens(config: RefreshTokenConfig): Promise<void> {
     this.refreshConfig = config;
   }
-  
+
   async generateToken(payload: JWTPayload): Promise<string> {
     if (!this.config) throw new Error('JWT not configured');
     // Implementation: return jwt.sign(payload, this.config.secret, { ... });
     return 'mock-jwt-token';
   }
-  
+
   async verifyToken(token: string): Promise<JWTPayload> {
     if (!this.config) throw new Error('JWT not configured');
     // Implementation: return jwt.verify(token, this.config.secret);
     return { sub: 'user123', iat: Date.now(), exp: Date.now() + 86400, iss: 'reengine', aud: 'users' };
   }
-  
+
   async refreshToken(refreshToken: string): Promise<TokenPair> {
     // Implementation: verify refresh token and generate new access token
     return {
@@ -72,37 +73,37 @@ export class JWTManagerImpl implements JWTManager {
 export class EncryptionManagerImpl implements EncryptionManager {
   private config: EncryptionConfig | null = null;
   private fieldConfig: FieldEncryptionConfig | null = null;
-  
+
   async configure(config: EncryptionConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async configureFieldEncryption(config: FieldEncryptionConfig): Promise<void> {
     this.fieldConfig = config;
   }
-  
+
   async encrypt(data: string): Promise<string> {
     if (!this.config) throw new Error('Encryption not configured');
     // Implementation: use crypto module with AES-256-GCM
     return 'encrypted-data';
   }
-  
+
   async decrypt(encryptedData: string): Promise<string> {
     if (!this.config) throw new Error('Encryption not configured');
     // Implementation: decrypt using crypto module
     return 'decrypted-data';
   }
-  
+
   async encryptField(fieldName: string, value: unknown): Promise<string> {
     // Implementation: field-specific encryption
     return `encrypted-${fieldName}-${value}`;
   }
-  
+
   async decryptField(fieldName: string, encryptedValue: string): Promise<unknown> {
     // Implementation: field-specific decryption
     return `decrypted-${fieldName}`;
   }
-  
+
   async rotateKey(): Promise<void> {
     // Implementation: key rotation logic
   }
@@ -114,19 +115,19 @@ export class AuditLoggerImpl implements AuditLogger {
     // Implementation: log to database or file system
     console.log('Security Event:', event);
   }
-  
+
   async logSystemEvent(event: SystemEvent): Promise<void> {
     console.log('System Event:', event);
   }
-  
+
   async logUserAction(action: UserAction): Promise<void> {
     console.log('User Action:', action);
   }
-  
+
   async logDataAccess(access: DataAccessEvent): Promise<void> {
     console.log('Data Access:', access);
   }
-  
+
   async getAuditLog(filters: AuditFilters): Promise<AuditLogEntry[]> {
     // Implementation: query audit logs with filters
     return [];
@@ -136,11 +137,11 @@ export class AuditLoggerImpl implements AuditLogger {
 // Threat Detector Implementation
 export class ThreatDetectorImpl implements ThreatDetector {
   private config: ThreatDetectionConfig | null = null;
-  
+
   async configure(config: ThreatDetectionConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async analyzeRequest(request: RequestAnalysis): Promise<ThreatAssessment> {
     // Implementation: analyze request for threats
     return {
@@ -151,7 +152,7 @@ export class ThreatDetectorImpl implements ThreatDetector {
       blocked: false
     };
   }
-  
+
   async analyzePattern(pattern: PatternAnalysis): Promise<ThreatAssessment> {
     // Implementation: analyze patterns for anomalies
     return {
@@ -162,15 +163,15 @@ export class ThreatDetectorImpl implements ThreatDetector {
       blocked: false
     };
   }
-  
+
   async blockIP(ipAddress: string, duration: number): Promise<void> {
     // Implementation: add IP to blocklist
   }
-  
+
   async unblockIP(ipAddress: string): Promise<void> {
     // Implementation: remove IP from blocklist
   }
-  
+
   async getThreatIntelligence(): Promise<ThreatIntelligence> {
     return {
       activeThreats: [],
@@ -189,11 +190,11 @@ export class ThreatDetectorImpl implements ThreatDetector {
 // API Key Manager Implementation
 export class APIKeyManagerImpl implements APIKeyManager {
   private config: APIKeyConfig | null = null;
-  
+
   async configure(config: APIKeyConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async generateKey(scopes: string[]): Promise<APIKey> {
     // Implementation: generate API key with scopes
     return {
@@ -206,7 +207,7 @@ export class APIKeyManagerImpl implements APIKeyManager {
       createdBy: 'system'
     };
   }
-  
+
   async validateKey(key: string): Promise<APIKeyValidation> {
     // Implementation: validate API key
     return {
@@ -217,11 +218,11 @@ export class APIKeyManagerImpl implements APIKeyManager {
       usageCount: 0
     };
   }
-  
+
   async revokeKey(keyId: string): Promise<void> {
     // Implementation: revoke API key
   }
-  
+
   async rotateKey(keyId: string): Promise<APIKey> {
     // Implementation: rotate API key
     return {
@@ -234,7 +235,7 @@ export class APIKeyManagerImpl implements APIKeyManager {
       createdBy: 'system'
     };
   }
-  
+
   async getAPIKeys(filters: APIKeyFilters): Promise<APIKey[]> {
     // Implementation: query API keys with filters
     return [];
@@ -244,11 +245,11 @@ export class APIKeyManagerImpl implements APIKeyManager {
 // Request Validator Implementation
 export class RequestValidatorImpl implements RequestValidator {
   private config: RequestValidationConfig | null = null;
-  
+
   async configure(config: RequestValidationConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async validateRequest(request: unknown): Promise<ValidationResult> {
     // Implementation: validate request structure and content
     return {
@@ -257,12 +258,12 @@ export class RequestValidatorImpl implements RequestValidator {
       sanitized: request
     };
   }
-  
+
   sanitizeInput(input: unknown): unknown {
     // Implementation: sanitize input to prevent XSS, SQL injection, etc.
     return input;
   }
-  
+
   async validateSchema(data: unknown, schema: unknown): Promise<SchemaValidationResult> {
     // Implementation: validate data against schema
     return {
@@ -276,18 +277,18 @@ export class RequestValidatorImpl implements RequestValidator {
 export class DDoSProtectionImpl implements DDoSProtection {
   private config: DDoSProtectionConfig | null = null;
   private requestCounts = new Map<string, { count: number; resetTime: number }>();
-  
+
   async configure(config: DDoSProtectionConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async checkRequest(ipAddress: string): Promise<DDoSCheckResult> {
     if (!this.config) throw new Error('DDoS protection not configured');
-    
+
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
     const requests = this.requestCounts.get(ipAddress);
-    
+
     if (!requests || requests.resetTime < now) {
       this.requestCounts.set(ipAddress, { count: 1, resetTime: now + this.config.windowMs });
       return {
@@ -297,7 +298,7 @@ export class DDoSProtectionImpl implements DDoSProtection {
         blocked: false
       };
     }
-    
+
     if (requests.count >= this.config.threshold) {
       return {
         allowed: false,
@@ -306,7 +307,7 @@ export class DDoSProtectionImpl implements DDoSProtection {
         blocked: true
       };
     }
-    
+
     requests.count++;
     return {
       allowed: true,
@@ -315,15 +316,15 @@ export class DDoSProtectionImpl implements DDoSProtection {
       blocked: false
     };
   }
-  
+
   async blockIP(ipAddress: string, duration: number): Promise<void> {
     // Implementation: block IP for specified duration
   }
-  
+
   async unblockIP(ipAddress: string): Promise<void> {
     // Implementation: unblock IP
   }
-  
+
   async getStatistics(): Promise<DDoSStatistics> {
     // Implementation: return DDoS protection statistics
     return {
@@ -338,22 +339,22 @@ export class DDoSProtectionImpl implements DDoSProtection {
 // IP Whitelist Implementation
 export class IPWhitelistImpl implements IPWhitelist {
   private config: IPWhitelistConfig | null = null;
-  
+
   async configure(config: IPWhitelistConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async isWhitelisted(ipAddress: string): Promise<boolean> {
     if (!this.config) return false;
     return this.config.allowedIPs.includes(ipAddress);
   }
-  
+
   async addIP(ipAddress: string): Promise<void> {
     if (this.config) {
       this.config.allowedIPs.push(ipAddress);
     }
   }
-  
+
   async removeIP(ipAddress: string): Promise<void> {
     if (this.config) {
       const index = this.config.allowedIPs.indexOf(ipAddress);
@@ -362,7 +363,7 @@ export class IPWhitelistImpl implements IPWhitelist {
       }
     }
   }
-  
+
   async getWhitelistedIPs(): Promise<string[]> {
     return this.config?.allowedIPs || [];
   }
@@ -372,15 +373,15 @@ export class IPWhitelistImpl implements IPWhitelist {
 export class MetricsCollectorImpl implements MetricsCollector {
   private config: MetricsConfig | null = null;
   private metrics = new Map<string, MetricValue[]>();
-  
+
   async configure(config: MetricsConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async defineMetric(name: string, definition: MetricDefinition): Promise<void> {
     // Implementation: define metric structure
   }
-  
+
   async recordMetric(name: string, value: number, labels?: Record<string, string>): Promise<void> {
     const metricValues = this.metrics.get(name) || [];
     metricValues.push({
@@ -390,19 +391,19 @@ export class MetricsCollectorImpl implements MetricsCollector {
     });
     this.metrics.set(name, metricValues);
   }
-  
+
   async incrementCounter(name: string, labels?: Record<string, string>): Promise<void> {
     await this.recordMetric(name, 1, labels);
   }
-  
+
   async recordHistogram(name: string, value: number, labels?: Record<string, string>): Promise<void> {
     await this.recordMetric(name, value, labels);
   }
-  
+
   async recordGauge(name: string, value: number, labels?: Record<string, string>): Promise<void> {
     await this.recordMetric(name, value, labels);
   }
-  
+
   async getMetrics(): Promise<MetricsData> {
     const result: MetricsData = {};
     for (const [name, values] of this.metrics.entries()) {
@@ -417,33 +418,33 @@ export class AlertManagerImpl implements AlertManager {
   private config: AlertConfig | null = null;
   private alerts: Alert[] = [];
   private rules: AlertRule[] = [];
-  
+
   async configure(config: AlertConfig): Promise<void> {
     this.config = config;
     this.rules = config.rules;
   }
-  
+
   async sendAlert(alert: Alert): Promise<void> {
     this.alerts.push(alert);
     // Implementation: send alert through configured channels
     console.log('Alert sent:', alert);
   }
-  
+
   async createRule(rule: AlertRule): Promise<void> {
     this.rules.push(rule);
   }
-  
+
   async updateRule(ruleId: string, rule: AlertRule): Promise<void> {
     const index = this.rules.findIndex(r => r.name === ruleId);
     if (index > -1) {
       this.rules[index] = rule;
     }
   }
-  
+
   async deleteRule(ruleId: string): Promise<void> {
     this.rules = this.rules.filter(r => r.name !== ruleId);
   }
-  
+
   async getAlerts(filters: AlertFilters): Promise<Alert[]> {
     return this.alerts.filter(alert => {
       if (filters.severity && alert.severity !== filters.severity) return false;
@@ -451,7 +452,7 @@ export class AlertManagerImpl implements AlertManager {
       return true;
     });
   }
-  
+
   async getRules(): Promise<AlertRule[]> {
     return this.rules;
   }
@@ -461,35 +462,35 @@ export class AlertManagerImpl implements AlertManager {
 export class DashboardServiceImpl implements DashboardService {
   private config: DashboardConfig | null = null;
   private dashboards = new Map<string, Dashboard>();
-  
+
   async configure(config: DashboardConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async createDashboard(dashboard: Dashboard): Promise<Dashboard> {
     this.dashboards.set(dashboard.id, dashboard);
     return dashboard;
   }
-  
+
   async updateDashboard(dashboardId: string, dashboard: Dashboard): Promise<Dashboard> {
     this.dashboards.set(dashboardId, dashboard);
     return dashboard;
   }
-  
+
   async deleteDashboard(dashboardId: string): Promise<void> {
     this.dashboards.delete(dashboardId);
   }
-  
+
   async getDashboard(dashboardId: string): Promise<Dashboard> {
     const dashboard = this.dashboards.get(dashboardId);
     if (!dashboard) throw new Error('Dashboard not found');
     return dashboard;
   }
-  
+
   async listDashboards(): Promise<Dashboard[]> {
     return Array.from(this.dashboards.values());
   }
-  
+
   async getDashboardData(dashboardId: string, timeRange: TimeRange): Promise<DashboardData> {
     const dashboard = await this.getDashboard(dashboardId);
     return {
@@ -509,15 +510,15 @@ export class TracingServiceImpl implements TracingService {
   private config: TracingConfig | null = null;
   private spans = new Map<string, Span>();
   private traces = new Map<string, Trace>();
-  
+
   async configure(config: TracingConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async configureTracing(operation: string, config: TracingOperationConfig): Promise<void> {
     // Implementation: configure tracing for specific operation
   }
-  
+
   startSpan(operation: string, parentSpan?: Span): Span {
     const span: Span = {
       traceId: parentSpan?.traceId || 'trace-' + Math.random().toString(36).substr(2, 9),
@@ -530,11 +531,11 @@ export class TracingServiceImpl implements TracingService {
       tags: {},
       logs: []
     };
-    
+
     this.spans.set(span.spanId, span);
     return span;
   }
-  
+
   finishSpan(span: Span, error?: Error): void {
     span.endTime = Date.now();
     span.duration = span.endTime - span.startTime;
@@ -542,13 +543,13 @@ export class TracingServiceImpl implements TracingService {
       span.error = error;
     }
   }
-  
+
   async getTrace(traceId: string): Promise<Trace> {
     const trace = this.traces.get(traceId);
     if (!trace) throw new Error('Trace not found');
     return trace;
   }
-  
+
   async getTraces(filters: TraceFilters): Promise<Trace[]> {
     return Array.from(this.traces.values()).filter(trace => {
       if (filters.serviceName && !trace.services.includes(filters.serviceName)) return false;
@@ -562,62 +563,64 @@ export class TracingServiceImpl implements TracingService {
 export class HealthMonitorImpl implements HealthMonitor {
   private services = new Map<string, ServiceRegistration>();
   private healthResults = new Map<string, HealthCheckResult>();
-  
+
   async setupEndpoints(endpoints: HealthEndpoints): Promise<void> {
     // Implementation: setup health check endpoints
   }
-  
+
   async setupMetrics(config: MetricsConfig): Promise<void> {
     // Implementation: setup metrics collection
   }
-  
+
   async setupAlerting(config: AlertingConfig): Promise<void> {
     // Implementation: setup alerting
   }
-  
+
   async setupTracing(config: TracingConfig): Promise<void> {
     // Implementation: setup distributed tracing
   }
-  
+
   async registerService(service: ServiceRegistration): Promise<void> {
     this.services.set(service.name, service);
   }
-  
+
   async checkAllServices(): Promise<Record<string, HealthCheckResult>> {
     const results: Record<string, HealthCheckResult> = {};
-    
+
     for (const [serviceName] of this.services) {
       try {
         results[serviceName] = await this.checkService(serviceName);
       } catch (error) {
         results[serviceName] = {
+          service: serviceName,
           status: 'unhealthy',
           message: error instanceof Error ? error.message : 'Unknown error',
           lastChecked: Date.now()
         };
       }
     }
-    
+
     return results;
   }
-  
+
   async checkService(serviceName: string): Promise<HealthCheckResult> {
     const service = this.services.get(serviceName);
     if (!service) throw new Error(`Service ${serviceName} not registered`);
-    
+
     // Implementation: perform actual health check
     return {
+      service: serviceName,
       status: 'healthy',
       lastChecked: Date.now(),
       responseTime: 100
     };
   }
-  
+
   async getHealthStatus(): Promise<HealthStatus> {
     const results = await this.checkAllServices();
     const healthyServices = Object.values(results).filter(r => r.status === 'healthy').length;
     const overall = healthyServices === Object.keys(results).length ? 'healthy' : 'unhealthy';
-    
+
     return {
       overall,
       services: results,
@@ -631,25 +634,25 @@ export class HealthMonitorImpl implements HealthMonitor {
 export class CircuitBreakerImpl implements CircuitBreaker {
   private config: CircuitBreakerConfig | null = null;
   private states = new Map<string, CircuitBreakerState>();
-  
+
   async configure(config: CircuitBreakerConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async execute<T>(operation: () => Promise<T>, serviceName: string): Promise<T> {
     const state = this.states.get(serviceName) || {
       service: serviceName,
       state: 'closed',
       failureCount: 0
     };
-    
+
     if (state.state === 'open') {
       if (Date.now() < (state.nextAttempt || 0)) {
         throw new Error(`Circuit breaker is open for ${serviceName}`);
       }
       state.state = 'half-open';
     }
-    
+
     try {
       const result = await operation();
       this.onSuccess(serviceName);
@@ -659,7 +662,7 @@ export class CircuitBreakerImpl implements CircuitBreaker {
       throw error;
     }
   }
-  
+
   private onSuccess(serviceName: string): void {
     const state = this.states.get(serviceName);
     if (state) {
@@ -667,25 +670,25 @@ export class CircuitBreakerImpl implements CircuitBreaker {
       state.state = 'closed';
     }
   }
-  
+
   private onFailure(serviceName: string): void {
     const state = this.states.get(serviceName) || {
       service: serviceName,
       state: 'closed',
       failureCount: 0
     };
-    
+
     state.failureCount++;
-    
+
     if (state.failureCount >= (this.config?.errorThresholdPercentage || 50)) {
       state.state = 'open';
       state.lastFailureTime = Date.now();
       state.nextAttempt = Date.now() + (this.config?.resetTimeout || 30000);
     }
-    
+
     this.states.set(serviceName, state);
   }
-  
+
   getState(serviceName: string): CircuitBreakerState {
     return this.states.get(serviceName) || {
       service: serviceName,
@@ -693,7 +696,7 @@ export class CircuitBreakerImpl implements CircuitBreaker {
       failureCount: 0
     };
   }
-  
+
   async reset(serviceName: string): Promise<void> {
     this.states.set(serviceName, {
       service: serviceName,
@@ -701,7 +704,7 @@ export class CircuitBreakerImpl implements CircuitBreaker {
       failureCount: 0
     });
   }
-  
+
   async getStatistics(): Promise<CircuitBreakerStatistics> {
     // Implementation: return circuit breaker statistics
     return {
@@ -718,15 +721,15 @@ export class CircuitBreakerImpl implements CircuitBreaker {
 export class RateLimiterImpl implements RateLimiter {
   private config: RateLimitConfig | null = null;
   private requests = new Map<string, { count: number; resetTime: number }>();
-  
+
   async configure(config: RateLimitConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async checkLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
     const now = Date.now();
     const requests = this.requests.get(key);
-    
+
     if (!requests || requests.resetTime < now) {
       this.requests.set(key, { count: 1, resetTime: now + windowMs });
       return {
@@ -736,7 +739,7 @@ export class RateLimiterImpl implements RateLimiter {
         totalHits: 1
       };
     }
-    
+
     if (requests.count >= limit) {
       return {
         allowed: false,
@@ -745,7 +748,7 @@ export class RateLimiterImpl implements RateLimiter {
         totalHits: requests.count
       };
     }
-    
+
     requests.count++;
     return {
       allowed: true,
@@ -754,16 +757,16 @@ export class RateLimiterImpl implements RateLimiter {
       totalHits: requests.count
     };
   }
-  
+
   async consume(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
     return this.checkLimit(key, limit, windowMs);
   }
-  
+
   async getRemainingRequests(key: string, limit: number, windowMs: number): Promise<number> {
     const result = await this.checkLimit(key, limit, windowMs);
     return result.remainingRequests;
   }
-  
+
   async resetKey(key: string): Promise<void> {
     this.requests.delete(key);
   }
@@ -777,31 +780,31 @@ export class SelfHealingManagerImpl implements SelfHealingManager {
   private aiHealingConfig: AIHealingConfig | null = null;
   private enabled = false;
   private lastHealingAction: HealingAction | null = null;
-  
+
   async configureAutoRestart(config: AutoRestartConfig): Promise<void> {
     this.autoRestartConfig = config;
   }
-  
+
   async configureCircuitBreakerHealing(config: CircuitBreakerHealingConfig): Promise<void> {
     this.circuitBreakerHealingConfig = config;
   }
-  
+
   async configureDatabaseHealing(config: DatabaseHealingConfig): Promise<void> {
     this.databaseHealingConfig = config;
   }
-  
+
   async configureAIHealing(config: AIHealingConfig): Promise<void> {
     this.aiHealingConfig = config;
   }
-  
+
   async enableSelfHealing(): Promise<void> {
     this.enabled = true;
   }
-  
+
   async disableSelfHealing(): Promise<void> {
     this.enabled = false;
   }
-  
+
   async getHealingStatus(): Promise<HealingStatus> {
     return {
       enabled: this.enabled,
@@ -818,31 +821,31 @@ export class SelfHealingManagerImpl implements SelfHealingManager {
 export class ServiceRegistryImpl implements ServiceRegistry {
   private config: ServiceRegistryConfig | null = null;
   private services = new Map<string, ServiceDefinition>();
-  
+
   async initialize(config: ServiceRegistryConfig): Promise<void> {
     this.config = config;
   }
-  
+
   async register(service: ServiceDefinition): Promise<void> {
     this.services.set(service.id, service);
   }
-  
+
   async deregister(serviceId: string): Promise<void> {
     this.services.delete(serviceId);
   }
-  
+
   async discover(serviceType: string): Promise<ServiceDefinition[]> {
     return Array.from(this.services.values()).filter(service => service.type === serviceType);
   }
-  
+
   async getService(serviceId: string): Promise<ServiceDefinition | null> {
     return this.services.get(serviceId) || null;
   }
-  
+
   async getAllServices(): Promise<ServiceDefinition[]> {
     return Array.from(this.services.values());
   }
-  
+
   async healthCheck(): Promise<void> {
     // Implementation: perform health check on all services
   }
@@ -854,37 +857,37 @@ export class MessageQueueImpl implements MessageQueue {
   private queues = new Map<string, Message[]>();
   private handlers = new Map<string, MessageHandler>();
   private connected = false;
-  
+
   async connect(config: MessageQueueConfig): Promise<void> {
     this.config = config;
     this.connected = true;
   }
-  
+
   async setupQueues(queues: QueueDefinition[]): Promise<void> {
     for (const queue of queues) {
       this.queues.set(queue.name, []);
     }
   }
-  
+
   async publish(queueName: string, message: Message): Promise<void> {
     const queue = this.queues.get(queueName);
     if (!queue) throw new Error(`Queue ${queueName} not found`);
-    
+
     queue.push(message);
   }
-  
+
   async subscribe(queueName: string, handler: MessageHandler): Promise<void> {
     this.handlers.set(queueName, handler);
   }
-  
+
   async unsubscribe(queueName: string): Promise<void> {
     this.handlers.delete(queueName);
   }
-  
+
   async getQueueStats(queueName: string): Promise<QueueStats> {
     const queue = this.queues.get(queueName);
     if (!queue) throw new Error(`Queue ${queueName} not found`);
-    
+
     return {
       name: queueName,
       messageCount: queue.length,
@@ -892,7 +895,7 @@ export class MessageQueueImpl implements MessageQueue {
       rate: 0
     };
   }
-  
+
   async getConnectionStatus(): Promise<ConnectionStatus> {
     return {
       connected: this.connected,
@@ -909,23 +912,23 @@ export class PerformanceOptimizerImpl implements PerformanceOptimizer {
   private cpuConfig: CPUConfig | null = null;
   private networkConfig: NetworkConfig | null = null;
   private databaseConfig: DatabaseConfig | null = null;
-  
+
   async configureMemory(config: MemoryConfig): Promise<void> {
     this.memoryConfig = config;
   }
-  
+
   async configureCPU(config: CPUConfig): Promise<void> {
     this.cpuConfig = config;
   }
-  
+
   async configureNetwork(config: NetworkConfig): Promise<void> {
     this.networkConfig = config;
   }
-  
+
   async configureDatabase(config: DatabaseConfig): Promise<void> {
     this.databaseConfig = config;
   }
-  
+
   async getPerformanceMetrics(): Promise<PerformanceMetrics> {
     return {
       memory: {
@@ -956,7 +959,7 @@ export class PerformanceOptimizerImpl implements PerformanceOptimizer {
       }
     };
   }
-  
+
   async optimize(): Promise<OptimizationResult> {
     // Implementation: perform optimization
     return {
@@ -965,13 +968,29 @@ export class PerformanceOptimizerImpl implements PerformanceOptimizer {
       performanceGain: 0.1
     };
   }
-  
+
   async validateConfiguration(): Promise<PerfValidationResult> {
     // Implementation: validate configuration
     return {
       valid: true,
       errors: [],
       sanitized: null
+    };
+  }
+
+  async initialize(): Promise<void> {
+    // Stub
+  }
+
+  async shutdown(): Promise<void> {
+    // Stub
+  }
+
+  async analyze(): Promise<PerformanceAnalysis> {
+    return {
+      bottlenecks: [],
+      recommendations: [],
+      score: 100
     };
   }
 }
@@ -995,19 +1014,19 @@ export class SupabaseServiceImpl implements SupabaseService {
 
   async configure(config: SupabaseConfig): Promise<void> {
     this.config = config;
-    
+
     // Initialize main client
     this.client = createClient<Database>(config.url, config.anonKey, {
       db: { schema: config.schema || 'public' },
       auth: config.auth,
-      realtime: config.realtime
-    });
+      realtime: config.realtime as any
+    } as any);
 
     // Initialize service role client
     this.serviceClient = createClient<Database>(config.url, config.serviceKey, {
       db: { schema: config.schema || 'public' },
       auth: { persistSession: false }
-    });
+    } as any);
 
     // Initialize realtime client
     this.realtimeClient = new SupabaseRealtimeClientImpl(config);
@@ -1024,7 +1043,7 @@ export class SupabaseServiceImpl implements SupabaseService {
     const startTime = Date.now();
     try {
       const { error } = await this.client!.from('leads').select('lead_id').limit(1);
-      
+
       if (error) {
         throw new Error(`Supabase connection failed: ${error.message}`);
       }
@@ -1095,7 +1114,7 @@ export class SupabaseServiceImpl implements SupabaseService {
       result.auth = !authError;
 
       result.latency = Date.now() - startTime;
-      
+
       // Determine overall status
       const failedChecks = [
         result.connection,
@@ -1164,7 +1183,7 @@ export class SupabaseServiceImpl implements SupabaseService {
 
       // Apply columns selection
       if (query.columns) {
-        supabaseQuery = supabaseQuery.select(query.columns) as any;
+        supabaseQuery = supabaseQuery.select(query.columns.join(',')) as any;
       } else {
         supabaseQuery = supabaseQuery.select('*') as any;
       }
@@ -1194,9 +1213,9 @@ export class SupabaseServiceImpl implements SupabaseService {
       // Apply pagination
       if (query.limit) {
         if (query.offset !== undefined) {
-          supabaseQuery = supabaseQuery.range(query.offset, query.offset + query.limit - 1) as any;
+          supabaseQuery = (supabaseQuery as any).range(query.offset, query.offset + query.limit - 1) as any;
         } else {
-          supabaseQuery = supabaseQuery.limit(query.limit) as any;
+          supabaseQuery = (supabaseQuery as any).limit(query.limit) as any;
         }
       }
 
@@ -1207,23 +1226,23 @@ export class SupabaseServiceImpl implements SupabaseService {
           result = await supabaseQuery;
           break;
         case 'insert':
-          result = await supabaseQuery.insert(query.data);
+          result = await supabaseQuery.insert(query.data as any);
           break;
         case 'update':
-          result = await supabaseQuery.update(query.data as any);
+          result = await (supabaseQuery as any).update(query.data);
           break;
         case 'delete':
           result = await supabaseQuery.delete();
           break;
         case 'upsert':
-          result = await supabaseQuery.upsert(query.data);
+          result = await supabaseQuery.upsert(query.data as any);
           break;
         default:
           throw new Error(`Unsupported operation: ${query.operation}`);
       }
 
       const executionTime = Date.now() - startTime;
-      
+
       if ((result as any).error) {
         this.metrics.queries.failed++;
         throw new Error(`Query failed: ${(result as any).error.message}`);
@@ -1243,7 +1262,7 @@ export class SupabaseServiceImpl implements SupabaseService {
     } catch (error) {
       this.metrics.queries.failed++;
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         data: [],
@@ -1266,7 +1285,7 @@ export class SupabaseServiceImpl implements SupabaseService {
 
         switch (operation.type) {
           case 'insert':
-            query = query.insert(operation.data) as any;
+            query = query.insert(operation.data as any) as any;
             break;
           case 'update':
             if (operation.filters) {
@@ -1274,7 +1293,7 @@ export class SupabaseServiceImpl implements SupabaseService {
                 query = (query as any).eq(filter.column, filter.value);
               });
             }
-            query = query.update(operation.data) as any;
+            query = (query as any).update(operation.data);
             break;
           case 'delete':
             if (operation.filters) {
@@ -1287,7 +1306,7 @@ export class SupabaseServiceImpl implements SupabaseService {
         }
 
         const { data, error } = await query as any;
-        
+
         if (error) {
           throw new Error(`Transaction operation failed: ${error.message}`);
         }
@@ -1306,7 +1325,7 @@ export class SupabaseServiceImpl implements SupabaseService {
 
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         data: null as T,
@@ -1348,12 +1367,12 @@ export class SupabaseServiceImpl implements SupabaseService {
 
   async getStatistics(): Promise<SupabaseStatistics> {
     const uptime = Date.now() - (this.statistics.lastReset || Date.now());
-    
+
     return {
       ...this.statistics,
       uptime,
       averageResponseTime: this.metrics.queries.averageExecutionTime,
-      errorRate: this.metrics.queries.total > 0 ? 
+      errorRate: this.metrics.queries.total > 0 ?
         (this.metrics.queries.failed / this.metrics.queries.total) * 100 : 0,
       throughput: this.metrics.queries.total / (uptime / 1000)
     };
@@ -1385,8 +1404,8 @@ export class SupabaseServiceImpl implements SupabaseService {
   private updateQueryMetrics(executionTime: number): void {
     const total = this.metrics.queries.total;
     const current = this.metrics.queries.averageExecutionTime;
-    
-    this.metrics.queries.averageExecutionTime = 
+
+    this.metrics.queries.averageExecutionTime =
       ((current * (total - 1)) + executionTime) / total;
   }
 }
@@ -1400,19 +1419,19 @@ export class SupabaseRealtimeClientImpl implements SupabaseRealtimeClient {
   constructor(config: SupabaseConfig) {
     this.config = config;
     this.client = createClient<Database>(config.url, config.anonKey, {
-      realtime: config.realtime
-    });
+      realtime: config.realtime as any
+    } as any);
   }
 
   async connect(): Promise<void> {
     this.connectionStatus = 'connecting';
-    
+
     try {
       // Test realtime connection
       const channel = this.client.channel('test-connection');
       await channel.subscribe();
       await channel.unsubscribe();
-      
+
       this.connectionStatus = 'connected';
     } catch (error) {
       this.connectionStatus = 'error';
