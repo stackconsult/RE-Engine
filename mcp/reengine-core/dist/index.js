@@ -1,7 +1,57 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, McpError, ErrorCode, } from "@modelcontextprotocol/sdk/types.js";
 import { v4 as uuidv4 } from "uuid";
+// Authentication configuration
+const SERVICE_CONFIG = {
+    serviceId: process.env.SERVICE_ID || 'reengine-core',
+    apiKey: process.env.CORE_API_KEY || process.env.DEFAULT_API_KEY || 'dev-key-placeholder',
+    authUrl: process.env.AUTH_URL || 'http://localhost:3001/auth/token'
+};
+// Get JWT token for service authentication with graceful fallback
+async function getServiceToken() {
+    // Skip authentication in development mode
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('🔓 Development mode: Skipping JWT authentication');
+        return null;
+    }
+    try {
+        const response = await fetch(SERVICE_CONFIG.authUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': SERVICE_CONFIG.apiKey
+            },
+            body: JSON.stringify({ serviceId: SERVICE_CONFIG.serviceId })
+        });
+        if (!response.ok) {
+            console.warn(`⚠️ Auth failed (${response.status}), continuing without token`);
+            return null;
+        }
+        const { token } = await response.json();
+        console.log('✅ JWT token obtained successfully');
+        return token;
+    }
+    catch (error) {
+        console.warn('⚠️ Auth service unavailable, continuing without token:', error.message);
+        return null;
+    }
+}
+// Authenticated fetch wrapper with fallback
+async function authenticatedFetch(url, options = {}) {
+    const token = await getServiceToken();
+    const headers = {
+        ...options.headers,
+        'Content-Type': 'application/json'
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return fetch(url, {
+        ...options,
+        headers
+    });
+}
 import { LocalMCPIntegration } from "./local-integration.js";
 // Initialize local integration
 const engine = new LocalMCPIntegration();

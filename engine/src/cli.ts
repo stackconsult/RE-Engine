@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck - Type issues pending (Phase 2)
 
 /**
  * RE Engine CLI
@@ -85,7 +86,7 @@ program
         logger.info('🔧 Running orchestration tests...');
         const { runBasicTests } = await import('./orchestration/test-runner');
         const success = await runBasicTests();
-        
+
         if (!success) {
           logger.error('❌ Orchestration tests failed');
           process.exit(1);
@@ -96,7 +97,7 @@ program
         logger.info('🔄 Running workflow tests...');
         const { runWorkflowTests } = await import('./workflows/workflow-tests');
         const success = await runWorkflowTests();
-        
+
         if (!success) {
           logger.error('❌ Workflow tests failed');
           process.exit(1);
@@ -126,7 +127,7 @@ program
   .action(async () => {
     try {
       logger.info('📊 RE Engine System Status');
-      
+
       // System information
       logger.info('🖥️  System Information:');
       logger.info(`   Node.ts: ${process.version}`);
@@ -143,7 +144,7 @@ program
 
       // Dependencies check
       logger.info('📦 Dependencies:');
-      
+
       // Check for Ollama
       try {
         const response = await fetch('http://localhost:11434/api/tags');

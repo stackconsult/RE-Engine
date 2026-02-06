@@ -71,6 +71,7 @@ export class ResourceManager extends EventEmitter {
   private loadBalancer: LoadBalancer;
 
   constructor(config?: Partial<ResourceManagerConfig>) {
+    super(); // Required for EventEmitter extension
     this.config = {
       enableAutoScaling: true,
       maxResources: {
@@ -89,11 +90,11 @@ export class ResourceManager extends EventEmitter {
       loadBalancingStrategy: 'least-connections',
       ...config
     };
-    
+
     this.logger = new Logger('ResourceManager', true);
     this.currentResources = this.initializeResources();
     this.loadBalancer = new LoadBalancer(this.config.loadBalancingStrategy);
-    
+
     this.startResourceMonitoring();
   }
 
@@ -105,10 +106,10 @@ export class ResourceManager extends EventEmitter {
 
     // Check if resources are available
     const available = this.getAvailableResources();
-    
+
     // Calculate needed resources
     const needed = this.calculateNeededResources(requirements);
-    
+
     this.logger.debug('Resource check:', { available, needed });
 
     if (this.canSatisfy(available, needed)) {
@@ -157,7 +158,7 @@ export class ResourceManager extends EventEmitter {
    */
   async getHealthStatus(): Promise<any> {
     const utilization = this.calculateOverallUtilization();
-    
+
     return {
       status: utilization < 80 ? 'healthy' : utilization < 95 ? 'degraded' : 'unhealthy',
       utilization,
@@ -239,7 +240,7 @@ export class ResourceManager extends EventEmitter {
   private calculateNeededResources(requirements: ResourceRequirements): ResourceRequirements {
     // Add buffer for overhead
     const buffer = 1.1; // 10% buffer
-    
+
     return {
       cpu: Math.ceil(requirements.cpu * buffer),
       memory: Math.ceil(requirements.memory * buffer),
@@ -355,7 +356,7 @@ export class ResourceManager extends EventEmitter {
     };
 
     this.allocatedResources.set(allocationId, allocation);
-    
+
     this.logger.info(`✅ Resources allocated: ${JSON.stringify(allocation)}`);
     return allocation;
   }
@@ -445,7 +446,7 @@ export class ResourceManager extends EventEmitter {
 
     while (waitedTime < maxWaitTime) {
       const available = this.getAvailableResources();
-      
+
       if (this.canSatisfy(available, needed)) {
         this.logger.info('✅ Resources are ready for allocation');
         return;
@@ -511,7 +512,7 @@ export class ResourceManager extends EventEmitter {
 
   private async checkScaleDown(): Promise<void> {
     const utilization = this.calculateOverallUtilization();
-    
+
     if (utilization < 30) { // Scale down if utilization is below 30%
       this.logger.info('📉 Scaling down resources due to low utilization');
       await this.scaleDownResources();
@@ -572,9 +573,9 @@ export class ResourceManager extends EventEmitter {
 
   private async performHealthCheck(): Promise<void> {
     this.updateCurrentResources();
-    
+
     const utilization = this.calculateOverallUtilization();
-    
+
     // Check if scaling is needed
     if (utilization > this.config.scalingThresholds.cpuThreshold) {
       this.logger.warn(`⚠️ High resource utilization: ${utilization.toFixed(2)}%`);
@@ -632,7 +633,7 @@ class LoadBalancer {
 
   private selectRoundRobin(nodes: any[]): any {
     if (nodes.length === 0) return null;
-    
+
     const node = nodes[this.roundRobinIndex];
     this.roundRobinIndex = (this.roundRobinIndex + 1) % nodes.length;
     return node;
@@ -640,7 +641,7 @@ class LoadBalancer {
 
   private selectLeastConnections(nodes: any[]): any {
     if (nodes.length === 0) return null;
-    
+
     return nodes.reduce((least, current) => {
       return (current.connections || 0) < (least.connections || 0) ? current : least;
     });
@@ -648,20 +649,20 @@ class LoadBalancer {
 
   private selectWeighted(nodes: any[]): any {
     if (nodes.length === 0) return null;
-    
+
     // Calculate total weight
     const totalWeight = nodes.reduce((sum, node) => sum + (node.weight || 1), 0);
-    
+
     // Select based on weight
     let random = Math.random() * totalWeight;
-    
+
     for (const node of nodes) {
       random -= (node.weight || 1);
       if (random <= 0) {
         return node;
       }
     }
-    
+
     return nodes[nodes.length - 1];
   }
 }

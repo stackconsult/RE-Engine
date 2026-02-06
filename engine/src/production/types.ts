@@ -1258,3 +1258,92 @@ export interface SupabaseRealtimeClient {
   isConnected(): boolean;
   getConnectionStatus(): 'connected' | 'connecting' | 'disconnected' | 'error';
 }
+
+// Additional interfaces for production-bootstrap.service.ts
+
+export interface SecurityManager {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  getStatus(): Promise<SecurityStatus>;
+  validateRequest(request: any): Promise<ValidationResult>;
+  auditLog(event: SecurityEvent): Promise<void>;
+}
+
+export interface EventBus {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  publish(event: string, payload: any): Promise<void>;
+  subscribe(event: string, handler: (payload: any) => void): void;
+  unsubscribe(event: string, handler: (payload: any) => void): void;
+}
+
+export interface OllamaService {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  generate(prompt: string, model?: string): Promise<string>;
+  chat(messages: any[], model?: string): Promise<string>;
+  list(): Promise<string[]>;
+  isAvailable(): Promise<boolean>;
+}
+
+export interface OpenClawService {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  sendMessage(message: string, options?: any): Promise<any>;
+  getConversation(): Promise<any[]>;
+  isAvailable(): Promise<boolean>;
+}
+
+export interface RedisService {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, ttl?: number): Promise<void>;
+  del(key: string): Promise<void>;
+  exists(key: string): Promise<boolean>;
+  isConnected(): boolean;
+}
+
+
+export interface SecurityStatus {
+  securityLevel: 'high' | 'medium' | 'low';
+  threatsBlocked: number;
+  lastThreat?: number;
+  encryptionEnabled: boolean;
+  auditEnabled: boolean;
+}
+
+export interface MCPServer {
+  name: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  callTool(name: string, args: any): Promise<any>;
+  listTools(): Promise<string[]>;
+}
+
+export interface AIOrchestrator {
+  initialize(config: AIOrchestratorConfig): Promise<void>;
+  shutdown(): Promise<void>;
+  selectModel(task: string): Promise<string>;
+  generate(prompt: string, options?: any): Promise<string>;
+  chat(messages: any[], options?: any): Promise<string>;
+}
+
+
+export interface PerformanceOptimizer {
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  analyze(): Promise<PerformanceAnalysis>;
+  optimize(): Promise<void>;
+  getMetrics(): Promise<PerformanceMetrics>;
+}
+
+export interface PerformanceAnalysis {
+  bottlenecks: string[];
+  recommendations: string[];
+  score: number;
+}
+

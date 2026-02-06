@@ -76,7 +76,7 @@ export class DncService {
         // Check if already in DNC
         const existing = dncList.find(entry => entry.value.toLowerCase() === value.toLowerCase());
         if (existing) {
-            logger.warn({ value, as, any, existingReason: existing.reason }, "Value already in DNC list");
+            logger.warn({ value, existingReason: existing.reason }, "Value already in DNC list");
             return existing;
         }
         const dncEntry = {
@@ -86,7 +86,7 @@ export class DncService {
         };
         const updatedDncList = [...dncList, dncEntry];
         await this.store.upsertDnc(updatedDncList);
-        logger.info({ value, as, any, reason, addedBy }, "Added to DNC list");
+        logger.info({ value, reason, addedBy }, "Added to DNC list");
         return dncEntry;
     }
     async removeFromDnc(value) {
@@ -110,7 +110,7 @@ export class DncService {
         }
         entry.reason = newReason;
         await this.store.upsertDnc(dncList);
-        logger.info({ value, as, any, newReason }, "Updated DNC reason");
+        logger.info({ value, newReason }, "Updated DNC reason");
         return true;
     }
     async getDncStats() {

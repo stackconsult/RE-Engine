@@ -3,7 +3,7 @@
  * Native Ollama client for RE Engine integration
  */
 
-import { logger, logSystemEvent } from '../observability/logger.ts';
+import { logger, logSystemEvent } from '../observability/logger.js';
 import { EventEmitter } from 'events';
 
 export interface OllamaMessage {

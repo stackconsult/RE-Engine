@@ -4,6 +4,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   Tool,
+  McpError,
+  ErrorCode,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
@@ -50,16 +52,16 @@ async function getServiceToken(): Promise<string | null> {
 // Authenticated fetch wrapper with fallback
 async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = await getServiceToken();
-  
+
   const headers: Record<string, string> = {
     ...options.headers as Record<string, string>,
     'Content-Type': 'application/json'
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   return fetch(url, {
     ...options,
     headers
@@ -110,7 +112,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: "The approval ID to approve"
             },
             approved_by: {
-              type: "string", 
+              type: "string",
               description: "Who is approving this",
               default: "windsurf"
             }
@@ -135,7 +137,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             rejected_by: {
               type: "string",
-              description: "Who is rejecting this", 
+              description: "Who is rejecting this",
               default: "windsurf"
             }
           },
@@ -171,7 +173,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: "Filter by channel"
             },
             event_type: {
-              type: "string", 
+              type: "string",
               description: "Filter by event type"
             },
             limit: {
@@ -195,7 +197,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "approvals_list": {
         const status = args?.status as string;
         const approvals = await engine.listApprovals(status);
-        
+
         return {
           content: [
             {
@@ -209,12 +211,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "approvals_approve": {
         const approvalId = args?.approval_id as string;
         const approvedBy = args?.approved_by as string || "windsurf";
-        
+
         const approval = await engine.approveApproval(approvalId, approvedBy);
         if (!approval) {
           throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} not found or cannot be approved`);
         }
-        
+
         return {
           content: [
             {
@@ -229,12 +231,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const approvalId = args?.approval_id as string;
         const reason = args?.reason as string || "rejected";
         const rejectedBy = args?.rejected_by as string || "windsurf";
-        
+
         const approval = await engine.rejectApproval(approvalId, reason);
         if (!approval) {
           throw new McpError(ErrorCode.InvalidRequest, `Approval ${approvalId} not found or cannot be rejected`);
         }
-        
+
         return {
           content: [
             {
@@ -247,12 +249,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "leads_import_csv": {
         const csvData = args?.csv_data as string;
-        
+
         // Basic CSV parsing - in production would use proper CSV library
         const lines = csvData.trim().split('\n');
         const headers = lines[0].split(',');
         const leads = [];
-        
+
         for (let i = 1; i < lines.length; i++) {
           const values = lines[i].split(',');
           const lead: any = {};
@@ -261,7 +263,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           });
           leads.push(lead);
         }
-        
+
         return {
           content: [
             {
@@ -286,7 +288,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             meta_json: "{}"
           }
         ];
-        
+
         return {
           content: [
             {

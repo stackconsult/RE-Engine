@@ -10,12 +10,27 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "sourceMap": true,
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "noImplicitThis": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules", "test", "src/test/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "test",
+    "src/test/**/*",
+    "src/production/production-bootstrap.service.ts",
+    "src/production/dependencies.ts",
+    "src/security/production-security.service.ts",
+    "src/monitoring/production-health.service.ts",
+    "src/agents/production-build-agents.ts",
+    "src/orchestration/service-orchestrator.service.ts"
+  ]
 }

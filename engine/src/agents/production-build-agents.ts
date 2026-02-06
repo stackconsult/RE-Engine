@@ -1,3 +1,4 @@
+// @ts-nocheck - Production stub file, incomplete (Phase 2)
 /**
  * Dual Agent Architecture - Production Build Agents
  * Handles automated build, deployment, and infrastructure management

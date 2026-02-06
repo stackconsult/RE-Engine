@@ -40,7 +40,7 @@ export class REEngineAPIServer extends EventEmitter {
 
   constructor(config?: Partial<ServerConfig>) {
     super();
-    
+
     const defaultConfig = {
       port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
       host: process.env.HOST || 'localhost',
@@ -53,11 +53,11 @@ export class REEngineAPIServer extends EventEmitter {
       enableDetailedLogging: process.env.NODE_ENV !== 'production',
       ...config
     };
-    
+
     this.config = defaultConfig;
     this.logger = new Logger('REEngineAPIServer', this.config.enableDetailedLogging);
     this.app = express();
-    
+
     this.orchestrator = new MasterOrchestrator({
       maxConcurrentWorkflows: 5,
       defaultTimeout: 300000,
@@ -65,14 +65,14 @@ export class REEngineAPIServer extends EventEmitter {
       enableAutoScaling: false,
       enableDetailedLogging: this.config.enableDetailedLogging
     });
-    
+
     this.workflowService = new WorkflowService(this.orchestrator, {
       defaultTimeout: 300000,
       maxConcurrentWorkflows: 3,
       enableDetailedLogging: this.config.enableDetailedLogging,
       enableAutoRetry: true
     });
-    
+
     this.setupMiddleware();
     this.setupRoutes();
     this.setupErrorHandling();
@@ -235,13 +235,13 @@ export class REEngineAPIServer extends EventEmitter {
     }
 
     // Body parsing
-    this.app.use(express.tson({ limit: '10mb' }));
+    this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // Request logging
     this.app.use((req: Request, res: Response, next: NextFunction) => {
       const start = Date.now();
-      
+
       res.on('finish', () => {
         const duration = Date.now() - start;
         this.logger.debug(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {
@@ -261,7 +261,7 @@ export class REEngineAPIServer extends EventEmitter {
   private setupRoutes(): void {
     // Health check
     this.app.get('/health', (req: Request, res: Response) => {
-      res.tson({
+      res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
@@ -272,7 +272,7 @@ export class REEngineAPIServer extends EventEmitter {
 
     // API info
     this.app.get('/api', (req: Request, res: Response) => {
-      res.tson({
+      res.json({
         name: 'RE Engine API',
         version: process.env.npm_package_version || '1.0.0',
         description: 'Real Estate Automation API',
@@ -296,7 +296,7 @@ export class REEngineAPIServer extends EventEmitter {
 
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {
-      res.status(404).tson({
+      res.status(404).json({
         error: 'Not Found',
         message: `Cannot ${req.method} ${req.originalUrl}`,
         timestamp: new Date().toISOString()
@@ -307,7 +307,8 @@ export class REEngineAPIServer extends EventEmitter {
   private setupErrorHandling(): void {
     // Global error handler
     this.app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-      this.logger.error('Unhandled error:', error, {
+      this.logger.error('Unhandled error', {
+        error: error.message,
         method: req.method,
         path: req.path,
         body: req.body,
@@ -321,12 +322,12 @@ export class REEngineAPIServer extends EventEmitter {
         ...(this.config.environment !== 'production' && { stack: error.stack })
       };
 
-      res.status(error.status || 500).tson(errorResponse);
+      res.status(error.status || 500).json(errorResponse);
     });
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-      this.logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+      this.logger.error('Unhandled Rejection', { promise, reason });
     });
 
     // Handle uncaught exceptions

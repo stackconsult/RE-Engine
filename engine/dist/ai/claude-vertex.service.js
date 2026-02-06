@@ -71,7 +71,7 @@ export class ClaudeVertexService {
         catch (error) {
             logError(error, 'claude-vertex-client-init-failed');
             // Fallback to manual API calls if SDK is not available
-            logger.warn('Anthropic Vertex SDK not available as any, using manual API calls');
+            logger.warn('Anthropic Vertex SDK not available, using manual API calls');
             this.anthropicClient = null;
         }
     }

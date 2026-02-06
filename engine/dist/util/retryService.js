@@ -48,7 +48,7 @@ export class RetryService {
         // 3. If successful, remove from failed_sends and log event
         // 4. If failed, increment retry_count and calculate next_retry_at
         // 5. If retry_count >= max_retries, move to dead_letter.csv
-        logger.info({ processed, as, any, retried, dead_lettered }, "Retry processing completed");
+        logger.info({ processed, retried, dead_lettered }, "Retry processing completed");
         return { processed, retried, dead_lettered };
     }
     calculateNextRetry(retryCount) {

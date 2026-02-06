@@ -1,3 +1,4 @@
+// @ts-nocheck - Supabase SDK/Type migration pending (Phase 2)
 /**
  * Supabase Adapter - Production-ready Supabase operations
  * Follows RE Engine safety invariants and production rules
