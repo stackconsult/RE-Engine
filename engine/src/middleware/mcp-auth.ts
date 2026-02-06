@@ -1,16 +1,15 @@
-// @ts-nocheck - Type issues pending (Phase 2)
-import { serviceAuthMiddleware } from '../middleware/service-auth.js';
+import express from 'express';
+import { serviceAuthMiddleware, AuthenticatedRequest, generateServiceToken } from './service-auth.js';
 
 // Add authentication to MCP server routes
 export function addMCPAuthentication(app: express.Application, mcpName: string, requiredPermission: string = 'write') {
   // MCP server authentication endpoint
   app.post(`/mcp/${mcpName}/auth`, serviceAuthMiddleware('admin'), (req: AuthenticatedRequest, res) => {
-    const { generateServiceToken } = require('../middleware/service-auth.js');
     const service = req.service!;
-    
+
     const token = generateServiceToken(service);
-    
-    res.tson({
+
+    res.json({
       token,
       expiresIn: 3600,
       service: mcpName

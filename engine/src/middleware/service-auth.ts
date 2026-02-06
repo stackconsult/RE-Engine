@@ -1,8 +1,7 @@
-// @ts-nocheck - Type issues pending (Phase 2)
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import pino from 'pino';
-import { DatabaseAuthService } from './database-auth.ts';
+import { DatabaseAuthService } from './database-auth.js';
 
 const logger = pino({ name: 'service-auth' });
 
@@ -13,8 +12,9 @@ try {
     dbAuthService = new DatabaseAuthService(process.env.DATABASE_URL);
     logger.info("Database authentication service initialized");
   }
-} catch (error) {
-  logger.warn({ error: error.message }, "Database authentication not available, using fallback");
+} catch (error: unknown) {
+  const err = error as Error;
+  logger.warn({ error: err.message }, "Database authentication not available, using fallback");
 }
 
 export interface ServiceAuth {
@@ -69,14 +69,15 @@ async function getServiceAuth(serviceId: string): Promise<ServiceAuth | null> {
       if (service) {
         return service;
       }
-    } catch (error) {
-      logger.warn({ 
-        serviceId, 
-        error: error.message 
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.warn({
+        serviceId,
+        error: err.message
       }, "Database auth lookup failed, using fallback");
     }
   }
-  
+
   return FALLBACK_REGISTRY[serviceId] || null;
 }
 
@@ -85,39 +86,41 @@ async function validateApiKey(serviceId: string, apiKey: string): Promise<boolea
   if (dbAuthService) {
     try {
       return await dbAuthService.validateApiKey(serviceId, apiKey);
-    } catch (error) {
-      logger.warn({ 
-        serviceId, 
-        error: error.message 
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.warn({
+        serviceId,
+        error: err.message
       }, "Database API key validation failed, using fallback");
     }
   }
-  
+
   const service = FALLBACK_REGISTRY[serviceId];
   return service ? service.apiKey === apiKey : false;
 }
 
 // Log authentication attempt
 async function logAuthAttempt(
-  serviceId: string, 
-  action: string, 
-  resource: string, 
-  success: boolean, 
-  ipAddress?: string, 
-  userAgent?: string, 
+  serviceId: string,
+  action: string,
+  resource: string,
+  success: boolean,
+  ipAddress?: string,
+  userAgent?: string,
   errorMessage?: string
 ): Promise<void> {
   if (dbAuthService) {
     try {
       await dbAuthService.logAuthAttempt(serviceId, action, resource, success, ipAddress, userAgent, errorMessage);
-    } catch (error) {
-      logger.warn({ 
-        serviceId, 
-        error: error.message 
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.warn({
+        serviceId,
+        error: err.message
       }, "Failed to log auth attempt to database");
     }
   }
-  
+
   // Always log to application logger
   logger.info({
     serviceId,
@@ -144,17 +147,18 @@ export function generateServiceToken(service: ServiceAuth): string {
 
 export function validateServiceToken(token: string): ServiceAuth | null {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as any;
-    
-    const service = SERVICE_REGISTRY[decoded.serviceId];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as { serviceId: string };
+
+    const service = FALLBACK_REGISTRY[decoded.serviceId];
     if (!service) {
       logger.warn({ serviceId: decoded.serviceId }, 'Unknown service in token');
       return null;
     }
-    
+
     return service;
-  } catch (error) {
-    logger.error({ error: error.message }, 'Token validation failed');
+  } catch (error: unknown) {
+    const err = error as Error;
+    logger.error({ error: err.message }, 'Token validation failed');
     return null;
   }
 }
@@ -163,56 +167,56 @@ export function serviceAuthMiddleware(requiredPermission?: string) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     const apiKey = req.headers['x-api-key'] as string;
-    
+
     // Try JWT token first
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       const service = validateServiceToken(token);
-      
+
       if (service) {
         if (requiredPermission && !service.permissions.includes(requiredPermission)) {
-          return res.status(403).tson({
+          return res.status(403).json({
             error: 'Forbidden',
             message: 'Insufficient permissions'
           });
         }
-        
+
         req.service = service;
-        logger.info({ 
+        logger.info({
           serviceId: service.serviceId,
-          permission: requiredPermission 
+          permission: requiredPermission
         }, 'Service authenticated via JWT');
         return next();
       }
     }
-    
+
     // Fallback to API key
     if (apiKey) {
-      const service = Object.values(SERVICE_REGISTRY).find(s => s.apiKey === apiKey);
-      
+      const service = Object.values(FALLBACK_REGISTRY).find(s => s.apiKey === apiKey);
+
       if (service) {
         if (requiredPermission && !service.permissions.includes(requiredPermission)) {
-          return res.status(403).tson({
+          return res.status(403).json({
             error: 'Forbidden',
             message: 'Insufficient permissions'
           });
         }
-        
+
         req.service = service;
-        logger.info({ 
+        logger.info({
           serviceId: service.serviceId,
-          permission: requiredPermission 
+          permission: requiredPermission
         }, 'Service authenticated via API key');
         return next();
       }
     }
-    
-    logger.warn({ 
+
+    logger.warn({
       hasToken: !!authHeader,
-      hasApiKey: !!apiKey 
+      hasApiKey: !!apiKey
     }, 'Authentication failed');
-    
-    res.status(401).tson({
+
+    res.status(401).json({
       error: 'Unauthorized',
       message: 'Valid API key or JWT token required'
     });

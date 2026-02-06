@@ -1,4 +1,4 @@
-// @ts-nocheck - Type issues pending (Phase 2)
+// @ts-nocheck - Express Request.user type conflict needs module augmentation (Phase 3)
 /**
  * Authentication Middleware for Web Dashboard
  * JWT token verification and user session management
@@ -27,20 +27,20 @@ export class AuthMiddleware {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const token = this.extractToken(req);
-        
+
         if (!token) {
           return res.status(401).json({ error: 'No token provided' });
         }
 
         const authToken = await this.authService.verifyToken(token);
-        
+
         if (!authToken) {
           return res.status(401).json({ error: 'Invalid or expired token' });
         }
 
         req.user = authToken;
         next();
-        
+
       } catch (error) {
         console.error('Authentication error:', error);
         res.status(401).json({ error: 'Authentication failed' });
@@ -57,7 +57,7 @@ export class AuthMiddleware {
         }
 
         if (!req.user.permissions.includes(requiredPermission)) {
-          return res.status(403).json({ 
+          return res.status(403).json({
             error: 'Insufficient permissions',
             required: requiredPermission,
             current: req.user.permissions
@@ -65,7 +65,7 @@ export class AuthMiddleware {
         }
 
         next();
-        
+
       } catch (error) {
         console.error('Authorization error:', error);
         res.status(500).json({ error: 'Authorization check failed' });
