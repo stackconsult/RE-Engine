@@ -36,11 +36,7 @@ export class MCPClient {
                 version: "1.0.0",
             },
             {
-                capabilities: {
-                    roots: {
-                        listChanged: true,
-                    },
-                },
+                capabilities: {},
             }
         );
     }
@@ -76,8 +72,8 @@ export class MCPClient {
             this.logger.info(`✅ Connected to MCP server: ${this.config.name}`);
 
             // Log available tools
-            const tools = await this.listTools();
-            this.logger.debug(`Available tools for ${this.config.name}:`, tools.map(t => t.name));
+            // const tools = await this.listTools();
+            // this.logger.debug(`Available tools for ${this.config.name}:`, tools.map(t => t.name));
 
         } catch (error) {
             this.logger.error(`❌ Failed to connect to MCP server ${this.config.name}:`, error);
