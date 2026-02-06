@@ -58,7 +58,7 @@ export class SupabaseIntegrationService {
     try {
       // Test connection
       const health = await this.manager.healthCheck();
-      
+
       if (!health.database) {
         throw new Error('Supabase database connection failed');
       }
@@ -75,7 +75,7 @@ export class SupabaseIntegrationService {
 
       this.isInitialized = true;
 
-      logSystemEvent('supabase_integration_initialized', {
+      logSystemEvent('supabase_integration_initialized', 'info', {
         realtimeEnabled: this.config.enableRealtime,
         storageEnabled: this.config.enableStorage,
         authEnabled: this.config.enableAuth,
@@ -91,7 +91,7 @@ export class SupabaseIntegrationService {
   // Lead Management Operations
   async createLead(lead: Omit<Database['public']['Tables']['leads']['Insert'], 'lead_id'>): Promise<Database['public']['Tables']['leads']['Row']> {
     const client = getSupabaseClient();
-    
+
     try {
       const { data, error } = await client
         .from('leads')
@@ -106,7 +106,7 @@ export class SupabaseIntegrationService {
       if (error) throw error;
       if (!data) throw new Error('Failed to create lead');
 
-      logSystemEvent('lead_created', { lead_id: data.lead_id });
+      logSystemEvent('lead_created', 'info', { lead_id: data.lead_id });
       return data;
 
     } catch (error) {
@@ -117,7 +117,7 @@ export class SupabaseIntegrationService {
 
   async updateLead(leadId: string, updates: Partial<Database['public']['Tables']['leads']['Update']>): Promise<Database['public']['Tables']['leads']['Row']> {
     const client = getSupabaseClient();
-    
+
     try {
       const { data, error } = await client
         .from('leads')
@@ -132,7 +132,7 @@ export class SupabaseIntegrationService {
       if (error) throw error;
       if (!data) throw new Error('Lead not found');
 
-      logSystemEvent('lead_updated', { lead_id: leadId });
+      logSystemEvent('lead_updated', 'info', { lead_id: leadId });
       return data;
 
     } catch (error) {
@@ -143,7 +143,7 @@ export class SupabaseIntegrationService {
 
   async getLead(leadId: string): Promise<Database['public']['Tables']['leads']['Row'] | null> {
     const client = getSupabaseClient();
-    
+
     try {
       const { data, error } = await client
         .from('leads')
@@ -170,7 +170,7 @@ export class SupabaseIntegrationService {
     orderBy?: string;
   }): Promise<Database['public']['Tables']['leads']['Row'][]> {
     const client = getSupabaseClient();
-    
+
     try {
       let query = client.from('leads').select('*');
 
@@ -205,7 +205,7 @@ export class SupabaseIntegrationService {
   // Approval Management Operations
   async createApproval(approval: Omit<Database['public']['Tables']['approvals']['Insert'], 'approval_id'>): Promise<Database['public']['Tables']['approvals']['Row']> {
     const client = getSupabaseClient();
-    
+
     try {
       const { data, error } = await client
         .from('approvals')
@@ -220,7 +220,7 @@ export class SupabaseIntegrationService {
       if (error) throw error;
       if (!data) throw new Error('Failed to create approval');
 
-      logSystemEvent('approval_created', { approval_id: data.approval_id });
+      logSystemEvent('approval_created', 'info', { approval_id: data.approval_id });
       return data;
 
     } catch (error) {
@@ -231,7 +231,7 @@ export class SupabaseIntegrationService {
 
   async updateApproval(approvalId: string, updates: Partial<Database['public']['Tables']['approvals']['Update']>): Promise<Database['public']['Tables']['approvals']['Row']> {
     const client = getSupabaseClient();
-    
+
     try {
       const { data, error } = await client
         .from('approvals')
@@ -243,7 +243,7 @@ export class SupabaseIntegrationService {
       if (error) throw error;
       if (!data) throw new Error('Approval not found');
 
-      logSystemEvent('approval_updated', { approval_id: approvalId });
+      logSystemEvent('approval_updated', 'info', { approval_id: approvalId });
       return data;
 
     } catch (error) {
@@ -254,7 +254,7 @@ export class SupabaseIntegrationService {
 
   async getApproval(approvalId: string): Promise<Database['public']['Tables']['approvals']['Row'] | null> {
     const client = getSupabaseClient();
-    
+
     try {
       const { data, error } = await client
         .from('approvals')
@@ -281,7 +281,7 @@ export class SupabaseIntegrationService {
     offset?: number;
   }): Promise<Database['public']['Tables']['approvals']['Row'][]> {
     const client = getSupabaseClient();
-    
+
     try {
       let query = client.from('approvals').select('*');
 
@@ -338,7 +338,7 @@ export class SupabaseIntegrationService {
 
       this.subscriptions.set(subscriptionId, subscription);
 
-      logSystemEvent('realtime_subscription_created', {
+      logSystemEvent('realtime_subscription_created', 'info', {
         subscriptionId,
         table: subscription.table,
         event: subscription.event
@@ -362,7 +362,7 @@ export class SupabaseIntegrationService {
 
       this.subscriptions.delete(subscriptionId);
 
-      logSystemEvent('realtime_subscription_removed', { subscriptionId });
+      logSystemEvent('realtime_subscription_removed', 'info', { subscriptionId });
 
     } catch (error) {
       logError('Failed to remove realtime subscription', error as Error);
@@ -394,7 +394,7 @@ export class SupabaseIntegrationService {
           upsert: options?.upsert || false
         });
 
-      logSystemEvent('file_uploaded', { bucket, path });
+      logSystemEvent('file_uploaded', 'info', { bucket, path });
       return result;
 
     } catch (error) {
@@ -488,14 +488,14 @@ export class SupabaseIntegrationService {
         table: 'leads',
         event: '*',
         callback: async (payload) => {
-          logSystemEvent('lead_realtime_event', payload);
+          logSystemEvent('lead_realtime_event', 'info', payload);
         }
       },
       {
         table: 'approvals',
         event: '*',
         callback: async (payload) => {
-          logSystemEvent('approval_realtime_event', payload);
+          logSystemEvent('approval_realtime_event', 'info', payload);
         }
       }
     ];
@@ -542,7 +542,7 @@ export async function createSupabaseIntegration(
 ): Promise<SupabaseIntegrationService> {
   const finalConfig = { ...DEFAULT_INTEGRATION_CONFIG, ...config };
   const service = new SupabaseIntegrationService(finalConfig);
-  
+
   await service.initialize();
   return service;
 }

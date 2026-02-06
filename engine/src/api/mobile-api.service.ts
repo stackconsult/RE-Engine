@@ -108,7 +108,7 @@ export class MobileAPIService {
       const agentId = req.user?.id;
 
       const lead = await this.dbManager.getLead(id);
-      
+
       if (!lead) {
         res.status(404).json({
           success: false,

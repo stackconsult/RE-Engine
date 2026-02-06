@@ -1,4 +1,4 @@
-// @ts-nocheck - Supabase SDK/Type migration pending (Phase 2)
+/**
 /**
  * Advanced Property Matching Engine for Phase 6
  * AI-powered recommendation engine for real estate properties
@@ -220,7 +220,7 @@ export class AdvancedPropertyMatchingEngine {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing advanced property matching engine...');
-    
+
     try {
       // Load learning data
       if (this.config.learning.enabled) {
@@ -240,10 +240,10 @@ export class AdvancedPropertyMatchingEngine {
 
       // Get available properties
       const properties = await this.getAvailableProperties(preferences);
-      
+
       // Score each property
       const matches: PropertyMatch[] = [];
-      
+
       for (const property of properties) {
         const match = await this.scoreProperty(property, preferences);
         if (match.score > 0.3) { // Minimum threshold
@@ -253,7 +253,7 @@ export class AdvancedPropertyMatchingEngine {
 
       // Sort by score and apply learning adjustments
       matches.sort((a, b) => b.score - a.score);
-      
+
       if (this.config.learning.enabled) {
         await this.applyLearningAdjustments(matches, leadId);
       }
@@ -289,7 +289,7 @@ export class AdvancedPropertyMatchingEngine {
   private async getAvailableProperties(preferences: LeadPreferences): Promise<PropertyFeatures[]> {
     // Get properties from database and external sources
     // This would integrate with CRM integrations
-    
+
     const properties: PropertyFeatures[] = [
       {
         basic: {
@@ -377,7 +377,7 @@ export class AdvancedPropertyMatchingEngine {
     ];
 
     // Filter based on basic criteria
-    return properties.filter(property => 
+    return properties.filter(property =>
       this.matchesBasicCriteria(property, preferences)
     );
   }
@@ -473,9 +473,9 @@ export class AdvancedPropertyMatchingEngine {
     const boostedScore = this.applyBoostFactors(totalScore / totalWeight, property);
 
     // Generate AI insights
-    const aiInsights = this.config.ai.enabled ? 
-      await this.generateAIInsights(property, preferences, reasons) : 
-      this.generateBasicInsights(property, preferences);
+    const aiInsights = this.config.ai.enabled ?
+      await this.generateAIInsights(property, preferences, reasons) :
+      this.generateBasicInsights(property, preferences, reasons);
 
     return {
       propertyId: property.basic.id,
@@ -565,7 +565,7 @@ export class AdvancedPropertyMatchingEngine {
       // Calculate how far from range
       const distance = price < min ? (min - price) / min : (price - max) / max;
       score += Math.max(0, 1 - distance * (1 - flexibility));
-      
+
       if (distance > 0) {
         reasons.push({
           category: 'price',
@@ -638,7 +638,7 @@ export class AdvancedPropertyMatchingEngine {
     ];
 
     // Must-have features
-    const mustHaveMatches = preferences.features.mustHave.filter(feature => 
+    const mustHaveMatches = preferences.features.mustHave.filter(feature =>
       allFeatures.some(f => f.toLowerCase().includes(feature.toLowerCase()))
     );
 
@@ -654,7 +654,7 @@ export class AdvancedPropertyMatchingEngine {
     }
 
     // Nice-to-have features
-    const niceToHaveMatches = preferences.features.niceToHave.filter(feature => 
+    const niceToHaveMatches = preferences.features.niceToHave.filter(feature =>
       allFeatures.some(f => f.toLowerCase().includes(feature.toLowerCase()))
     );
 
@@ -670,7 +670,7 @@ export class AdvancedPropertyMatchingEngine {
     }
 
     // Deal-breakers
-    const dealBreakerMatches = preferences.features.dealBreakers.filter(feature => 
+    const dealBreakerMatches = preferences.features.dealBreakers.filter(feature =>
       allFeatures.some(f => f.toLowerCase().includes(feature.toLowerCase()))
     );
 
@@ -696,7 +696,7 @@ export class AdvancedPropertyMatchingEngine {
     let amenityCount = 0;
 
     // Check relevant amenities based on lifestyle
-    if (preferences.lifestyle.familyFriendly && amenities.pool) {
+    if (preferences.lifestyle.familySize > 0 && amenities.pool) {
       amenityCount++;
       reasons.push({
         category: 'amenities',
@@ -880,7 +880,7 @@ export class AdvancedPropertyMatchingEngine {
     if (property.market.priceHistory.length > 1) {
       const latestPrice = property.market.priceHistory[property.market.priceHistory.length - 1].price;
       const previousPrice = property.market.priceHistory[property.market.priceHistory.length - 2].price;
-      
+
       if (latestPrice < previousPrice) {
         boostedScore += boostFactors.priceReduced * 0.1;
       }
@@ -910,7 +910,7 @@ export class AdvancedPropertyMatchingEngine {
 
     // Based on positive factors
     const positiveReasons = reasons.filter(r => r.impact === 'positive');
-    
+
     if (positiveReasons.some(r => r.category === 'location')) {
       recommendations.push('Excellent location - act quickly in this competitive market');
     }
@@ -931,7 +931,7 @@ export class AdvancedPropertyMatchingEngine {
 
     // Based on negative factors
     const negativeReasons = reasons.filter(r => r.impact === 'negative');
-    
+
     if (negativeReasons.some(r => r.category === 'price')) {
       warnings.push('Price may be above market value - consider negotiation');
     }
@@ -972,8 +972,8 @@ export class AdvancedPropertyMatchingEngine {
       summary: `Property scores ${positiveReasons.length} positive factors vs ${negativeReasons.length} concerns`,
       highlights: positiveReasons.slice(0, 3).map(r => r.explanation),
       concerns: negativeReasons.slice(0, 3).map(r => r.explanation),
-      marketAdvice: property.market.marketTrend === 'rising' ? 
-        'Good time to buy in rising market' : 
+      marketAdvice: property.market.marketTrend === 'rising' ?
+        'Good time to buy in rising market' :
         'Market conditions stable - reasonable pricing expected',
     };
   }
@@ -989,7 +989,7 @@ export class AdvancedPropertyMatchingEngine {
     }
 
     const averageScore = matches.reduce((sum, m) => sum + m.score, 0) / matches.length;
-    
+
     const scoreDistribution = {
       excellent: matches.filter(m => m.score >= 0.8).length,
       good: matches.filter(m => m.score >= 0.6 && m.score < 0.8).length,
@@ -1030,7 +1030,7 @@ export class AdvancedPropertyMatchingEngine {
   private async applyLearningAdjustments(matches: PropertyMatch[], leadId: string): Promise<void> {
     // Apply machine learning based on historical feedback
     const learningData = this.learningData.get(leadId);
-    
+
     if (learningData) {
       // Adjust scores based on past interactions
       matches.forEach(match => {

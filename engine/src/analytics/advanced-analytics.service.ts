@@ -1,4 +1,4 @@
-// @ts-nocheck - Supabase SDK/Type migration pending (Phase 2)
+/**
 /**
  * Advanced Analytics Service for Phase 6
  * Real-time dashboards and reporting with VRCL integration
@@ -146,7 +146,7 @@ export class AdvancedAnalyticsService {
   // Lead analytics
   async getLeadAnalytics(timeframe: 'day' | 'week' | 'month' = 'week'): Promise<LeadAnalytics> {
     const cacheKey = `lead_analytics_${timeframe}`;
-    
+
     if (this.config.cacheEnabled) {
       const cached = this.getFromCache(cacheKey);
       if (cached) return cached;
@@ -154,15 +154,15 @@ export class AdvancedAnalyticsService {
 
     try {
       const baseMetrics = await this.dbManager.getDashboardMetrics();
-      
+
       // Get detailed analytics from database
       const detailedMetrics = await this.getDetailedLeadMetrics(timeframe);
-      
+
       const analytics: LeadAnalytics = {
         totalLeads: baseMetrics.totalLeads,
         newLeads: baseMetrics.activeLeads,
         conversionRate: baseMetrics.conversionRate,
-        averageResponseTime: baseMetrics.recentActivity.length > 0 ? 
+        averageResponseTime: baseMetrics.recentActivity.length > 0 ?
           this.calculateAverageResponseTime(baseMetrics.recentActivity) : 0,
         leadsByStatus: detailedMetrics.leadsByStatus,
         leadsBySource: detailedMetrics.leadsBySource,
@@ -241,64 +241,64 @@ export class AdvancedAnalyticsService {
   private generateDailyTrends(days: number): Array<{ date: string; leads: number; conversions: number }> {
     const trends = [];
     const today = new Date();
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      
+
       trends.push({
         date: date.toISOString().split('T')[0],
         leads: Math.floor(Math.random() * 15) + 5,
         conversions: Math.floor(Math.random() * 5) + 1,
       });
     }
-    
+
     return trends;
   }
 
   private generateWeeklyTrends(weeks: number): Array<{ week: string; leads: number; conversions: number }> {
     const trends = [];
     const today = new Date();
-    
+
     for (let i = weeks - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - (i * 7));
-      
+
       const weekStart = new Date(date);
       weekStart.setDate(date.getDate() - date.getDay());
-      
+
       trends.push({
         week: weekStart.toISOString().split('T')[0],
         leads: Math.floor(Math.random() * 80) + 20,
         conversions: Math.floor(Math.random() * 20) + 5,
       });
     }
-    
+
     return trends;
   }
 
   private generateMonthlyTrends(months: number): Array<{ month: string; leads: number; conversions: number }> {
     const trends = [];
     const today = new Date();
-    
+
     for (let i = months - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setMonth(date.getMonth() - i);
-      
+
       trends.push({
         month: date.toISOString().slice(0, 7),
         leads: Math.floor(Math.random() * 300) + 100,
         conversions: Math.floor(Math.random() * 80) + 20,
       });
     }
-    
+
     return trends;
   }
 
   // Agent analytics
   async getAgentAnalytics(): Promise<AgentAnalytics> {
     const cacheKey = 'agent_analytics';
-    
+
     if (this.config.cacheEnabled) {
       const cached = this.getFromCache(cacheKey);
       if (cached) return cached;
@@ -364,7 +364,7 @@ export class AdvancedAnalyticsService {
   // System analytics
   async getSystemAnalytics(): Promise<SystemAnalytics> {
     const cacheKey = 'system_analytics';
-    
+
     if (this.config.cacheEnabled) {
       const cached = this.getFromCache(cacheKey);
       if (cached) return cached;
@@ -372,7 +372,7 @@ export class AdvancedAnalyticsService {
 
     try {
       const health = await this.dbManager.getSystemHealth();
-      
+
       const analytics: SystemAnalytics = {
         systemHealth: {
           database: health.neon === 'healthy' ? 'healthy' : 'degraded',
@@ -419,7 +419,7 @@ export class AdvancedAnalyticsService {
     }
 
     const cacheKey = `vrcl_${location}`;
-    
+
     if (this.config.cacheEnabled) {
       const cached = this.getFromCache(cacheKey);
       if (cached) return cached;
@@ -427,11 +427,11 @@ export class AdvancedAnalyticsService {
 
     try {
       const vrclData = await this.fetchVRCLData(location);
-      
+
       this.setCache(cacheKey, vrclData);
       return vrclData;
     } catch (error) {
-      this.logger.error('Failed to get VRCL analytics', error);
+      this.logger.error('Failed to get VRCL analytics', error as Error);
       throw error;
     }
   }
@@ -439,7 +439,7 @@ export class AdvancedAnalyticsService {
   private async fetchVRCLData(location: string): Promise<VRCLData> {
     // This would integrate with the actual VRCL API
     // For now, return mock data that matches the expected structure
-    
+
     return {
       marketTrends: {
         medianPrice: 685000,
@@ -509,7 +509,7 @@ export class AdvancedAnalyticsService {
       ]);
 
       const alerts = this.generateAlerts(systemAnalytics, leadAnalytics);
-      
+
       const dashboard = {
         leadAnalytics,
         agentAnalytics,
@@ -627,7 +627,7 @@ export class AdvancedAnalyticsService {
   // Utility methods
   private calculateAverageResponseTime(events: any[]): number {
     if (events.length === 0) return 0;
-    
+
     // Calculate average time between lead creation and first response
     const responseTimes = events
       .filter(event => event.type === 'outbound')
@@ -641,22 +641,22 @@ export class AdvancedAnalyticsService {
 
   private getFromCache(key: string): any {
     if (!this.config.cacheEnabled) return null;
-    
+
     const cached = this.cache.get(key);
     if (!cached) return null;
-    
+
     const age = Date.now() - cached.timestamp;
     if (age > this.config.cacheTTL * 1000) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return cached.data;
   }
 
   private setCache(key: string, data: any): void {
     if (!this.config.cacheEnabled) return;
-    
+
     this.cache.set(key, {
       data,
       timestamp: Date.now(),

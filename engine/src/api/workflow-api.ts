@@ -1,4 +1,4 @@
-// @ts-nocheck - Logger API migration pending (Phase 2)
+/**
 /**
  * Workflow API
  * RESTful API for workflow execution and management
@@ -43,12 +43,12 @@ export function createWorkflowAPIRouter(
   router.post('/execute', async (req: Request, res: Response) => {
     try {
       const request: WorkflowAPIRequest = req.body;
-      
-      logger.info({
+
+      logger.info('🔄 API: Execute workflow request', {
         workflowId: request.workflowId,
         priority: request.priority,
         userId: req.headers['x-user-id']
-      }, '🔄 API: Execute workflow request');
+      });
 
       // Validate request
       if (!request.workflowId) {
@@ -76,7 +76,7 @@ export function createWorkflowAPIRouter(
         startTime: Date.now(),
         orchestratorId: 'api-request',
         traceId: generateTraceId(),
-        permissions: req.headers['x-permissions']?.split(',') || [],
+        permissions: (req.headers['x-permissions'] as string)?.split(',') || [],
         metadata: {
           ...request.metadata,
           apiRequest: true,
@@ -100,16 +100,16 @@ export function createWorkflowAPIRouter(
         timestamp: new Date().toISOString()
       };
 
-      logger.info({
+      logger.info('✅ API: Workflow execution queued', {
         executionId,
         workflowId: request.workflowId
-      }, '✅ API: Workflow execution queued');
+      });
 
       res.status(202).json(response);
 
     } catch (error) {
       logger.error('❌ API: Execute workflow error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -124,12 +124,12 @@ export function createWorkflowAPIRouter(
    */
   router.get('/:executionId/status', async (req: Request, res: Response) => {
     try {
-      const { executionId } = req.params;
-      
-      logger.info({ executionId }, '🔍 API: Get execution status');
+      const { executionId } = req.params as { executionId: string };
+
+      logger.info('🔍 API: Get execution status', { executionId });
 
       const status = workflowService.getExecutionStatus(executionId);
-      
+
       if (!status) {
         return res.status(404).json({
           success: false,
@@ -157,7 +157,7 @@ export function createWorkflowAPIRouter(
 
     } catch (error) {
       logger.error('❌ API: Get execution status error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -172,12 +172,12 @@ export function createWorkflowAPIRouter(
    */
   router.post('/:executionId/cancel', async (req: Request, res: Response) => {
     try {
-      const { executionId } = req.params;
-      
-      logger.info({ executionId }, '🛑 API: Cancel execution');
+      const { executionId } = req.params as { executionId: string };
+
+      logger.info('🛑 API: Cancel execution', { executionId });
 
       const cancelled = await workflowService.cancelExecution(executionId);
-      
+
       if (!cancelled) {
         return res.status(404).json({
           success: false,
@@ -192,12 +192,12 @@ export function createWorkflowAPIRouter(
         timestamp: new Date().toISOString()
       };
 
-      logger.info({ executionId }, '✅ API: Execution cancelled');
+      logger.info('✅ API: Execution cancelled', { executionId });
       res.json(response);
 
     } catch (error) {
       logger.error('❌ API: Cancel execution error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -213,8 +213,8 @@ export function createWorkflowAPIRouter(
   router.get('/', async (req: Request, res: Response) => {
     try {
       const category = req.query.category as string;
-      
-      logger.info({ category }, '📋 API: Get workflows');
+
+      logger.info('📋 API: Get workflows', { category });
 
       let workflows;
       if (category) {
@@ -241,7 +241,7 @@ export function createWorkflowAPIRouter(
 
     } catch (error) {
       logger.error('❌ API: Get workflows error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -256,12 +256,12 @@ export function createWorkflowAPIRouter(
    */
   router.get('/:workflowId', async (req: Request, res: Response) => {
     try {
-      const { workflowId } = req.params;
-      
-      logger.info({ workflowId }, '🔍 API: Get workflow details');
+      const { workflowId } = req.params as { workflowId: string };
+
+      logger.info('🔍 API: Get workflow details', { workflowId });
 
       const workflow = workflowService.getWorkflow(workflowId);
-      
+
       if (!workflow) {
         return res.status(404).json({
           success: false,
@@ -301,7 +301,7 @@ export function createWorkflowAPIRouter(
 
     } catch (error) {
       logger.error('❌ API: Get workflow details error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -337,7 +337,7 @@ export function createWorkflowAPIRouter(
 
     } catch (error) {
       logger.error('❌ API: Get stats error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -375,7 +375,7 @@ export function createWorkflowAPIRouter(
 
     } catch (error) {
       logger.error('❌ API: Get active executions error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -391,11 +391,11 @@ export function createWorkflowAPIRouter(
   router.post('/execute-immediate', async (req: Request, res: Response) => {
     try {
       const request: WorkflowAPIRequest = req.body;
-      
-      logger.info({
+
+      logger.info('🚀 API: Execute workflow immediately', {
         workflowId: request.workflowId,
         userId: req.headers['x-user-id']
-      }, '🚀 API: Execute workflow immediately');
+      });
 
       // Validate request
       if (!request.workflowId) {
@@ -423,7 +423,7 @@ export function createWorkflowAPIRouter(
         startTime: Date.now(),
         orchestratorId: 'api-request',
         traceId: generateTraceId(),
-        permissions: req.headers['x-permissions']?.split(',') || [],
+        permissions: (req.headers['x-permissions'] as string)?.split(',') || [],
         metadata: {
           ...request.metadata,
           apiRequest: true,
@@ -446,17 +446,17 @@ export function createWorkflowAPIRouter(
         timestamp: new Date().toISOString()
       };
 
-      logger.info({
+      logger.info('✅ API: Workflow executed immediately', {
         workflowId: request.workflowId,
         success: result.success,
         executionTime: result.executionTime
-      }, '✅ API: Workflow executed immediately');
+      });
 
       res.json(response);
 
     } catch (error) {
       logger.error('❌ API: Execute workflow immediately error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -482,7 +482,7 @@ export function createTemplateAPIRouter(): Router {
   router.post('/lead-generation', async (req: Request, res: Response) => {
     try {
       const params = req.body;
-      
+
       logger.info('🎨 API: Generate lead generation template', params);
 
       const context = workflowTemplateService.createLeadGenerationContext({
@@ -504,7 +504,7 @@ export function createTemplateAPIRouter(): Router {
 
     } catch (error) {
       logger.error('❌ API: Generate lead generation template error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -520,7 +520,7 @@ export function createTemplateAPIRouter(): Router {
   router.post('/market-analysis', async (req: Request, res: Response) => {
     try {
       const params = req.body;
-      
+
       logger.info('🎨 API: Generate market analysis template', params);
 
       const context = workflowTemplateService.createMarketAnalysisContext({
@@ -540,7 +540,7 @@ export function createTemplateAPIRouter(): Router {
 
     } catch (error) {
       logger.error('❌ API: Generate market analysis template error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -556,7 +556,7 @@ export function createTemplateAPIRouter(): Router {
   router.post('/property-valuation', async (req: Request, res: Response) => {
     try {
       const params = req.body;
-      
+
       logger.info('🎨 API: Generate property valuation template', params);
 
       const context = workflowTemplateService.createPropertyValuationContext({
@@ -577,7 +577,7 @@ export function createTemplateAPIRouter(): Router {
 
     } catch (error) {
       logger.error('❌ API: Generate property valuation template error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
@@ -593,7 +593,7 @@ export function createTemplateAPIRouter(): Router {
   router.post('/client-onboarding', async (req: Request, res: Response) => {
     try {
       const params = req.body;
-      
+
       logger.info('🎨 API: Generate client onboarding template', params);
 
       const context = workflowTemplateService.createClientOnboardingContext({
@@ -612,7 +612,7 @@ export function createTemplateAPIRouter(): Router {
 
     } catch (error) {
       logger.error('❌ API: Generate client onboarding template error:', error);
-      
+
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
