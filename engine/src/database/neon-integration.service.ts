@@ -40,7 +40,7 @@ export interface DatabaseSchema {
     lead_id: string;
     type: 'message' | 'email' | 'call' | 'meeting';
     content: string;
-    channel: 'whatsapp' | 'email' | 'sms' | 'phone';
+    channel: 'whatsapp' | 'email' | 'sms' | 'phone' | 'voice' | 'video';
     status: 'pending' | 'approved' | 'rejected' | 'sent';
     ai_score: number;
     reviewed_by: string;
@@ -84,7 +84,7 @@ export class NeonIntegrationService {
   constructor(config: NeonConfig) {
     this.config = config;
     this.logger = new Logger('NeonIntegration', true);
-    
+
     // Primary connection pool
     this.pool = new Pool({
       connectionString: config.connectionString,
@@ -104,15 +104,15 @@ export class NeonIntegrationService {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing Neon PostgreSQL integration...');
-    
+
     try {
       // Test connections
       await this.pool.query('SELECT 1');
       await this.pooledPool.query('SELECT 1');
-      
+
       // Create schema if not exists
       await this.createSchema();
-      
+
       this.logger.info('Neon PostgreSQL integration initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Neon integration', error);
@@ -122,7 +122,7 @@ export class NeonIntegrationService {
 
   private async createSchema(): Promise<void> {
     this.logger.info('Creating database schema...');
-    
+
     const schema = `
       -- Leads table
       CREATE TABLE IF NOT EXISTS leads (
@@ -229,13 +229,13 @@ export class NeonIntegrationService {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
     `;
-    
+
     const values = [
       lead.first_name, lead.last_name, lead.email, lead.phone, lead.property_address,
       lead.city, lead.province, lead.postal_code, lead.property_type, lead.price_range,
       lead.timeline, lead.source, lead.status, lead.assigned_agent, JSON.stringify(lead.metadata)
     ];
-    
+
     const result = await this.pool.query(query, values);
     return result.rows[0].id;
   }
@@ -291,12 +291,12 @@ export class NeonIntegrationService {
     }
 
     query += ' ORDER BY created_at DESC';
-    
+
     if (criteria.limit) {
       query += ` LIMIT $${paramIndex++}`;
       values.push(criteria.limit);
     }
-    
+
     if (criteria.offset) {
       query += ` OFFSET $${paramIndex++}`;
       values.push(criteria.offset);
@@ -314,13 +314,13 @@ export class NeonIntegrationService {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id
     `;
-    
+
     const values = [
       approval.lead_id, approval.type, approval.content, approval.channel,
       approval.status, approval.ai_score, approval.reviewed_by,
       approval.reviewed_at, JSON.stringify(approval.metadata)
     ];
-    
+
     const result = await this.pool.query(query, values);
     return result.rows[0].id;
   }
@@ -333,7 +333,7 @@ export class NeonIntegrationService {
       WHERE a.status = 'pending' 
       ORDER BY a.created_at ASC
     `;
-    
+
     const result = await this.pool.query(query);
     return result.rows;
   }
@@ -344,7 +344,7 @@ export class NeonIntegrationService {
       SET status = $2, reviewed_by = $3, reviewed_at = NOW() 
       WHERE id = $1
     `;
-    
+
     const result = await this.pool.query(query, [id, status, reviewedBy]);
     return result.rowCount > 0;
   }
@@ -356,12 +356,12 @@ export class NeonIntegrationService {
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `;
-    
+
     const values = [
       event.lead_id, event.type, event.channel, event.content,
       event.direction, event.agent_id, JSON.stringify(event.metadata)
     ];
-    
+
     const result = await this.pool.query(query, values);
     return result.rows[0].id;
   }
@@ -373,7 +373,7 @@ export class NeonIntegrationService {
       ORDER BY timestamp DESC 
       LIMIT $2
     `;
-    
+
     const result = await this.pool.query(query, [leadId, limit]);
     return result.rows;
   }
@@ -386,13 +386,13 @@ export class NeonIntegrationService {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id
     `;
-    
+
     const values = [
       agent.name, agent.email, agent.phone, agent.license_number,
       agent.brokerage, agent.specialties, agent.active_leads,
       agent.conversion_rate, agent.status
     ];
-    
+
     const result = await this.pool.query(query, values);
     return result.rows[0].id;
   }
@@ -409,7 +409,7 @@ export class NeonIntegrationService {
       SET active_leads = $2, conversion_rate = $3, updated_at = NOW() 
       WHERE id = $1
     `;
-    
+
     const result = await this.pool.query(query, [id, activeLeads, conversionRate]);
     return result.rowCount > 0;
   }
@@ -565,7 +565,7 @@ export class NeonIntegrationService {
     }
 
     this.logger.info(`Migration completed: ${migrated} records migrated, ${errors.length} errors`);
-    
+
     return { migrated, errors };
   }
 

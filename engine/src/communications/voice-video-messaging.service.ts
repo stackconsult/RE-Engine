@@ -1,4 +1,4 @@
-// @ts-nocheck - Type issues pending (Phase 2)
+/**
 /**
  * Voice & Video Messaging Service for Phase 6
  * Multi-modal communication capabilities
@@ -132,13 +132,13 @@ export class VoiceVideoMessagingService {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing voice & video messaging service...');
-    
+
     try {
       // Initialize providers
       if (this.config.voice.enabled) {
         await this.initializeVoiceProvider();
       }
-      
+
       if (this.config.video.enabled) {
         await this.initializeVideoProvider();
       }
@@ -163,7 +163,7 @@ export class VoiceVideoMessagingService {
 
       // Transcribe if enabled
       let transcription: string | undefined;
-      let sentiment: string | undefined;
+      let sentiment: 'positive' | 'neutral' | 'negative' | undefined;
       let summary: string | undefined;
 
       if (this.config.transcription.enabled) {
@@ -229,7 +229,7 @@ export class VoiceVideoMessagingService {
 
       // Transcribe if enabled
       let transcription: string | undefined;
-      let sentiment: string | undefined;
+      let sentiment: 'positive' | 'neutral' | 'negative' | undefined;
       let summary: string | undefined;
 
       if (this.config.transcription.enabled) {
@@ -318,7 +318,7 @@ export class VoiceVideoMessagingService {
           roomName: room.name,
           roomUrl: room.url,
           maxParticipants: this.config.video.roomSettings.maxParticipants,
-          screenShareEnabled: this.config.video.roomSettings.screenShareEnabled,
+          screenShareUsed: false, // Not yet used
           chatEnabled: true,
         },
       };
@@ -382,7 +382,7 @@ export class VoiceVideoMessagingService {
           roomName: room.name,
           roomUrl: room.url,
           maxParticipants: 2,
-          screenShareEnabled: true,
+          screenShareUsed: false, // Not used yet
           chatEnabled: true,
         },
       };
@@ -416,7 +416,7 @@ export class VoiceVideoMessagingService {
   async joinVideoCall(callId: string, participantId: string, participantName: string, role: 'agent' | 'lead'): Promise<VideoCall> {
     try {
       const videoCall = this.activeCalls.get(callId) || await this.getVideoCall(callId);
-      
+
       if (!videoCall) {
         throw new Error('Video call not found');
       }
@@ -450,7 +450,7 @@ export class VoiceVideoMessagingService {
   async endVideoCall(callId: string, reason?: string): Promise<VideoCall> {
     try {
       const videoCall = this.activeCalls.get(callId);
-      
+
       if (!videoCall) {
         throw new Error('Active video call not found');
       }
@@ -458,7 +458,7 @@ export class VoiceVideoMessagingService {
       // Mark as ended
       videoCall.status = 'ended';
       videoCall.endedAt = new Date();
-      
+
       if (videoCall.startedAt) {
         videoCall.duration = Math.floor((videoCall.endedAt.getTime() - videoCall.startedAt.getTime()) / 1000);
       }
@@ -567,7 +567,7 @@ export class VoiceVideoMessagingService {
 
   private async transcribeAudio(audioBuffer: Buffer): Promise<{
     text: string;
-    sentiment: string;
+    sentiment: 'positive' | 'neutral' | 'negative';
     summary: string;
   }> {
     // Transcribe audio using AI service

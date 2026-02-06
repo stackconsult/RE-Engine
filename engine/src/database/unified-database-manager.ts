@@ -53,7 +53,7 @@ export interface ApprovalData {
   lead_id: string;
   type: 'message' | 'email' | 'call' | 'meeting';
   content: string;
-  channel: 'whatsapp' | 'email' | 'sms' | 'phone';
+  channel: 'whatsapp' | 'email' | 'sms' | 'phone' | 'voice' | 'video';
   status: 'pending' | 'approved' | 'rejected' | 'sent';
   ai_score?: number;
   reviewed_by?: string;
