@@ -1,4 +1,3 @@
-// @ts-nocheck - Type issues pending (Phase 2)
 /**
  * Intelligent Model Selector
  * Selects optimal AI models based on task requirements, performance, and availability
@@ -34,7 +33,7 @@ export class IntelligentModelSelector extends EventEmitter {
       ...config
     };
     this.logger = new Logger('IntelligentModelSelector', true);
-    
+
     this.performanceTracker = new ModelPerformanceTracker(this.config.performanceHistorySize);
     this.fallbackChain = new FallbackChain(this.config.fallbackChainDepth);
   }
@@ -44,7 +43,7 @@ export class IntelligentModelSelector extends EventEmitter {
    */
   async initializeLocalModel(modelName: string): Promise<AIModel> {
     this.logger.info(`🤖 Initializing local model: ${modelName}`);
-    
+
     const model: AIModel = {
       id: `local-${modelName}`,
       name: modelName,
@@ -59,6 +58,7 @@ export class IntelligentModelSelector extends EventEmitter {
         latency: 0,
         accuracy: 0,
         reliability: 0,
+        errorRate: 0,
         lastUpdated: Date.now()
       }
     };
@@ -80,7 +80,7 @@ export class IntelligentModelSelector extends EventEmitter {
    */
   async initializeCloudModel(modelName: string): Promise<AIModel> {
     this.logger.info(`☁️ Initializing cloud model: ${modelName}`);
-    
+
     const model: AIModel = {
       id: `cloud-${modelName}`,
       name: modelName,
@@ -95,6 +95,7 @@ export class IntelligentModelSelector extends EventEmitter {
         latency: 0,
         accuracy: 0,
         reliability: 0,
+        errorRate: 0,
         lastUpdated: Date.now()
       }
     };
@@ -116,17 +117,17 @@ export class IntelligentModelSelector extends EventEmitter {
    */
   async selectOptimalModel(taskType: string, requirements: ModelRequirements): Promise<AIModel> {
     this.logger.info(`🎯 Selecting optimal model for task: ${taskType}`);
-    
+
     // Get available models
     const availableModels = this.getAvailableModels(taskType);
-    
+
     if (availableModels.length === 0) {
       throw new Error(`No available models for task type: ${taskType}`);
     }
 
     // Rank models by suitability
     const rankedModels = await this.rankModels(availableModels, taskType, requirements);
-    
+
     this.logger.debug(`Model ranking for ${taskType}:`, rankedModels.map(m => ({ id: m.id, score: m._rankingScore })));
 
     // Try models in order of preference
@@ -180,11 +181,11 @@ export class IntelligentModelSelector extends EventEmitter {
    */
   getAvailableModels(taskType?: string): AIModel[] {
     const models = Array.from(this.models.values());
-    
+
     if (taskType) {
       return models.filter(model => this.isModelSuitableForTask(model, taskType));
     }
-    
+
     return models;
   }
 
@@ -223,7 +224,7 @@ export class IntelligentModelSelector extends EventEmitter {
     // Performance metrics (25% weight)
     const performance = this.performanceTracker.getAveragePerformance(model.id);
     score += (1 - performance.errorRate) * 0.15; // Reliability
-    score += (1 / Math.max(performance.averageLatency, 1)) * 0.1; // Speed
+    score += (1 / Math.max(performance.latency, 1)) * 0.1; // Speed
     score += performance.accuracy * 0.0; // Accuracy (not implemented yet)
 
     // Resource requirements (20% weight)
@@ -314,7 +315,7 @@ export class IntelligentModelSelector extends EventEmitter {
 
     const requiredSpecialties = taskSpecialtyMap[taskType] || [];
     const matchingSpecialties = model.specialties.filter(s => requiredSpecialties.includes(s));
-    
+
     if (matchingSpecialties.length === 0) {
       return 0.3;
     }
@@ -351,10 +352,10 @@ export class IntelligentModelSelector extends EventEmitter {
         const startTime = Date.now();
         await this.testModelAvailability(model);
         const latency = Date.now() - startTime;
-        
+
         // Update performance metrics
         await this.updateModelPerformance(model.id, { latency });
-        
+
         return 1.0;
       } catch (error) {
         // Update error rate
@@ -463,9 +464,9 @@ export class IntelligentModelSelector extends EventEmitter {
 
   private async getCloudFallback(taskType: string, requirements: ModelRequirements): Promise<AIModel> {
     this.logger.warn(`🔄 Using cloud fallback for task: ${taskType}`);
-    
-    const cloudModels = this.models.values().filter(m => !m.isLocal);
-    
+
+    const cloudModels = Array.from(this.models.values()).filter(m => !m.isLocal);
+
     for (const model of cloudModels) {
       if (await this.isModelAvailable(model)) {
         this.logger.info(`✅ Using cloud fallback model: ${model.id}`);
@@ -588,7 +589,7 @@ class ModelPerformanceTracker {
 
   getAveragePerformance(modelId: string): ModelPerformance {
     const history = this.getHistory(modelId);
-    
+
     if (history.length === 0) {
       return {
         latency: 0,
@@ -630,7 +631,7 @@ class FallbackChain {
 
   async getFallbackChain(primaryModel: AIModel, availableModels: AIModel[]): Promise<AIModel[]> {
     const chain: AIModel[] = [primaryModel];
-    
+
     // Add similar models first
     const similarModels = availableModels
       .filter(m => m.id !== primaryModel.id && this.areModelsSimilar(primaryModel, m))

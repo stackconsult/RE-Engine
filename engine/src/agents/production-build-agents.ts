@@ -1,4 +1,3 @@
-// @ts-nocheck - Production stub file, incomplete (Phase 2)
 /**
  * Dual Agent Architecture - Production Build Agents
  * Handles automated build, deployment, and infrastructure management
@@ -92,34 +91,34 @@ export class BuildAgent implements ProductionBuildAgent {
   private currentTask?: ProductionTask;
   private healthMonitor: HealthMonitor;
   private circuitBreaker: CircuitBreaker;
-  
+
   constructor(config: ProductionAgentConfig, dependencies: { healthMonitor: HealthMonitor; circuitBreaker: CircuitBreaker }) {
     this.id = `build-agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.config = config;
     this.healthMonitor = dependencies.healthMonitor;
     this.circuitBreaker = dependencies.circuitBreaker;
   }
-  
+
   async execute(task: ProductionTask): Promise<ProductionResult> {
     if (this.status !== 'idle') {
       throw new Error(`Build agent ${this.id} is not idle`);
     }
-    
+
     this.currentTask = task;
     this.status = 'running';
-    
+
     const startTime = Date.now();
     const resourceUsage = this.getResourceUsage();
-    
+
     try {
       // Execute build task with circuit breaker protection
       const result = await this.circuitBreaker.execute(
         () => this.performBuild(task),
         'build-agent'
       );
-      
+
       this.status = 'completed';
-      
+
       return {
         taskId: task.id,
         status: 'success',
@@ -133,10 +132,10 @@ export class BuildAgent implements ProductionBuildAgent {
         },
         timestamp: Date.now()
       };
-      
+
     } catch (error) {
       this.status = 'failed';
-      
+
       return {
         taskId: task.id,
         status: 'failure',
@@ -154,7 +153,7 @@ export class BuildAgent implements ProductionBuildAgent {
       this.currentTask = undefined;
     }
   }
-  
+
   private async performBuild(task: ProductionTask): Promise<unknown> {
     // Build implementation
     const buildSteps = [
@@ -165,16 +164,16 @@ export class BuildAgent implements ProductionBuildAgent {
       'bundle-assets',
       'generate-build-artifacts'
     ];
-    
+
     const buildResults = [];
-    
+
     for (const step of buildSteps) {
       console.log(`Build agent ${this.id} executing step: ${step}`);
       // Simulate build step execution
       await new Promise(resolve => setTimeout(resolve, 1000));
       buildResults.push({ step, status: 'completed', timestamp: Date.now() });
     }
-    
+
     return {
       buildId: `build-${Date.now()}`,
       steps: buildResults,
@@ -183,7 +182,7 @@ export class BuildAgent implements ProductionBuildAgent {
       checksum: 'abc123'
     };
   }
-  
+
   getStatus(): ProductionAgentStatus {
     return {
       id: this.id,
@@ -195,7 +194,7 @@ export class BuildAgent implements ProductionBuildAgent {
       health: 'healthy'
     };
   }
-  
+
   private getResourceUsage(): ResourceUsage {
     return {
       cpu: Math.random() * 0.8,
@@ -215,33 +214,33 @@ export class DeployAgent implements ProductionBuildAgent {
   private currentTask?: ProductionTask;
   private healthMonitor: HealthMonitor;
   private circuitBreaker: CircuitBreaker;
-  
+
   constructor(config: ProductionAgentConfig, dependencies: { healthMonitor: HealthMonitor; circuitBreaker: CircuitBreaker }) {
     this.id = `deploy-agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.config = config;
     this.healthMonitor = dependencies.healthMonitor;
     this.circuitBreaker = dependencies.circuitBreaker;
   }
-  
+
   async execute(task: ProductionTask): Promise<ProductionResult> {
     if (this.status !== 'idle') {
       throw new Error(`Deploy agent ${this.id} is not idle`);
     }
-    
+
     this.currentTask = task;
     this.status = 'running';
-    
+
     const startTime = Date.now();
     const resourceUsage = this.getResourceUsage();
-    
+
     try {
       const result = await this.circuitBreaker.execute(
         () => this.performDeployment(task),
         'deploy-agent'
       );
-      
+
       this.status = 'completed';
-      
+
       return {
         taskId: task.id,
         status: 'success',
@@ -255,10 +254,10 @@ export class DeployAgent implements ProductionBuildAgent {
         },
         timestamp: Date.now()
       };
-      
+
     } catch (error) {
       this.status = 'failed';
-      
+
       return {
         taskId: task.id,
         status: 'failure',
@@ -276,7 +275,7 @@ export class DeployAgent implements ProductionBuildAgent {
       this.currentTask = undefined;
     }
   }
-  
+
   private async performDeployment(task: ProductionTask): Promise<unknown> {
     // Deployment implementation
     const deploySteps = [
@@ -288,15 +287,15 @@ export class DeployAgent implements ProductionBuildAgent {
       'update-dns-records',
       'verify-deployment'
     ];
-    
+
     const deployResults = [];
-    
+
     for (const step of deploySteps) {
       console.log(`Deploy agent ${this.id} executing step: ${step}`);
       await new Promise(resolve => setTimeout(resolve, 1500));
       deployResults.push({ step, status: 'completed', timestamp: Date.now() });
     }
-    
+
     return {
       deploymentId: `deploy-${Date.now()}`,
       environment: this.config.environment,
@@ -306,7 +305,7 @@ export class DeployAgent implements ProductionBuildAgent {
       rollbackAvailable: true
     };
   }
-  
+
   getStatus(): ProductionAgentStatus {
     return {
       id: this.id,
@@ -318,7 +317,7 @@ export class DeployAgent implements ProductionBuildAgent {
       health: 'healthy'
     };
   }
-  
+
   private getResourceUsage(): ResourceUsage {
     return {
       cpu: Math.random() * 0.6,
@@ -337,29 +336,29 @@ export class MonitorAgent implements ProductionBuildAgent {
   public config: ProductionAgentConfig;
   private currentTask?: ProductionTask;
   private healthMonitor: HealthMonitor;
-  
+
   constructor(config: ProductionAgentConfig, dependencies: { healthMonitor: HealthMonitor }) {
     this.id = `monitor-agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.config = config;
     this.healthMonitor = dependencies.healthMonitor;
   }
-  
+
   async execute(task: ProductionTask): Promise<ProductionResult> {
     if (this.status !== 'idle') {
       throw new Error(`Monitor agent ${this.id} is not idle`);
     }
-    
+
     this.currentTask = task;
     this.status = 'running';
-    
+
     const startTime = Date.now();
     const resourceUsage = this.getResourceUsage();
-    
+
     try {
       const result = await this.performMonitoring(task);
-      
+
       this.status = 'completed';
-      
+
       return {
         taskId: task.id,
         status: 'success',
@@ -373,10 +372,10 @@ export class MonitorAgent implements ProductionBuildAgent {
         },
         timestamp: Date.now()
       };
-      
+
     } catch (error) {
       this.status = 'failed';
-      
+
       return {
         taskId: task.id,
         status: 'failure',
@@ -394,7 +393,7 @@ export class MonitorAgent implements ProductionBuildAgent {
       this.currentTask = undefined;
     }
   }
-  
+
   private async performMonitoring(task: ProductionTask): Promise<unknown> {
     // Monitoring implementation
     const monitoringChecks = [
@@ -406,20 +405,20 @@ export class MonitorAgent implements ProductionBuildAgent {
       'error-tracking',
       'capacity-planning'
     ];
-    
+
     const monitoringResults = [];
-    
+
     for (const check of monitoringChecks) {
       console.log(`Monitor agent ${this.id} performing check: ${check}`);
       await new Promise(resolve => setTimeout(resolve, 500));
-      monitoringResults.push({ 
-        check, 
-        status: 'healthy', 
+      monitoringResults.push({
+        check,
+        status: 'healthy',
         timestamp: Date.now(),
         metrics: this.generateCheckMetrics(check)
       });
     }
-    
+
     return {
       monitoringId: `monitor-${Date.now()}`,
       checks: monitoringResults,
@@ -428,7 +427,7 @@ export class MonitorAgent implements ProductionBuildAgent {
       recommendations: ['Scale up during peak hours', 'Optimize database queries']
     };
   }
-  
+
   private generateCheckMetrics(check: string): Record<string, unknown> {
     const baseMetrics = {
       cpu: Math.random() * 100,
@@ -436,7 +435,7 @@ export class MonitorAgent implements ProductionBuildAgent {
       disk: Math.random() * 100,
       network: Math.random() * 100
     };
-    
+
     switch (check) {
       case 'system-health':
         return { ...baseMetrics, uptime: process.uptime(), loadAverage: [0.5, 0.6, 0.7] };
@@ -448,7 +447,7 @@ export class MonitorAgent implements ProductionBuildAgent {
         return baseMetrics;
     }
   }
-  
+
   getStatus(): ProductionAgentStatus {
     return {
       id: this.id,
@@ -460,7 +459,7 @@ export class MonitorAgent implements ProductionBuildAgent {
       health: 'healthy'
     };
   }
-  
+
   private getResourceUsage(): ResourceUsage {
     return {
       cpu: Math.random() * 0.3,
@@ -480,30 +479,30 @@ export class HealAgent implements ProductionBuildAgent {
   private currentTask?: ProductionTask;
   private healthMonitor: HealthMonitor;
   private selfHealingManager: SelfHealingManager;
-  
+
   constructor(config: ProductionAgentConfig, dependencies: { healthMonitor: HealthMonitor; selfHealingManager: SelfHealingManager }) {
     this.id = `heal-agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.config = config;
     this.healthMonitor = dependencies.healthMonitor;
     this.selfHealingManager = dependencies.selfHealingManager;
   }
-  
+
   async execute(task: ProductionTask): Promise<ProductionResult> {
     if (this.status !== 'idle') {
       throw new Error(`Heal agent ${this.id} is not idle`);
     }
-    
+
     this.currentTask = task;
     this.status = 'running';
-    
+
     const startTime = Date.now();
     const resourceUsage = this.getResourceUsage();
-    
+
     try {
       const result = await this.performHealing(task);
-      
+
       this.status = 'completed';
-      
+
       return {
         taskId: task.id,
         status: 'success',
@@ -517,10 +516,10 @@ export class HealAgent implements ProductionBuildAgent {
         },
         timestamp: Date.now()
       };
-      
+
     } catch (error) {
       this.status = 'failed';
-      
+
       return {
         taskId: task.id,
         status: 'failure',
@@ -538,7 +537,7 @@ export class HealAgent implements ProductionBuildAgent {
       this.currentTask = undefined;
     }
   }
-  
+
   private async performHealing(task: ProductionTask): Promise<unknown> {
     // Healing implementation
     const healingActions = [
@@ -550,20 +549,20 @@ export class HealAgent implements ProductionBuildAgent {
       'verify-recovery',
       'update-monitoring'
     ];
-    
+
     const healingResults = [];
-    
+
     for (const action of healingActions) {
       console.log(`Heal agent ${this.id} performing action: ${action}`);
       await new Promise(resolve => setTimeout(resolve, 800));
-      healingResults.push({ 
-        action, 
-        status: 'completed', 
+      healingResults.push({
+        action,
+        status: 'completed',
         timestamp: Date.now(),
         impact: this.generateActionImpact(action)
       });
     }
-    
+
     return {
       healingId: `heal-${Date.now()}`,
       actions: healingResults,
@@ -573,7 +572,7 @@ export class HealAgent implements ProductionBuildAgent {
       systemHealth: 'healthy'
     };
   }
-  
+
   private generateActionImpact(action: string): Record<string, unknown> {
     switch (action) {
       case 'detect-issues':
@@ -588,7 +587,7 @@ export class HealAgent implements ProductionBuildAgent {
         return { impact: 'positive' };
     }
   }
-  
+
   getStatus(): ProductionAgentStatus {
     return {
       id: this.id,
@@ -600,7 +599,7 @@ export class HealAgent implements ProductionBuildAgent {
       health: 'healthy'
     };
   }
-  
+
   private getResourceUsage(): ResourceUsage {
     return {
       cpu: Math.random() * 0.4,
@@ -616,11 +615,11 @@ export class ProductionAgentManager {
   private agents = new Map<string, ProductionBuildAgent>();
   private taskQueue: ProductionTask[] = [];
   private running = false;
-  
+
   constructor() {
     this.initializeAgents();
   }
-  
+
   private initializeAgents(): void {
     // Initialize production build agents
     const agentConfigs = [
@@ -657,38 +656,38 @@ export class ProductionAgentManager {
         retryPolicy: { maxAttempts: 3, backoffStrategy: 'exponential' as const, baseDelay: 3000, maxDelay: 45000 }
       }
     ];
-    
+
     // Create mock dependencies
     const healthMonitor = new productionDependencies.HealthMonitor();
     const circuitBreaker = new productionDependencies.CircuitBreaker();
     const selfHealingManager = new productionDependencies.SelfHealingManager();
-    
+
     // Initialize agents with dependencies
     this.agents.set('build', new BuildAgent(agentConfigs[0], { healthMonitor, circuitBreaker }));
     this.agents.set('deploy', new DeployAgent(agentConfigs[1], { healthMonitor, circuitBreaker }));
     this.agents.set('monitor', new MonitorAgent(agentConfigs[2], { healthMonitor }));
     this.agents.set('heal', new HealAgent(agentConfigs[3], { healthMonitor, selfHealingManager }));
   }
-  
+
   async submitTask(task: ProductionTask): Promise<string> {
     this.taskQueue.push(task);
-    
+
     if (!this.running) {
       this.startProcessing();
     }
-    
+
     return task.id;
   }
-  
+
   private async startProcessing(): Promise<void> {
     if (this.running) return;
-    
+
     this.running = true;
-    
+
     while (this.taskQueue.length > 0) {
       const task = this.taskQueue.shift();
       if (!task) break;
-      
+
       const agent = this.getAvailableAgent(task.type);
       if (agent) {
         try {
@@ -702,10 +701,10 @@ export class ProductionAgentManager {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
-    
+
     this.running = false;
   }
-  
+
   private getAvailableAgent(taskType: string): ProductionBuildAgent | null {
     for (const agent of this.agents.values()) {
       if (agent.type === taskType && agent.status === 'idle') {
@@ -714,11 +713,11 @@ export class ProductionAgentManager {
     }
     return null;
   }
-  
+
   getAgentStatuses(): ProductionAgentStatus[] {
     return Array.from(this.agents.values()).map(agent => agent.getStatus());
   }
-  
+
   getTaskQueue(): ProductionTask[] {
     return [...this.taskQueue];
   }

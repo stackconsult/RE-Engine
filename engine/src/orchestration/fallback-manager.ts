@@ -1,4 +1,3 @@
-// @ts-nocheck - Type issues pending (Phase 2)
 /**
  * Fallback Manager
  * Handles intelligent fallback strategies for component failures
@@ -45,7 +44,7 @@ export class FallbackManager extends EventEmitter {
 
     try {
       const strategy = await this.selectFallbackStrategy(failure);
-      
+
       if (!strategy) {
         return await this.handleNoStrategyAvailable(failure);
       }
@@ -70,11 +69,11 @@ export class FallbackManager extends EventEmitter {
    */
   getCircuitBreakerStatus(): Map<string, CircuitBreakerStatus> {
     const status = new Map<string, CircuitBreakerStatus>();
-    
+
     this.circuitBreakers.forEach((breaker, key) => {
       status.set(key, breaker.getStatus());
     });
-    
+
     return status;
   }
 
@@ -91,12 +90,12 @@ export class FallbackManager extends EventEmitter {
   // Private Methods
 
   private async selectFallbackStrategy(failure: WorkflowFailure): Promise<FallbackStrategy | null> {
-    const strategies = this.strategies.get(failure.workflowId) || 
-                      this.strategies.get('default') || 
-                      [];
+    const strategies = this.strategies.get(failure.workflowId) ||
+      this.strategies.get('default') ||
+      [];
 
     // Filter applicable strategies
-    const applicableStrategies = strategies.filter(strategy => 
+    const applicableStrategies = strategies.filter(strategy =>
       this.isStrategyApplicable(strategy, failure)
     );
 
@@ -110,7 +109,7 @@ export class FallbackManager extends EventEmitter {
     // Check circuit breaker for each strategy
     for (const strategy of applicableStrategies) {
       const circuitBreaker = this.getCircuitBreaker(strategy.type);
-      
+
       if (circuitBreaker.canExecute()) {
         return strategy;
       } else {
@@ -142,7 +141,7 @@ export class FallbackManager extends EventEmitter {
       }
     } catch (error) {
       circuitBreaker.recordFailure();
-      
+
       this.logger.error(`❌ Fallback strategy ${strategy.type} failed:`, error);
       return await this.handleFallbackFailure(error, strategy, failure);
     } finally {
@@ -224,8 +223,7 @@ export class FallbackManager extends EventEmitter {
       action: 'Manual intervention requested',
       message: `Manual intervention required for ${failure.workflowId}`,
       timestamp: Date.now(),
-      requiresManualIntervention: true,
-      interventionId: interventionRequest.id
+      requiresManualIntervention: true
     };
   }
 
@@ -259,7 +257,7 @@ export class FallbackManager extends EventEmitter {
 
     // Try next strategy if available
     const nextStrategy = await this.getNextStrategy(strategy, failure);
-    
+
     if (nextStrategy) {
       this.logger.info(`🔄 Trying next fallback strategy: ${nextStrategy.type}`);
       return await this.executeFallback(nextStrategy, failure);
@@ -277,11 +275,11 @@ export class FallbackManager extends EventEmitter {
   }
 
   private async getNextStrategy(currentStrategy: FallbackStrategy, failure: WorkflowFailure): Promise<FallbackStrategy | null> {
-    const strategies = this.strategies.get(failure.workflowId) || 
-                      this.strategies.get('default') || [];
+    const strategies = this.strategies.get(failure.workflowId) ||
+      this.strategies.get('default') || [];
 
     const currentIndex = strategies.findIndex(s => s.type === currentStrategy.type);
-    
+
     if (currentIndex === -1 || currentIndex === strategies.length - 1) {
       return null;
     }
@@ -310,7 +308,7 @@ export class FallbackManager extends EventEmitter {
     if (!this.circuitBreakers.has(strategyType)) {
       this.circuitBreakers.set(strategyType, new CircuitBreaker(strategyType));
     }
-    
+
     return this.circuitBreakers.get(strategyType)!;
   }
 

@@ -1,4 +1,3 @@
-// @ts-nocheck - Type issues pending (Phase 2)
 /**
  * Guardrail System
  * Comprehensive rule-based validation and enforcement
@@ -80,11 +79,11 @@ export class GuardrailSystem extends EventEmitter {
       }
 
       const result = await this.evaluateRule(rule, workflow, context);
-      
+
       if (!result.compliant) {
         overallCompliant = false;
         overallReason = overallReason ? `${overallReason}; ${result.reason}` : result.reason;
-        
+
         // Update severity to highest level
         if (this.getSeverityLevel(result.severity) > this.getSeverityLevel(overallSeverity)) {
           overallSeverity = result.severity || 'medium';
@@ -136,11 +135,11 @@ export class GuardrailSystem extends EventEmitter {
       }
 
       const result = await this.evaluateRule(rule, step, context);
-      
+
       if (!result.compliant) {
         overallCompliant = false;
         overallReason = overallReason ? `${overallReason}; ${result.reason}` : result.reason;
-        
+
         if (this.getSeverityLevel(result.severity) > this.getSeverityLevel(overallSeverity)) {
           overallSeverity = result.severity || 'medium';
         }
@@ -189,11 +188,11 @@ export class GuardrailSystem extends EventEmitter {
       }
 
       const result = await this.evaluateRuleForAction(rule, action, context);
-      
+
       if (!result.compliant) {
         overallCompliant = false;
         overallReason = overallReason ? `${overallReason}; ${result.reason}` : result.reason;
-        
+
         if (this.getSeverityLevel(result.severity) > this.getSeverityLevel(overallSeverity)) {
           overallSeverity = result.severity || 'medium';
         }
@@ -330,7 +329,7 @@ export class GuardrailSystem extends EventEmitter {
         description: 'Prevents activities that violate laws or regulations',
         enabled: true,
         conditions: [
-          { field: 'parameters', operator: 'regex', value: /(?i)(fraud|scam|illegal|hack)/ }
+          { field: 'parameters', operator: 'regex', value: /(fraud|scam|illegal|hack)/i }
         ],
         actions: [
           { type: 'block', parameters: { reason: 'Illegal activity detected' } }
@@ -442,7 +441,7 @@ export class GuardrailSystem extends EventEmitter {
     if (target.type === 'real-estate' && target.parameters) {
       const prohibitedTerms = ['race', 'religion', 'nationality', 'gender', 'familial_status'];
       const targetText = JSON.stringify(target.parameters).toLowerCase();
-      
+
       for (const term of prohibitedTerms) {
         if (targetText.includes(term)) {
           return {

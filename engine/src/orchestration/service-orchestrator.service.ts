@@ -1,10 +1,9 @@
-// @ts-nocheck - Production stub file, incomplete (Phase 2)
 /**
  * Service Orchestrator
  * Central coordination of all services with discovery, health monitoring, and load balancing
  */
 
-import { 
+import {
   ServiceDefinition, ServiceCriteria, ServiceRequest, ServiceResponse, ServiceEvent,
   HealthCheckResult, ResourceUsage, EventHandler, DomainEvent
 } from '../shared/types.js';
@@ -62,13 +61,13 @@ export class ServiceOrchestrator {
     if (this.isRunning) return;
 
     this.isRunning = true;
-    
+
     // Start periodic health checks
     this.startHealthCheckLoop();
-    
+
     // Start service discovery
     this.startServiceDiscovery();
-    
+
     console.log('Service Orchestrator started');
   }
 
@@ -120,7 +119,7 @@ export class ServiceOrchestrator {
 
   async discoverServices(criteria: ServiceCriteria): Promise<ServiceDefinition[]> {
     const services = Array.from(this.registry.services.values());
-    
+
     return services.filter(service => {
       if (criteria.type && service.type !== criteria.type) return false;
       if (criteria.version && service.version !== criteria.version) return false;
@@ -139,7 +138,7 @@ export class ServiceOrchestrator {
   // Service Health & Load Balancing
   async healthCheckAll(): Promise<Map<string, HealthCheckResult>> {
     const results = new Map<string, HealthCheckResult>();
-    
+
     for (const [serviceId, service] of this.registry.services) {
       try {
         const health = await this.checkServiceHealth(service);
@@ -155,7 +154,7 @@ export class ServiceOrchestrator {
         results.set(serviceId, failedHealth);
       }
     }
-    
+
     return results;
   }
 
@@ -208,9 +207,9 @@ export class ServiceOrchestrator {
 
   async broadcastEvent(event: ServiceEvent): Promise<void> {
     const handlers = this.eventHandlers.get(event.type) || [];
-    
+
     await Promise.allSettled(
-      handlers.map(handler => 
+      handlers.map(handler =>
         handler({
           id: `domain-${Date.now()}`,
           type: event.type,
@@ -295,12 +294,12 @@ export class ServiceOrchestrator {
 
   private async checkServiceHealth(service: ServiceDefinition): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Implementation would perform actual health check
       // For now, simulate healthy status
       const responseTime = Date.now() - startTime;
-      
+
       return {
         service: service.name,
         status: 'healthy',
@@ -381,7 +380,7 @@ class LoadBalancerImpl implements LoadBalancer {
 
   updateServiceHealth(serviceId: string, health: HealthCheckResult): void {
     this.serviceHealth.set(serviceId, health);
-    
+
     // Update metrics
     const utilization = this.metrics.serviceUtilization.get(serviceId) || 0;
     if (health.status === 'healthy') {
