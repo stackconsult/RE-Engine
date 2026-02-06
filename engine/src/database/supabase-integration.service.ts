@@ -399,20 +399,27 @@ export class SupabaseIntegrationService {
     if (!this.config.enableStorage) {
       throw new Error('Storage is not enabled');
     }
-
-    const client = getSupabaseClient();
-
     try {
-      const result = await client.storage
+      const result = await (this.manager as any).getClient().storage
         .from(bucket)
         .download(path);
-
       return result;
-
     } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to download file');
-      throw error;
+      logError(error instanceof Error ? error : new Error(String(error)), 'SupabaseIntegration.downloadFile');
+      return { data: null, error };
     }
+  }
+
+  getPublicUrl(bucket: string, path: string): string {
+    const { data } = (this.manager as any).getClient().storage
+      .from(bucket)
+      .getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async health(): Promise<boolean> {
+    const { leadsCount } = await this.getDatabaseStats();
+    return leadsCount >= 0;
   }
 
   // Analytics and Metrics

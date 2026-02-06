@@ -84,17 +84,17 @@ export class CRMIntegrationService {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing CRM integrations...');
-    
+
     try {
       // Start sync intervals for enabled services
       if (this.config.zillow.enabled) {
         this.startZillowSync();
       }
-      
+
       if (this.config.realtor.enabled) {
         this.startRealtorSync();
       }
-      
+
       if (this.config.mls.enabled) {
         this.startMLSSync();
       }
@@ -134,9 +134,9 @@ export class CRMIntegrationService {
       });
 
       for (const lead of leads.leads) {
-        if (lead.city && lead.property_address) {
-          const properties = await this.searchZillowProperties(lead.city, lead.property_address);
-          await this.processPropertyMatches(lead.id, properties, 'zillow');
+        if (lead.city && (lead as any).property_address) {
+          const properties = await this.searchZillowProperties(lead.city, (lead as any).property_address);
+          await this.processPropertyMatches(lead.lead_id, properties, 'zillow');
         }
       }
     } catch (error) {
@@ -208,8 +208,8 @@ export class CRMIntegrationService {
 
       for (const lead of leads.leads) {
         if (lead.city) {
-          const properties = await this.searchRealtorProperties(lead.city, lead.price_range);
-          await this.processPropertyMatches(lead.id, properties, 'realtor');
+          const properties = await this.searchRealtorProperties(lead.city, (lead as any).price_range);
+          await this.processPropertyMatches(lead.lead_id, properties, 'realtor');
         }
       }
     } catch (error) {
@@ -333,7 +333,7 @@ export class CRMIntegrationService {
 
       // Sort by score and store top matches
       matches.sort((a, b) => b.score - a.score);
-      
+
       // Store matches in database (would need to implement this)
       await this.storePropertyMatches(matches.slice(0, 5)); // Top 5 matches
 
@@ -536,7 +536,7 @@ export class CRMIntegrationService {
   async handleZillowWebhook(payload: any): Promise<void> {
     try {
       this.logger.info('Received Zillow webhook', payload);
-      
+
       // Process webhook data (new listings, price changes, etc.)
       if (payload.type === 'new_listing') {
         await this.processNewListing(payload.data, 'zillow');
@@ -551,7 +551,7 @@ export class CRMIntegrationService {
   async handleRealtorWebhook(payload: any): Promise<void> {
     try {
       this.logger.info('Received Realtor.com webhook', payload);
-      
+
       if (payload.type === 'new_listing') {
         await this.processNewListing(payload.data, 'realtor');
       }
@@ -563,7 +563,7 @@ export class CRMIntegrationService {
   private async processNewListing(listing: any, source: string): Promise<void> {
     // Find matching leads and create notifications
     const matchingLeads = await this.findLeadsForProperty(listing);
-    
+
     for (const lead of matchingLeads) {
       await this.notifyLeadOfNewProperty(lead.id, listing, source);
     }

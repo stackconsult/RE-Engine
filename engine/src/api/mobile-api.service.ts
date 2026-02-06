@@ -118,7 +118,7 @@ export class MobileAPIService {
       }
 
       // Ensure agent can only access their own leads
-      if (lead.assigned_agent !== agentId) {
+      if ((lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
           error: 'Access denied',
@@ -147,7 +147,7 @@ export class MobileAPIService {
 
       // Verify lead ownership
       const lead = await this.dbManager.getLead(id as string);
-      if (!lead || lead.assigned_agent !== agentId) {
+      if (!lead || (lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
           error: 'Access denied',
@@ -313,7 +313,7 @@ export class MobileAPIService {
 
       // Verify lead ownership
       const lead = await this.dbManager.getLead(id as string);
-      if (!lead || lead.assigned_agent !== agentId) {
+      if (!lead || (lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
           error: 'Access denied',
@@ -344,7 +344,7 @@ export class MobileAPIService {
 
       // Verify lead ownership
       const lead = await this.dbManager.getLead(eventData.lead_id);
-      if (!lead || lead.assigned_agent !== agentId) {
+      if (!lead || (lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
           error: 'Access denied',

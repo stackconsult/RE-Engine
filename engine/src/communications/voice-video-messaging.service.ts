@@ -643,9 +643,10 @@ export class VoiceVideoMessagingService {
       metadata: {
         messageId: message.id,
         sentiment: message.sentiment,
+        transcript_snippet: message.transcription ? message.transcription.substring(0, 100) : '',
         duration: message.duration,
-      },
-    });
+      }
+    } as any);
   }
 
   private async sendVideoCallNotifications(call: VideoCall): Promise<void> {
