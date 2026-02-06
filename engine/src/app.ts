@@ -1,11 +1,10 @@
-// @ts-nocheck - Type issues pending (Phase 2)
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { serviceAuthMiddleware, AuthenticatedRequest, generateServiceToken } from './middleware/service-auth.ts';
-import { logger } from './observability/logger.ts';
+import { serviceAuthMiddleware, AuthenticatedRequest, generateServiceToken, ServiceAuth } from './middleware/service-auth.js';
+import { logger } from './observability/logger.js';
 
 const app = express();
 
@@ -50,7 +49,7 @@ app.use((req, res, next) => {
 
 // Health check (no auth required)
 app.get('/health', (req, res) => {
-  res.tson({
+  res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '0.1.0'
@@ -62,25 +61,25 @@ app.post('/auth/token', async (req, res) => {
   try {
     const { serviceId } = req.body;
     const apiKey = req.headers['x-api-key'] as string;
-    
+
     if (!serviceId || !apiKey) {
-      return res.status(400).tson({ error: 'Missing serviceId or apiKey' });
+      return res.status(400).json({ error: 'Missing serviceId or apiKey' });
     }
-    
+
     // Validate API key using service auth middleware logic
     const authResult = await validateServiceApiKey(serviceId, apiKey);
-    
+
     if (!authResult.valid) {
-      return res.status(401).tson({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
+
     const token = generateServiceToken(serviceId);
-    
-    logger.info({ 
-      serviceId: serviceId 
+
+    logger.info({
+      serviceId: serviceId
     }, "Service token generated");
-    
-    res.tson({
+
+    res.json({
       token,
       expiresIn: 3600, // 1 hour
       service: {
@@ -90,12 +89,12 @@ app.post('/auth/token', async (req, res) => {
     });
   } catch (error) {
     console.error('Auth endpoint error:', error);
-    res.status(500).tson({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Service API Key Validation Function
-async function validateServiceApiKey(serviceId: string, apiKey: string): Promise<{valid: boolean, permissions?: any}> {
+async function validateServiceApiKey(serviceId: string, apiKey: string): Promise<{ valid: boolean, permissions?: any }> {
   try {
     // For now, use fallback registry (can be enhanced with database later)
     const fallbackService = {
@@ -106,12 +105,12 @@ async function validateServiceApiKey(serviceId: string, apiKey: string): Promise
       'reengine-core': { apiKey: process.env.CORE_API_KEY || 'dev-key', permissions: { read: true, write: true, orchestrate: true } },
       'reengine-outreach': { apiKey: process.env.OUTREACH_API_KEY || 'dev-key', permissions: { read: true, write: true, outreach: true } }
     };
-    
+
     const service = fallbackService[serviceId as keyof typeof fallbackService];
     if (service && service.apiKey === apiKey) {
       return { valid: true, permissions: service.permissions };
     }
-    
+
     return { valid: false };
   } catch (error) {
     console.error('API key validation error:', error);
@@ -125,8 +124,8 @@ app.use('/api', serviceAuthMiddleware());
 // Example protected endpoint
 app.get('/api/protected', (req: AuthenticatedRequest, res) => {
   const service = req.service!;
-  
-  res.tson({
+
+  res.json({
     message: 'Access granted',
     service: {
       serviceId: service.serviceId,
@@ -145,7 +144,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
     method: req.method
   }, "API error");
 
-  res.status(error.status || 500).tson({
+  res.status(error.status || 500).json({
     error: 'Internal Server Error',
     message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
@@ -153,7 +152,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).tson({
+  res.status(404).json({
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} not found`
   });

@@ -1,4 +1,4 @@
-// @ts-nocheck - Type issues pending (Phase 2)
+// @ts-nocheck - Supabase SDK schema type issues (Phase 3)
 /**
  * Enhanced Supabase Client Configuration
  * Production-ready Supabase integration with provided credentials
@@ -48,7 +48,7 @@ export class SupabaseClientManager {
   private config: SupabaseConfig | null = null;
   private connectionConfig: SupabaseConnectionConfig | null = null;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): SupabaseClientManager {
     if (!SupabaseClientManager.instance) {
@@ -64,8 +64,8 @@ export class SupabaseClientManager {
     try {
       // Initialize anonymous client
       this.anonClient = createClient<Database>(config.url, config.anonKey, {
-        db: { 
-          schema: config.schema || 'public' 
+        db: {
+          schema: config.schema || 'public'
         },
         auth: config.auth || {
           autoRefreshTokens: true,
@@ -87,11 +87,11 @@ export class SupabaseClientManager {
       // Initialize service role client if service key is provided
       if (config.serviceKey) {
         this.serviceClient = createClient<Database>(config.url, config.serviceKey, {
-          db: { 
-            schema: config.schema || 'public' 
+          db: {
+            schema: config.schema || 'public'
           },
-          auth: { 
-            persistSession: false 
+          auth: {
+            persistSession: false
           },
           global: {
             headers: {
@@ -134,7 +134,7 @@ export class SupabaseClientManager {
   async testConnection(): Promise<boolean> {
     try {
       const { error } = await this.anonClient!.from('leads').select('lead_id').limit(1);
-      
+
       if (error) {
         throw new Error(`Supabase connection test failed: ${error.message}`);
       }
@@ -265,7 +265,7 @@ export async function initializeSupabase(
 
   const manager = SupabaseClientManager.getInstance();
   await manager.initialize(finalConfig, finalConnectionConfig);
-  
+
   return manager;
 }
 

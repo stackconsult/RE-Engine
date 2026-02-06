@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// @ts-nocheck - Type issues pending (Phase 2)
 
 /**
  * RE Engine CLI
