@@ -1,4 +1,4 @@
-// @ts-nocheck - Logger API migration pending (Phase 2)
+// Phase 3 Strict
 /**
  * Mobile App API Service for Phase 6
  * Provides endpoints for mobile approvals and monitoring
@@ -77,7 +77,7 @@ export class MobileAPIService {
   // Lead management
   private async getLeads(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { status, limit = 20, offset = 0 } = req.query;
 
       const leads = await this.dbManager.searchLeads({
@@ -105,9 +105,9 @@ export class MobileAPIService {
   private async getLead(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
 
-      const lead = await this.dbManager.getLead(id);
+      const lead = await this.dbManager.getLead(id as string);
 
       if (!lead) {
         res.status(404).json({
@@ -142,11 +142,11 @@ export class MobileAPIService {
   private async updateLead(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const updates = req.body;
 
       // Verify lead ownership
-      const lead = await this.dbManager.getLead(id);
+      const lead = await this.dbManager.getLead(id as string);
       if (!lead || lead.assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
@@ -155,7 +155,7 @@ export class MobileAPIService {
         return;
       }
 
-      const success = await this.dbManager.updateLead(id, updates);
+      const success = await this.dbManager.updateLead(id as string, updates);
 
       res.json({
         success,
@@ -172,7 +172,7 @@ export class MobileAPIService {
 
   private async searchLeads(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { query, status, city, property_type, limit = 20, offset = 0 } = req.body;
 
       const results = await this.dbManager.searchLeads({
@@ -203,7 +203,7 @@ export class MobileAPIService {
   // Approval management
   private async getPendingApprovals(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const approvals = await this.dbManager.getPendingApprovals();
 
       // Filter approvals for this agent's leads
@@ -229,13 +229,13 @@ export class MobileAPIService {
   private async approveApproval(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const reviewedBy = req.user?.email;
+      const reviewedBy = req.user?.user.email;
 
-      const success = await this.dbManager.updateApprovalStatus(id, 'approved', reviewedBy);
+      const success = await this.dbManager.updateApprovalStatus(id as string, 'approved', reviewedBy);
 
       if (success) {
         // Trigger the approval workflow (send message, etc.)
-        await this.triggerApprovalWorkflow(id, 'approved');
+        await this.triggerApprovalWorkflow(id as string, 'approved');
       }
 
       res.json({
@@ -255,9 +255,9 @@ export class MobileAPIService {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-      const reviewedBy = req.user?.email;
+      const reviewedBy = req.user?.user.email;
 
-      const success = await this.dbManager.updateApprovalStatus(id, 'rejected', reviewedBy);
+      const success = await this.dbManager.updateApprovalStatus(id as string, 'rejected', reviewedBy);
 
       if (success) {
         // Log rejection reason
@@ -267,7 +267,7 @@ export class MobileAPIService {
           channel: 'system',
           content: `Approval rejected by ${reviewedBy}. Reason: ${reason}`,
           direction: 'in',
-          agent_id: req.user?.id,
+          agent_id: req.user?.user.user_id,
         });
       }
 
@@ -286,7 +286,7 @@ export class MobileAPIService {
 
   private async getApprovalHistory(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { limit = 50, offset = 0 } = req.query;
 
       // This would need to be implemented in the database manager
@@ -308,11 +308,11 @@ export class MobileAPIService {
   private async getLeadEvents(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { limit = 50 } = req.query;
 
       // Verify lead ownership
-      const lead = await this.dbManager.getLead(id);
+      const lead = await this.dbManager.getLead(id as string);
       if (!lead || lead.assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
@@ -321,7 +321,7 @@ export class MobileAPIService {
         return;
       }
 
-      const events = await this.dbManager.getLeadEvents(id, parseInt(limit as string));
+      const events = await this.dbManager.getLeadEvents(id as string, parseInt(limit as string));
 
       res.json({
         success: true,
@@ -339,7 +339,7 @@ export class MobileAPIService {
 
   private async createEvent(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const eventData = req.body;
 
       // Verify lead ownership
@@ -374,8 +374,8 @@ export class MobileAPIService {
   // Agent management
   private async getAgentProfile(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
-      const agent = await this.dbManager.getAgentByEmail(req.user?.email);
+      const agentId = req.user?.user.user_id;
+      const agent = await this.dbManager.getAgentByEmail(req.user?.user.email);
 
       res.json({
         success: true,
@@ -392,7 +392,7 @@ export class MobileAPIService {
 
   private async updateAgentProfile(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const updates = req.body;
 
       // This would need to be implemented in the database manager
@@ -411,7 +411,7 @@ export class MobileAPIService {
 
   private async getAgentMetrics(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const metrics = await this.dbManager.getDashboardMetrics(agentId);
 
       res.json({
@@ -430,7 +430,7 @@ export class MobileAPIService {
   // Dashboard
   private async getDashboard(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const metrics = await this.dbManager.getDashboardMetrics(agentId);
       const recentLeads = await this.dbManager.searchLeads({
         assigned_agent: agentId,
@@ -455,7 +455,7 @@ export class MobileAPIService {
 
   private async getDashboardMetrics(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const metrics = await this.dbManager.getDashboardMetrics(agentId);
 
       res.json({
@@ -474,7 +474,7 @@ export class MobileAPIService {
   // Sync endpoints for offline support
   private async syncLeads(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { lastSync } = req.query;
 
       // Get leads updated since last sync
@@ -499,7 +499,7 @@ export class MobileAPIService {
 
   private async syncEvents(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { lastSync } = req.query;
 
       // Get events since last sync
@@ -519,7 +519,7 @@ export class MobileAPIService {
 
   private async syncEventsUpload(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { events } = req.body;
 
       // Process offline events
@@ -547,7 +547,7 @@ export class MobileAPIService {
   private async registerForNotifications(req: Request, res: Response): Promise<void> {
     try {
       const { deviceToken, platform } = req.body;
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
 
       // Store device token for push notifications
       // This would integrate with your notification service
@@ -568,7 +568,7 @@ export class MobileAPIService {
   private async unregisterForNotifications(req: Request, res: Response): Promise<void> {
     try {
       const { deviceToken } = req.body;
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
 
       // Remove device token
       res.json({
@@ -586,7 +586,7 @@ export class MobileAPIService {
 
   private async getNotifications(req: Request, res: Response): Promise<void> {
     try {
-      const agentId = req.user?.id;
+      const agentId = req.user?.user.user_id;
       const { limit = 20, offset = 0 } = req.query;
 
       // Get notifications for this agent

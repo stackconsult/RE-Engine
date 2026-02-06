@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { serviceAuthMiddleware, AuthenticatedRequest, generateServiceToken, ServiceAuth } from './middleware/service-auth.js';
+import { serviceAuthMiddleware, generateServiceToken, ServiceAuth } from './middleware/service-auth.js';
 import { logger } from './observability/logger.js';
 
 const app = express();
@@ -122,7 +122,7 @@ async function validateServiceApiKey(serviceId: string, apiKey: string): Promise
 app.use('/api', serviceAuthMiddleware());
 
 // Example protected endpoint
-app.get('/api/protected', (req: AuthenticatedRequest, res) => {
+app.get('/api/protected', (req: express.Request, res) => {
   const service = req.service!;
 
   res.json({

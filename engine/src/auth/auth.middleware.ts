@@ -1,4 +1,4 @@
-// @ts-nocheck - Express Request.user type conflict needs module augmentation (Phase 3)
+// Phase 3 Strict
 /**
  * Authentication Middleware for Web Dashboard
  * JWT token verification and user session management
@@ -7,9 +7,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService, AuthToken } from './auth.service.js';
 
-export interface AuthenticatedRequest extends Request {
-  user?: AuthToken;
-}
+
 
 export class AuthMiddleware {
   private authService: AuthService;
@@ -24,7 +22,7 @@ export class AuthMiddleware {
 
   // Express middleware for authentication
   authenticate() {
-    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
       try {
         const token = this.extractToken(req);
 
@@ -50,7 +48,7 @@ export class AuthMiddleware {
 
   // Role-based authorization middleware
   authorize(requiredPermission: string) {
-    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
       try {
         if (!req.user) {
           return res.status(401).json({ error: 'Not authenticated' });
@@ -103,14 +101,14 @@ export class AuthMiddleware {
   }
 
   // Logout endpoint
-  async logout(req: AuthenticatedRequest, res: Response) {
+  async logout(req: Request, res: Response) {
     // In a real implementation, you might want to invalidate the token
     // For now, we'll just return success
     res.json({ success: true, message: 'Logged out successfully' });
   }
 
   // Get current user info
-  async getCurrentUser(req: AuthenticatedRequest, res: Response) {
+  async getCurrentUser(req: Request, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -130,7 +128,7 @@ export class AuthMiddleware {
   }
 
   // Change password
-  async changePassword(req: AuthenticatedRequest, res: Response) {
+  async changePassword(req: Request, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -160,7 +158,7 @@ export class AuthMiddleware {
     }
   }
 
-  private extractToken(req: AuthenticatedRequest): string | null {
+  private extractToken(req: Request): string | null {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -177,7 +175,7 @@ export class AuthMiddleware {
   }
 
   // Generate API key for user
-  async generateApiKey(req: AuthenticatedRequest, res: Response) {
+  async generateApiKey(req: Request, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -201,3 +199,5 @@ export class AuthMiddleware {
     await this.authService.close();
   }
 }
+
+export const authenticateToken = new AuthMiddleware().authenticate();

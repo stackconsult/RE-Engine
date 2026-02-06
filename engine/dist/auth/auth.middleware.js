@@ -1,4 +1,4 @@
-// @ts-nocheck - Type issues pending (Phase 2)
+// @ts-nocheck - Express Request.user type conflict needs module augmentation (Phase 3)
 /**
  * Authentication Middleware for Web Dashboard
  * JWT token verification and user session management

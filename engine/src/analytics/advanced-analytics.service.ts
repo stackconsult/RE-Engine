@@ -510,7 +510,7 @@ export class AdvancedAnalyticsService {
 
       const alerts = this.generateAlerts(systemAnalytics, leadAnalytics);
 
-      const dashboard = {
+      const dashboard: any = {
         leadAnalytics,
         agentAnalytics,
         systemAnalytics,
