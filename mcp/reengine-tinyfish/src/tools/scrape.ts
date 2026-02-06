@@ -1,5 +1,5 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { pino } from "pino";
+import pino from "pino";
 import { v4 as uuidv4 } from "uuid";
 
 // Logger configuration for audit compliance
@@ -10,7 +10,7 @@ const logger = pino({
     hostname: process.env.HOSTNAME || 'localhost',
     service: 'reengine-tinyfish'
   }
-});
+}, pino.destination(2));
 
 // TypeScript interfaces for type safety
 interface ScrapeArgs {
@@ -67,12 +67,12 @@ async function getMockFallback(args: ScrapeArgs, auditEvent: AuditEvent, startTi
 
   // Simulate API delay for realistic behavior
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   const mockData = {
     content: "Sample scraped content from the webpage. This would contain the actual content extracted by TinyFish based on the goal: " + (args.goal || 'Extract the main content'),
     links: [
       "https://example.com/page1",
-      "https://example.com/page2", 
+      "https://example.com/page2",
       "https://example.com/page3",
     ],
     images: [
@@ -294,14 +294,14 @@ export const scrape = {
         auditEvent.error = error;
         auditEvent.status = 'failed';
         logger.error(auditEvent, 'API request failed');
-        
+
         // Fallback to mock data on API failure
         return await getMockFallback(args, auditEvent, startTime);
       }
 
       // Handle SSE response stream
       const result = await parseSSEResponse(response);
-      
+
       auditEvent.status = 'success';
       logger.info(auditEvent, 'Scrape operation completed successfully');
 
@@ -319,9 +319,9 @@ export const scrape = {
       auditEvent.duration = duration;
       auditEvent.error = error instanceof Error ? error.message : String(error);
       auditEvent.status = 'failed';
-      
+
       logger.error(auditEvent, 'Scrape operation failed');
-      
+
       // Always fallback to mock data on any error
       return await getMockFallback(args, auditEvent, startTime);
     }

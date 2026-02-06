@@ -10,6 +10,7 @@ export interface Component {
   status: 'healthy' | 'degraded' | 'unhealthy' | 'limited';
   execute(action: string, params: any): Promise<any>;
   getHealth?(): Promise<ComponentHealth>;
+  initialize?(): Promise<void>;
 }
 
 export interface ComponentHealth {
@@ -317,7 +318,7 @@ export interface ExecutionStatus {
 }
 
 // Task Types
-export type TaskType = 
+export type TaskType =
   | 'lead_analysis'
   | 'property_description'
   | 'code_generation'

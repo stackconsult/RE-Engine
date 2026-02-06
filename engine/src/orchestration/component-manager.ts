@@ -6,6 +6,7 @@
 import { EventEmitter } from 'events';
 import { Component, ComponentHealth } from '../types/orchestration.types';
 import { Logger } from '../utils/logger';
+import { MCPClient } from './mcp-client';
 
 export interface ComponentManagerConfig {
   healthCheckInterval: number;
@@ -17,6 +18,7 @@ export interface ComponentManagerConfig {
 export class ComponentManager extends EventEmitter {
   private components: Map<string, Component> = new Map();
   private healthStatus: Map<string, ComponentHealth> = new Map();
+  private mcpClients: Map<string, MCPClient> = new Map();
   private config: ComponentManagerConfig;
   private logger: Logger;
   private healthCheckTimer: NodeJS.Timeout;
@@ -41,15 +43,20 @@ export class ComponentManager extends EventEmitter {
 
     try {
       const component = await this.createComponent(name, config);
-      
+
+      // Perform specific initialization if required (e.g. MCP connection)
+      if ((component as any).initialize) {
+        await (component as any).initialize();
+      }
+
       // Test component health
       const health = await this.checkComponentHealth(component);
       this.healthStatus.set(name, health);
-      
+
       this.components.set(name, component);
       this.logger.info(`✅ Component ${name} initialized successfully`);
       this.emit('component:initialized', { name, component, health });
-      
+
       return component;
     } catch (error) {
       this.logger.error(`❌ Failed to initialize component ${name}:`, error);
@@ -83,14 +90,14 @@ export class ComponentManager extends EventEmitter {
    */
   async establishChannels(): Promise<void> {
     this.logger.info('🔗 Establishing communication channels...');
-    
+
     // Set up event listeners for component communication
     this.components.forEach((component, name) => {
       if (component.status === 'healthy') {
         this.setupComponentChannels(component, name);
       }
     });
-    
+
     this.logger.info('✅ Communication channels established');
   }
 
@@ -101,7 +108,7 @@ export class ComponentManager extends EventEmitter {
     this.healthCheckTimer = setInterval(async () => {
       await this.performHealthChecks();
     }, this.config.healthCheckInterval);
-    
+
     this.logger.info('🏥 Component health monitoring started');
   }
 
@@ -121,9 +128,9 @@ export class ComponentManager extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.logger.info('🛑 Shutting down component manager...');
-    
+
     this.stopHealthMonitoring();
-    
+
     // Shutdown all components
     const shutdownPromises = Array.from(this.components.entries()).map(async ([name, component]) => {
       try {
@@ -132,12 +139,12 @@ export class ComponentManager extends EventEmitter {
         this.logger.warn(`⚠️ Error shutting down component ${name}:`, error);
       }
     });
-    
+
     await Promise.all(shutdownPromises);
-    
+
     this.components.clear();
     this.healthStatus.clear();
-    
+
     this.logger.info('✅ Component manager shutdown complete');
   }
 
@@ -183,7 +190,7 @@ export class ComponentManager extends EventEmitter {
             throw new Error(`Unknown database action: ${action}`);
         }
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => {} })
+      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => { } })
     };
   }
 
@@ -205,7 +212,7 @@ export class ComponentManager extends EventEmitter {
             throw new Error(`Unknown auth action: ${action}`);
         }
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => {} })
+      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => { } })
     };
   }
 
@@ -229,7 +236,7 @@ export class ComponentManager extends EventEmitter {
             throw new Error(`Unknown cache action: ${action}`);
         }
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => {} })
+      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => { } })
     };
   }
 
@@ -242,7 +249,25 @@ export class ComponentManager extends EventEmitter {
         // MCP server operations
         return await this.executeMCPOperation(name, action, params);
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => {} })
+      getHealth: async () => {
+        // Check actual connection status
+        // This is a simplified check - in reality we might ping the server
+        const client = this.mcpClients.get(name);
+        if (!client) return { status: 'unhealthy', lastCheck: Date.now(), errors: ['Client not connected'], metrics: {} };
+
+        try {
+          return { status: 'healthy', lastCheck: Date.now(), metrics: { connected: 1 } };
+        } catch (e) {
+          return { status: 'unhealthy', lastCheck: Date.now(), errors: [e.message], metrics: {} };
+        }
+      },
+      // Hook for initialization
+      initialize: async () => {
+        this.logger.info(`Initializing MCP Client for ${name}`);
+        const client = new MCPClient({ name });
+        await client.connect();
+        this.mcpClients.set(name, client);
+      }
     };
   }
 
@@ -264,7 +289,7 @@ export class ComponentManager extends EventEmitter {
             throw new Error(`Unknown mobile action: ${action}`);
         }
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => {} })
+      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => { } })
     };
   }
 
@@ -286,7 +311,7 @@ export class ComponentManager extends EventEmitter {
             throw new Error(`Unknown web automation action: ${action}`);
         }
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => {} })
+      getHealth: async () => await this.checkComponentHealth({ name, type: config.type, status: 'healthy', execute: async () => { } })
     };
   }
 
@@ -299,24 +324,24 @@ export class ComponentManager extends EventEmitter {
         this.logger.debug(`Executing ${action} on generic component ${name}`, params);
         return { success: true, data: params };
       },
-      getHealth: async () => await this.checkComponentHealth({ name, type: config.type || 'generic', status: 'healthy', execute: async () => {} })
+      getHealth: async () => await this.checkComponentHealth({ name, type: config.type || 'generic', status: 'healthy', execute: async () => { } })
     };
   }
 
   private async checkComponentHealth(component: Component): Promise<ComponentHealth> {
     try {
       const startTime = Date.now();
-      
+
       // Execute a simple health check
       if (component.getHealth) {
         const health = await component.getHealth();
         health.lastCheck = Date.now();
         return health;
       }
-      
+
       // Default health check
       const responseTime = Date.now() - startTime;
-      
+
       return {
         status: 'healthy',
         lastCheck: Date.now(),
@@ -352,15 +377,15 @@ export class ComponentManager extends EventEmitter {
       try {
         const health = await this.checkComponentHealth(component);
         const previousHealth = this.healthStatus.get(name);
-        
+
         // Check if health status changed
         if (!previousHealth || previousHealth.status !== health.status) {
           this.logger.info(`🏥 Component ${name} health changed: ${previousHealth?.status} → ${health.status}`);
           this.emit('component:health:changed', { name, health, previousHealth });
         }
-        
+
         this.healthStatus.set(name, health);
-        
+
         // Auto-recovery if enabled
         if (this.config.enableAutoRecovery && health.status === 'unhealthy') {
           await this.attemptComponentRecovery(name, component);
@@ -373,12 +398,12 @@ export class ComponentManager extends EventEmitter {
 
   private async attemptComponentRecovery(name: string, component: Component): Promise<void> {
     this.logger.info(`🔄 Attempting recovery for component ${name}`);
-    
+
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         // Attempt to reinitialize the component
         await new Promise(resolve => setTimeout(resolve, this.config.retryDelay));
-        
+
         const health = await this.checkComponentHealth(component);
         if (health.status === 'healthy') {
           this.logger.info(`✅ Component ${name} recovered successfully`);
@@ -389,24 +414,29 @@ export class ComponentManager extends EventEmitter {
         this.logger.warn(`⚠️ Recovery attempt ${attempt} failed for component ${name}:`, error);
       }
     }
-    
+
     this.logger.error(`❌ Failed to recover component ${name} after ${this.config.maxRetries} attempts`);
     this.emit('component:recovery:failed', { name });
   }
 
   private async shutdownComponent(name: string, component: Component): Promise<void> {
     this.logger.info(`🛑 Shutting down component: ${name}`);
-    
+
     // Component-specific shutdown logic
     if (component.type === 'database') {
       // Close database connections
     } else if (component.type === 'mcp-server') {
       // Stop MCP server
+      const client = this.mcpClients.get(name);
+      if (client) {
+        await client.disconnect();
+        this.mcpClients.delete(name);
+      }
     }
-    
+
     this.components.delete(name);
     this.healthStatus.delete(name);
-    
+
     this.logger.info(`✅ Component ${name} shutdown complete`);
   }
 
@@ -456,7 +486,27 @@ export class ComponentManager extends EventEmitter {
   }
 
   private async executeMCPOperation(name: string, action: string, params: any): Promise<any> {
-    return { success: true, operation: action, params };
+    const client = this.mcpClients.get(name);
+    if (!client) {
+      throw new Error(`MCP client for ${name} not found`);
+    }
+
+    // First, verify the tool exists
+    const tools = await client.listTools();
+    const tool = tools.find(t => t.name === action);
+
+    if (!tool) {
+      // If exact match fails, try to match by suffix (since action might be namespaced or just the tool name)
+      // Or if the action passed is "scrape" but the tool is "scrape_url"
+      const specificTool = tools.find(t => t.name.includes(action) || action.includes(t.name));
+      if (specificTool) {
+        this.logger.debug(`Mapped action ${action} to tool ${specificTool.name}`);
+        return await client.callTool(specificTool.name, params);
+      }
+      throw new Error(`Tool ${action} not found on server ${name}. Available: ${tools.map(t => t.name).join(', ')}`);
+    }
+
+    return await client.callTool(action, params);
   }
 
   private async sendiMessage(config: any, params: any): Promise<any> {

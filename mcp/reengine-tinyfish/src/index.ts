@@ -41,7 +41,7 @@ async function getServiceToken(): Promise<string> {
 // Authenticated fetch wrapper
 async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = await getServiceToken();
-  
+
   return fetch(url, {
     ...options,
     headers: {
@@ -192,6 +192,7 @@ const tools: Tool[] = [
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  console.error("DEBUG: Received ListToolsRequest");
   return { tools };
 });
 
@@ -207,7 +208,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
 
       case "extract_links": {
         const { url, filter } = args as { url: string; filter?: string };
-        
+
         // Mock link extraction
         const mockLinks = [
           "https://example.com/page1",
@@ -217,7 +218,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           "https://example.com/about",
         ];
 
-        const filteredLinks = filter 
+        const filteredLinks = filter
           ? mockLinks.filter(link => link.includes(filter))
           : mockLinks;
 
@@ -233,7 +234,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
 
       case "extract_images": {
         const { url, minSize } = args as { url: string; minSize?: number };
-        
+
         // Mock image extraction
         const mockImages = [
           { src: "https://example.com/image1.jpg", size: 1024, alt: "Image 1" },
@@ -269,26 +270,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           // Build search URL for Zillow (or other real estate sites)
           const baseUrl = "https://www.zillow.com/homes/";
           const searchParams = [];
-          
+
           if (propertyType && propertyType !== "single-family") {
             searchParams.push(propertyType.replace("-", "_"));
           }
-          
+
           if (priceRange?.min || priceRange?.max) {
             const priceFilter = [];
             if (priceRange.min) priceFilter.push(priceRange.min);
             if (priceRange.max) priceFilter.push(priceRange.max);
             searchParams.push(priceFilter.join("-"));
           }
-          
+
           if (beds) searchParams.push(`${beds}-beds`);
           if (baths) searchParams.push(`${baths}-baths`);
-          
+
           const searchUrl = `${baseUrl}${location.toLowerCase().replace(/\s+/g, "-")}_rb/${searchParams.join("/")}/`;
 
           // Use TinyFish API to scrape the listings
           const tinyFishUrl = process.env.TINYFISH_API_URL || 'https://api.tinyfish.io/v1/scrape';
-          
+
           const response = await fetch(tinyFishUrl, {
             method: 'POST',
             headers: {
@@ -309,10 +310,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           }
 
           const data = await response.json();
-          
+
           // Process and format listings data
           const listings = data.data?.listings || [];
-          
+
           return {
             content: [
               {
@@ -329,7 +330,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           };
         } catch (error) {
           console.error('Real estate scraping error:', error);
-          
+
           // Fallback to mock real estate data
           const mockListings = [
             {
@@ -346,7 +347,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
               description: "Beautiful home in downtown Austin"
             },
             {
-              id: "2", 
+              id: "2",
               address: "456 Oak Ave, Austin, TX 78702",
               price: 375000,
               beds: 2,
@@ -398,7 +399,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           const marketUrl = `https://www.zillow.com/${location.toLowerCase().replace(/\s+/g, "-")}/home-values/`;
 
           const tinyFishUrl = process.env.TINYFISH_API_URL || 'https://api.tinyfish.io/v1/scrape';
-          
+
           const response = await fetch(tinyFishUrl, {
             method: 'POST',
             headers: {
@@ -419,7 +420,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           }
 
           const data = await response.json();
-          
+
           return {
             content: [
               {
@@ -436,7 +437,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           };
         } catch (error) {
           console.error('Market data scraping error:', error);
-          
+
           // Fallback to mock market data
           const mockMarketData = {
             medianPrice: 425000,
@@ -487,7 +488,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           const agentUrl = `https://www.zillow.com/${location.toLowerCase().replace(/\s+/g, "-")}/real-estate-agents/`;
 
           const tinyFishUrl = process.env.TINYFISH_API_URL || 'https://api.tinyfish.io/v1/scrape';
-          
+
           const response = await fetch(tinyFishUrl, {
             method: 'POST',
             headers: {
@@ -508,7 +509,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           }
 
           const data = await response.json();
-          
+
           return {
             content: [
               {
@@ -525,7 +526,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           };
         } catch (error) {
           console.error('Agent data scraping error:', error);
-          
+
           // Fallback to mock agent data
           const mockAgents = [
             {
@@ -543,7 +544,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
             },
             {
               id: "2",
-              name: "Sarah Johnson", 
+              name: "Sarah Johnson",
               brokerage: "Capital City Properties",
               phone: "(512) 555-0456",
               email: "sarah@capitalcity.com",
@@ -556,7 +557,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
             }
           ];
 
-          const filteredAgents = specialty 
+          const filteredAgents = specialty
             ? mockAgents.filter(agent => agent.specialties.includes(specialty))
             : mockAgents;
 
