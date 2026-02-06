@@ -1,12 +1,12 @@
-// @ts-nocheck - Type issues pending (Phase 2)
+// @ts-nocheck - Integration service interfaces need alignment (Phase 3)
 /**
  * Unified Database Manager for Phase 6
  * Combines Neon PostgreSQL and Supabase for complete database solution
  */
 
-import { NeonIntegrationService } from './neon-integration.service';
-import { SupabaseIntegrationService } from './supabase-integration.service';
-import { Logger } from '../utils/logger';
+import { NeonIntegrationService } from './neon-integration.service.js';
+import { SupabaseIntegrationService } from './supabase-integration.service.js';
+import { Logger } from '../utils/logger.js';
 
 export interface DatabaseConfig {
   neon: {
@@ -99,7 +99,7 @@ export class UnifiedDatabaseManager {
   constructor(config: DatabaseConfig) {
     this.config = config;
     this.logger = new Logger('UnifiedDatabase', true);
-    
+
     this.neon = new NeonIntegrationService({
       connectionString: config.neon.connectionString,
       pooledConnectionString: config.neon.pooledConnectionString,
@@ -121,7 +121,7 @@ export class UnifiedDatabaseManager {
     if (this.isInitialized) return;
 
     this.logger.info('Initializing unified database manager...');
-    
+
     try {
       // Initialize both database systems
       await Promise.all([
@@ -185,11 +185,11 @@ export class UnifiedDatabaseManager {
   // Lead operations - unified interface
   async createLead(lead: Omit<LeadData, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
     this.ensureInitialized();
-    
+
     try {
       // Create in Neon (primary storage)
       const neonId = await this.neon.createLead(lead);
-      
+
       // Create in Supabase (for real-time and auth)
       const supabaseResult = await this.supabase.createLead({
         ...lead,
@@ -212,7 +212,7 @@ export class UnifiedDatabaseManager {
 
   async getLead(id: string): Promise<LeadData | null> {
     this.ensureInitialized();
-    
+
     try {
       // Try Neon first (primary source)
       const neonLead = await this.neon.getLead(id);
@@ -223,7 +223,7 @@ export class UnifiedDatabaseManager {
       // Fallback to Supabase
       const supabaseResult = await this.supabase.getLeads({ limit: 1 });
       const supabaseLead = supabaseResult.data.find(lead => lead.id === id);
-      
+
       return supabaseLead || null;
     } catch (error) {
       this.logger.error('Failed to get lead', error);
@@ -233,11 +233,11 @@ export class UnifiedDatabaseManager {
 
   async updateLead(id: string, updates: Partial<LeadData>): Promise<boolean> {
     this.ensureInitialized();
-    
+
     try {
       // Update in Neon
       const neonSuccess = await this.neon.updateLead(id, updates);
-      
+
       // Update in Supabase
       const supabaseResult = await this.supabase.updateLead(id, {
         ...updates,
@@ -266,7 +266,7 @@ export class UnifiedDatabaseManager {
     offset?: number;
   }): Promise<{ leads: LeadData[]; total: number }> {
     this.ensureInitialized();
-    
+
     try {
       // Use Supabase for advanced search (better text search)
       const supabaseResult = await this.supabase.searchLeads({
@@ -291,11 +291,11 @@ export class UnifiedDatabaseManager {
   // Approval operations
   async createApproval(approval: Omit<ApprovalData, 'id' | 'created_at'>): Promise<string> {
     this.ensureInitialized();
-    
+
     try {
       // Create in Neon
       const neonId = await this.neon.createApproval(approval);
-      
+
       // Create in Supabase for real-time
       const supabaseResult = await this.supabase.createApproval({
         ...approval,
@@ -317,7 +317,7 @@ export class UnifiedDatabaseManager {
 
   async getPendingApprovals(): Promise<ApprovalData[]> {
     this.ensureInitialized();
-    
+
     try {
       const result = await this.supabase.getPendingApprovals();
       return result.data;
@@ -329,11 +329,11 @@ export class UnifiedDatabaseManager {
 
   async updateApprovalStatus(id: string, status: 'approved' | 'rejected', reviewedBy: string): Promise<boolean> {
     this.ensureInitialized();
-    
+
     try {
       // Update in Neon
       const neonSuccess = await this.neon.updateApprovalStatus(id, status, reviewedBy);
-      
+
       // Update in Supabase for real-time
       const supabaseResult = await this.supabase.updateApprovalStatus(id, status, reviewedBy);
 
@@ -352,11 +352,11 @@ export class UnifiedDatabaseManager {
   // Event operations
   async createEvent(event: Omit<EventData, 'id' | 'timestamp'>): Promise<string> {
     this.ensureInitialized();
-    
+
     try {
       // Create in Neon
       const neonId = await this.neon.createEvent(event);
-      
+
       // Create in Supabase for real-time
       const supabaseResult = await this.supabase.createEvent({
         ...event,
@@ -377,7 +377,7 @@ export class UnifiedDatabaseManager {
 
   async getLeadEvents(leadId: string, limit: number = 50): Promise<EventData[]> {
     this.ensureInitialized();
-    
+
     try {
       const result = await this.supabase.getLeadEvents(leadId, limit);
       return result.data;
@@ -390,11 +390,11 @@ export class UnifiedDatabaseManager {
   // Agent operations
   async createAgent(agent: Omit<AgentData, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
     this.ensureInitialized();
-    
+
     try {
       // Create in Neon
       const neonId = await this.neon.createAgent(agent);
-      
+
       // Create in Supabase
       await this.supabase.signUpAgent(agent.email, 'temp-password', {
         name: agent.name,
@@ -413,7 +413,7 @@ export class UnifiedDatabaseManager {
 
   async getAgentByEmail(email: string): Promise<AgentData | null> {
     this.ensureInitialized();
-    
+
     try {
       const neonAgent = await this.neon.getAgentByEmail(email);
       return neonAgent;
@@ -434,11 +434,11 @@ export class UnifiedDatabaseManager {
     leadsBySource: Record<string, number>;
   }> {
     this.ensureInitialized();
-    
+
     try {
       // Get metrics from Supabase (real-time dashboard)
       const supabaseMetrics = await this.supabase.getDashboardMetrics(agentId);
-      
+
       // Get additional analytics from Neon
       const neonMetrics = await this.neon.getLeadMetrics('week');
 
@@ -464,15 +464,15 @@ export class UnifiedDatabaseManager {
     events: any[];
   }): Promise<{ migrated: number; errors: string[] }> {
     this.ensureInitialized();
-    
+
     try {
       // Migrate to Neon (primary storage)
       const neonResult = await this.neon.migrateFromCSV(csvData);
-      
+
       // After successful migration to Neon, sync to Supabase
       if (neonResult.migrated > 0 && neonResult.errors.length === 0) {
         this.logger.info('CSV migration successful, syncing to Supabase...');
-        
+
         // Sync leads to Supabase in batches
         for (const lead of csvData.leads) {
           try {
@@ -497,17 +497,17 @@ export class UnifiedDatabaseManager {
   // Storage operations (Supabase only)
   async uploadPropertyImage(propertyId: string, file: File): Promise<{ url: string; error: any }> {
     this.ensureInitialized();
-    
+
     try {
       const fileName = `property-${propertyId}-${Date.now()}`;
       const { data, error } = await this.supabase.uploadFile('property-images', fileName, file);
-      
+
       if (error) {
         throw error;
       }
 
       const publicUrl = this.supabase.getPublicUrl('property-images', fileName);
-      
+
       return { url: publicUrl, error: null };
     } catch (error) {
       this.logger.error('Failed to upload property image', error);
@@ -517,17 +517,17 @@ export class UnifiedDatabaseManager {
 
   async uploadDocument(documentType: string, file: File): Promise<{ url: string; error: any }> {
     this.ensureInitialized();
-    
+
     try {
       const fileName = `${documentType}-${Date.now()}`;
       const { data, error } = await this.supabase.uploadFile('documents', fileName, file);
-      
+
       if (error) {
         throw error;
       }
 
       const publicUrl = this.supabase.getPublicUrl('documents', fileName);
-      
+
       return { url: publicUrl, error: null };
     } catch (error) {
       this.logger.error('Failed to upload document', error);
@@ -544,12 +544,12 @@ export class UnifiedDatabaseManager {
     try {
       // Test Neon connection
       const neonHealthy = await this.testNeonConnection();
-      
+
       // Test Supabase connection
       const supabaseHealthy = await this.testSupabaseConnection();
-      
-      const overall = neonHealthy && supabaseHealthy ? 'healthy' : 
-                     neonHealthy || supabaseHealthy ? 'degraded' : 'unhealthy';
+
+      const overall = neonHealthy && supabaseHealthy ? 'healthy' :
+        neonHealthy || supabaseHealthy ? 'degraded' : 'unhealthy';
 
       return {
         neon: neonHealthy ? 'healthy' : 'unhealthy',
@@ -599,12 +599,12 @@ export class UnifiedDatabaseManager {
   // Cleanup
   async cleanup(): Promise<void> {
     this.logger.info('Cleaning up unified database manager...');
-    
+
     try {
       await this.supabase.cleanup();
       await this.neon.close();
       this.isInitialized = false;
-      
+
       this.logger.info('Unified database manager cleaned up successfully');
     } catch (error) {
       this.logger.error('Failed to cleanup database manager', error);

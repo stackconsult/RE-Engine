@@ -1,4 +1,4 @@
-// @ts-nocheck - Supabase SDK/Type migration pending (Phase 2)
+// @ts-nocheck - Supabase SDK query builder types need alignment (Phase 3)
 /**
  * Supabase Adapter - Production-ready Supabase operations
  * Follows RE Engine safety invariants and production rules
@@ -53,7 +53,7 @@ export class SupabaseAdapter {
   }
 
   async read<T>(
-    table: keyof Database['public']['Tables'], 
+    table: keyof Database['public']['Tables'],
     filters?: FilterOptions,
     options?: {
       limit?: number;
@@ -103,24 +103,24 @@ export class SupabaseAdapter {
         return { success: false, records: [], error: result.error.message };
       }
 
-      logSystemEvent('supabase-adapter-read-success', 'info', { 
-        table, 
-        count: result.data?.length || 0 
+      logSystemEvent('supabase-adapter-read-success', 'info', {
+        table,
+        count: result.data?.length || 0
       });
 
       return { success: true, records: (result.data || []) as T[] };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-read-error', { table });
-      return { 
-        success: false, 
-        records: [], 
+      return {
+        success: false,
+        records: [],
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   async write<T>(
-    table: keyof Database['public']['Tables'], 
+    table: keyof Database['public']['Tables'],
     records: Partial<T>[]
   ): Promise<WriteResult> {
     try {
@@ -133,24 +133,24 @@ export class SupabaseAdapter {
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
-      logSystemEvent('supabase-adapter-write-success', 'info', { 
-        table, 
-        count: records.length 
+      logSystemEvent('supabase-adapter-write-success', 'info', {
+        table,
+        count: records.length
       });
 
       return { success: true, recordsWritten: data?.length || records.length };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-write-error', { table });
-      return { 
-        success: false, 
-        recordsWritten: 0, 
+      return {
+        success: false,
+        recordsWritten: 0,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   async update<T>(
-    table: keyof Database['public']['Tables'], 
+    table: keyof Database['public']['Tables'],
     filters: FilterOptions,
     updates: Partial<T>
   ): Promise<WriteResult> {
@@ -169,24 +169,24 @@ export class SupabaseAdapter {
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
-      logSystemEvent('supabase-adapter-update-success', 'info', { 
-        table, 
-        count: data?.length || 0 
+      logSystemEvent('supabase-adapter-update-success', 'info', {
+        table,
+        count: data?.length || 0
       });
 
       return { success: true, recordsWritten: data?.length || 0 };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-update-error', { table });
-      return { 
-        success: false, 
-        recordsWritten: 0, 
+      return {
+        success: false,
+        recordsWritten: 0,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   async delete(
-    table: keyof Database['public']['Tables'], 
+    table: keyof Database['public']['Tables'],
     filters: FilterOptions
   ): Promise<WriteResult> {
     try {
@@ -204,25 +204,25 @@ export class SupabaseAdapter {
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
-      logSystemEvent('supabase-adapter-delete-success', 'info', { 
-        table, 
-        count: data?.length || 0 
+      logSystemEvent('supabase-adapter-delete-success', 'info', {
+        table,
+        count: data?.length || 0
       });
 
       return { success: true, recordsWritten: data?.length || 0 };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-delete-error', { table });
-      return { 
-        success: false, 
-        recordsWritten: 0, 
+      return {
+        success: false,
+        recordsWritten: 0,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   async upsert<T>(
-    table: keyof Database['public']['Tables'], 
-    records: Partial<T>[], 
+    table: keyof Database['public']['Tables'],
+    records: Partial<T>[],
     onConflict?: string
   ): Promise<WriteResult> {
     try {
@@ -239,24 +239,24 @@ export class SupabaseAdapter {
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
-      logSystemEvent('supabase-adapter-upsert-success', 'info', { 
-        table, 
-        count: records.length 
+      logSystemEvent('supabase-adapter-upsert-success', 'info', {
+        table,
+        count: records.length
       });
 
       return { success: true, recordsWritten: data?.length || records.length };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-upsert-error', { table });
-      return { 
-        success: false, 
-        recordsWritten: 0, 
+      return {
+        success: false,
+        recordsWritten: 0,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   async count(
-    table: keyof Database['public']['Tables'], 
+    table: keyof Database['public']['Tables'],
     filters?: FilterOptions
   ): Promise<{ success: boolean; count: number; error?: string }> {
     try {
@@ -277,16 +277,16 @@ export class SupabaseAdapter {
       return { success: true, count: count || 0 };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-count-error', { table });
-      return { 
-        success: false, 
-        count: 0, 
+      return {
+        success: false,
+        count: 0,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   async exists(
-    table: keyof Database['public']['Tables'], 
+    table: keyof Database['public']['Tables'],
     filters: FilterOptions
   ): Promise<boolean> {
     try {
@@ -312,10 +312,10 @@ export class SupabaseAdapter {
     const subscription = this.client
       .channel(`${table}-changes`)
       .on('postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: table as string 
+        {
+          event: '*',
+          schema: 'public',
+          table: table as string
         },
         callback
       )
@@ -351,15 +351,15 @@ export class SupabaseAdapter {
       return { success: true, data: results as T };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-transaction-failed');
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : String(error)
       };
     }
   }
 
   private applyFilters(
-    query: any, 
+    query: any,
     filters: FilterOptions
   ): any {
     // Equality filters
