@@ -1,4 +1,4 @@
-// @ts-nocheck - Express Request.user type conflict needs module augmentation (Phase 3)
+// Phase 3 Strict
 /**
  * Authentication Middleware for Web Dashboard
  * JWT token verification and user session management
@@ -159,4 +159,5 @@ export class AuthMiddleware {
         await this.authService.close();
     }
 }
+export const authenticateToken = new AuthMiddleware().authenticate();
 //# sourceMappingURL=auth.middleware.js.map

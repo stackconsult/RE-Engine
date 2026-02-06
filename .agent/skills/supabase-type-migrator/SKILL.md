@@ -3,28 +3,26 @@ name: supabase-type-migrator
 description: Regenerate and align Supabase database types
 ---
 
+
 # Supabase Type Migration Skill
 
 Refactors database integration to use strict, auto-generated Supabase types, eliminating `never` inference errors.
 
-## Steps
+## Workflow
+Follow the `.agent/workflows/supabase-type-migration.md` workflow.
 
-1.  **Regenerate Types**:
-    -   Run `npm run update-types` (or `supabase gen types typescript --project-id ...`).
-    -   Verify output in `src/database/supabase.types.ts` (or similar).
+## Key Concepts
 
-2.  **Analyze Mismatches**:
-    -   Identify "Insert" and "Update" type usage where optional fields cause `never` inference.
-    -   This happen when a Table type expects all columns but the client provides a subset (relying on DB defaults).
+### Wrappers
+We use wrapper types to simplify access to the complex generated `Database` interface:
+```typescript
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+export type InsertDto<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
+export type UpdateDto<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+```
 
-3.  **Create Utility Types**:
-    -   Define helper types in `src/shared/types.ts` or `database/types.ts`:
-        ```typescript
-        type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-        type InsertDto<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
-        type UpdateDto<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
-        ```
+### Handling `never`
+The generated types might assign `never` to fields that are optional in the DB.
+1. **Wrapper Cast**: `as unknown as InsertDto<'table'>` - Preferred.
+2. **Builder Cast**: `(client.from('table') as any).update(...)` - Use when the method signature itself forbids arguments (e.g., `update(values: never)`).
 
-4.  **Refactor Services**:
-    -   In `supabase-integration.service.ts`, explicitly cast payloads to `InsertDto<'table_name'>`.
-    -   Remove `@ts-nocheck` once errors clear.

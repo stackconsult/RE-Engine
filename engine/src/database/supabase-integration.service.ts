@@ -1,11 +1,13 @@
-// @ts-nocheck - Logger API migration pending (Phase 2)
+
 /**
  * Supabase Integration Service
  * Complete integration with RE Engine operations and storage
  */
 
+import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseClientManager, getSupabaseClient, getSupabaseServiceClient } from './supabase-client-enhanced.js';
 import { Database } from './supabase.types.js';
+import { InsertDto, UpdateDto } from './db-types.js';
 import { logSystemEvent, logError } from '../observability/logger.js';
 import { DomainLead, DomainApproval } from '../shared/types.js';
 
@@ -44,7 +46,7 @@ export interface RealtimeSubscription {
 export class SupabaseIntegrationService {
   private manager: SupabaseClientManager;
   private config: SupabaseIntegrationConfig;
-  private subscriptions: Map<string, RealtimeSubscription> = new Map();
+  private subscriptions: Map<string, { subscription: RealtimeSubscription; channel: RealtimeChannel }> = new Map();
   private isInitialized = false;
 
   constructor(config: SupabaseIntegrationConfig) {
@@ -83,7 +85,7 @@ export class SupabaseIntegrationService {
       });
 
     } catch (error) {
-      logError('Failed to initialize Supabase integration', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to initialize Supabase integration');
       throw error;
     }
   }
@@ -95,13 +97,10 @@ export class SupabaseIntegrationService {
     try {
       const { data, error } = await client
         .from('leads')
-        .insert({
-          ...lead,
-          lead_id: crypto.randomUUID(),
-          created_at: new Date().toISOString()
-        })
+        .insert(lead as any)
+
         .select()
-        .single();
+        .single() as unknown as { data: Database['public']['Tables']['leads']['Row'] | null; error: any };
 
       if (error) throw error;
       if (!data) throw new Error('Failed to create lead');
@@ -110,7 +109,7 @@ export class SupabaseIntegrationService {
       return data;
 
     } catch (error) {
-      logError('Failed to create lead', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to create lead');
       throw error;
     }
   }
@@ -119,15 +118,12 @@ export class SupabaseIntegrationService {
     const client = getSupabaseClient();
 
     try {
-      const { data, error } = await client
-        .from('leads')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+      const { data, error } = await (client
+        .from('leads') as any)
+        .update(updates)
         .eq('lead_id', leadId)
         .select()
-        .single();
+        .single() as unknown as { data: Database['public']['Tables']['leads']['Row'] | null; error: any };
 
       if (error) throw error;
       if (!data) throw new Error('Lead not found');
@@ -136,7 +132,7 @@ export class SupabaseIntegrationService {
       return data;
 
     } catch (error) {
-      logError('Failed to update lead', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to update lead');
       throw error;
     }
   }
@@ -158,7 +154,7 @@ export class SupabaseIntegrationService {
       return data;
 
     } catch (error) {
-      logError('Failed to get lead', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to get lead');
       throw error;
     }
   }
@@ -197,7 +193,7 @@ export class SupabaseIntegrationService {
       return data || [];
 
     } catch (error) {
-      logError('Failed to list leads', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to list leads');
       throw error;
     }
   }
@@ -209,22 +205,20 @@ export class SupabaseIntegrationService {
     try {
       const { data, error } = await client
         .from('approvals')
-        .insert({
-          ...approval,
-          approval_id: crypto.randomUUID(),
-          ts_created: new Date().toISOString()
-        })
+        .insert(approval as any)
         .select()
-        .single();
+        .single() as unknown as { data: Database['public']['Tables']['approvals']['Row'] | null; error: any };
 
       if (error) throw error;
       if (!data) throw new Error('Failed to create approval');
 
-      logSystemEvent('approval_created', 'info', { approval_id: data.approval_id });
+      logSystemEvent('approval_created', 'info', {
+        approval_id: data.approval_id
+      });
       return data;
 
     } catch (error) {
-      logError('Failed to create approval', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to create approval');
       throw error;
     }
   }
@@ -233,12 +227,12 @@ export class SupabaseIntegrationService {
     const client = getSupabaseClient();
 
     try {
-      const { data, error } = await client
-        .from('approvals')
+      const { data, error } = await (client
+        .from('approvals') as any)
         .update(updates)
         .eq('approval_id', approvalId)
         .select()
-        .single();
+        .single() as unknown as { data: Database['public']['Tables']['approvals']['Row'] | null; error: any };
 
       if (error) throw error;
       if (!data) throw new Error('Approval not found');
@@ -247,7 +241,7 @@ export class SupabaseIntegrationService {
       return data;
 
     } catch (error) {
-      logError('Failed to update approval', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to update approval');
       throw error;
     }
   }
@@ -269,7 +263,7 @@ export class SupabaseIntegrationService {
       return data;
 
     } catch (error) {
-      logError('Failed to get approval', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to get approval');
       throw error;
     }
   }
@@ -307,7 +301,7 @@ export class SupabaseIntegrationService {
       return data || [];
 
     } catch (error) {
-      logError('Failed to list approvals', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to list approvals');
       throw error;
     }
   }
@@ -336,7 +330,7 @@ export class SupabaseIntegrationService {
         )
         .subscribe();
 
-      this.subscriptions.set(subscriptionId, subscription);
+      this.subscriptions.set(subscriptionId, { subscription, channel });
 
       logSystemEvent('realtime_subscription_created', 'info', {
         subscriptionId,
@@ -347,25 +341,23 @@ export class SupabaseIntegrationService {
       return subscriptionId;
 
     } catch (error) {
-      logError('Failed to create realtime subscription', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to create realtime subscription');
       throw error;
     }
   }
 
   async unsubscribeFromTable(subscriptionId: string): Promise<void> {
-    const subscription = this.subscriptions.get(subscriptionId);
-    if (!subscription) return;
+    const entry = this.subscriptions.get(subscriptionId);
+    if (!entry) return;
 
     try {
-      const client = getSupabaseClient();
-      await client.removeChannel(subscriptionId);
-
+      await entry.channel.unsubscribe();
       this.subscriptions.delete(subscriptionId);
 
       logSystemEvent('realtime_subscription_removed', 'info', { subscriptionId });
 
     } catch (error) {
-      logError('Failed to remove realtime subscription', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to remove realtime subscription');
       throw error;
     }
   }
@@ -398,12 +390,12 @@ export class SupabaseIntegrationService {
       return result;
 
     } catch (error) {
-      logError('Failed to upload file', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to upload file');
       throw error;
     }
   }
 
-  async downloadFile(bucket: string, path: string): Promise<{ data: ArrayBuffer | null; error: unknown }> {
+  async downloadFile(bucket: string, path: string): Promise<{ data: Blob | null; error: unknown }> {
     if (!this.config.enableStorage) {
       throw new Error('Storage is not enabled');
     }
@@ -418,7 +410,7 @@ export class SupabaseIntegrationService {
       return result;
 
     } catch (error) {
-      logError('Failed to download file', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to download file');
       throw error;
     }
   }
@@ -454,7 +446,7 @@ export class SupabaseIntegrationService {
       };
 
     } catch (error) {
-      logError('Failed to get database stats', error as Error);
+      logError(error instanceof Error ? error : new Error(String(error)), 'Failed to get database stats');
       throw error;
     }
   }
@@ -476,7 +468,7 @@ export class SupabaseIntegrationService {
         }
 
       } catch (error) {
-        logError(`Failed to create storage bucket: ${bucket}`, error as Error);
+        logError(error instanceof Error ? error : new Error(String(error)), `Failed to create storage bucket: ${bucket}`);
       }
     }
   }
@@ -488,14 +480,14 @@ export class SupabaseIntegrationService {
         table: 'leads',
         event: '*',
         callback: async (payload) => {
-          logSystemEvent('lead_realtime_event', 'info', payload);
+          logSystemEvent('lead_realtime_event', 'info', payload as Record<string, unknown>);
         }
       },
       {
         table: 'approvals',
         event: '*',
         callback: async (payload) => {
-          logSystemEvent('approval_realtime_event', 'info', payload);
+          logSystemEvent('approval_realtime_event', 'info', payload as Record<string, unknown>);
         }
       }
     ];
@@ -504,7 +496,7 @@ export class SupabaseIntegrationService {
       try {
         await this.subscribeToTable(subscription);
       } catch (error) {
-        logError('Failed to setup default realtime subscription', error as Error);
+        logError(error instanceof Error ? error : new Error(String(error)), 'Failed to setup default realtime subscription');
       }
     }
   }
