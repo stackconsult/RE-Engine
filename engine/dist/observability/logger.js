@@ -1,9 +1,11 @@
 import pino from "pino";
 import path from "path";
 import { hostname } from "os";
+import { ConfigService } from "../config/config.service.js";
 // Create a production-ready logger configuration
-const isProduction = process.env.NODE_ENV === 'production';
-const logLevel = process.env.LOG_LEVEL || 'info';
+const config = ConfigService.getInstance();
+const isProduction = config.get('NODE_ENV') === 'production';
+const logLevel = config.get('LOG_LEVEL') || 'info';
 // Base logger configuration
 const baseConfig = {
     level: logLevel,

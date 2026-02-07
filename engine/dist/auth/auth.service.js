@@ -5,12 +5,13 @@
 import * as jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getDatabase } from '../database/index.js';
+import { ConfigService } from '../config/config.service.js';
 export class AuthService {
     db = getDatabase();
     jwtSecret;
     tokenExpiry;
     constructor() {
-        this.jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+        this.jwtSecret = ConfigService.getInstance().get('JWT_SECRET');
         this.tokenExpiry = '24h';
     }
     async initialize() {
