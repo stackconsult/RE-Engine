@@ -15,6 +15,45 @@ export interface NeonConfig {
 }
 
 export interface DatabaseSchema {
+  contacts: {
+    id: string;
+    channel: string;
+    identifier: string;
+    display_name: string;
+    verified: boolean;
+    created_at: Date;
+    updated_at: Date;
+    metadata: Record<string, any>;
+  };
+  icp_profiles: {
+    id: string;
+    name: string;
+    description: string;
+    criteria_locations: string[];
+    criteria_investment: Record<string, any>;
+    criteria_professional: Record<string, any>;
+    criteria_behavior: Record<string, any>;
+    criteria_platforms: string[];
+    settings_maxLeadsPerDay: number;
+    settings_discoveryFrequency: string;
+    settings_confidenceThreshold: number;
+    settings_excludeDuplicates: boolean;
+    settings_enrichmentEnabled: boolean;
+    created_at: Date;
+    updated_at: Date;
+  };
+  identities: {
+    id: string;
+    platform: string;
+    profile_url: string;
+    auth_status: string;
+    cookies: any;
+    credentials: any;
+    last_used: Date;
+    created_at: Date;
+    updated_at: Date;
+    metadata: Record<string, any>;
+  };
   leads: {
     id: string;
     first_name: string;
@@ -46,17 +85,19 @@ export interface DatabaseSchema {
     reviewed_by: string;
     reviewed_at: Date;
     created_at: Date;
+    rejection_reason?: string;
     metadata: Record<string, any>;
   };
   events: {
     id: string;
-    lead_id: string;
-    type: 'inbound' | 'outbound' | 'internal';
-    channel: string;
+    lead_id?: string;
+    type: string;
+    source: string;
     content: string;
-    direction: 'in' | 'out';
+    data: any;
+    direction?: 'in' | 'out';
     timestamp: Date;
-    agent_id: string;
+    agent_id?: string;
     metadata: Record<string, any>;
   };
   agents: {
@@ -124,6 +165,51 @@ export class NeonIntegrationService {
     this.logger.info('Creating database schema...');
 
     const schema = `
+      -- Contacts table
+      CREATE TABLE IF NOT EXISTS contacts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        channel VARCHAR(50) NOT NULL,
+        identifier VARCHAR(255) NOT NULL,
+        display_name VARCHAR(255),
+        verified BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        metadata JSONB DEFAULT '{}'
+      );
+
+      -- ICP Profiles table
+      CREATE TABLE IF NOT EXISTS icp_profiles (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(200) NOT NULL,
+        description TEXT,
+        criteria_locations TEXT[],
+        criteria_investment JSONB DEFAULT '{}',
+        criteria_professional JSONB DEFAULT '{}',
+        criteria_behavior JSONB DEFAULT '{}',
+        criteria_platforms TEXT[],
+        settings_maxLeadsPerDay INTEGER DEFAULT 10,
+        settings_discoveryFrequency VARCHAR(50) DEFAULT 'daily',
+        settings_confidenceThreshold DECIMAL(3,2) DEFAULT 0.70,
+        settings_excludeDuplicates BOOLEAN DEFAULT TRUE,
+        settings_enrichmentEnabled BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+
+      -- Identities table
+      CREATE TABLE IF NOT EXISTS identities (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        platform VARCHAR(50) NOT NULL,
+        profile_url TEXT,
+        auth_status VARCHAR(50) DEFAULT 'unauthenticated',
+        cookies JSONB DEFAULT '{}',
+        credentials JSONB DEFAULT '{}',
+        last_used TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        metadata JSONB DEFAULT '{}'
+      );
+
       -- Leads table
       CREATE TABLE IF NOT EXISTS leads (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -158,17 +244,19 @@ export class NeonIntegrationService {
         reviewed_by VARCHAR(100),
         reviewed_at TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        rejection_reason TEXT,
         metadata JSONB DEFAULT '{}'
       );
 
       -- Events table
       CREATE TABLE IF NOT EXISTS events (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-        type VARCHAR(20) NOT NULL,
-        channel VARCHAR(50) NOT NULL,
+        lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+        type VARCHAR(50) NOT NULL,
+        source VARCHAR(100) NOT NULL,
         content TEXT NOT NULL,
-        direction VARCHAR(3) NOT NULL,
+        data JSONB DEFAULT '{}',
+        direction VARCHAR(3),
         timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         agent_id UUID REFERENCES agents(id),
         metadata JSONB DEFAULT '{}'
@@ -199,6 +287,8 @@ export class NeonIntegrationService {
       CREATE INDEX IF NOT EXISTS idx_events_lead_id ON events(lead_id);
       CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
       CREATE INDEX IF NOT EXISTS idx_agents_email ON agents(email);
+      CREATE INDEX IF NOT EXISTS idx_contacts_identifier ON contacts(identifier);
+      CREATE INDEX IF NOT EXISTS idx_identities_platform ON identities(platform);
 
       -- Triggers for updated_at
       CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -209,11 +299,29 @@ export class NeonIntegrationService {
       END;
       $$ language 'plpgsql';
 
-      CREATE TRIGGER update_leads_updated_at BEFORE UPDATE ON leads
-        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-      CREATE TRIGGER update_agents_updated_at BEFORE UPDATE ON agents
-        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+      DO $$ 
+      BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_leads_updated_at') THEN
+              CREATE TRIGGER update_leads_updated_at BEFORE UPDATE ON leads
+                FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_agents_updated_at') THEN
+              CREATE TRIGGER update_agents_updated_at BEFORE UPDATE ON agents
+                FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_contacts_updated_at') THEN
+              CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON contacts
+                FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_icp_profiles_updated_at') THEN
+              CREATE TRIGGER update_icp_profiles_updated_at BEFORE UPDATE ON icp_profiles
+                FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_identities_updated_at') THEN
+              CREATE TRIGGER update_identities_updated_at BEFORE UPDATE ON identities
+                FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+          END IF;
+      END $$;
     `;
 
     await this.pool.query(schema);
@@ -307,18 +415,18 @@ export class NeonIntegrationService {
   }
 
   // Approval operations
-  async createApproval(approval: Omit<DatabaseSchema['approvals'], 'id' | 'created_at'>): Promise<string> {
+  async createApproval(approval: Omit<DatabaseSchema['approvals'], 'id' | 'created_at' | 'updated_at'>): Promise<string> {
     const query = `
       INSERT INTO approvals (lead_id, type, content, channel, status, ai_score, 
-                           reviewed_by, reviewed_at, metadata)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                           reviewed_by, reviewed_at, rejection_reason, metadata)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
     `;
 
     const values = [
       approval.lead_id, approval.type, approval.content, approval.channel,
       approval.status, approval.ai_score, approval.reviewed_by,
-      approval.reviewed_at, JSON.stringify(approval.metadata)
+      approval.reviewed_at, approval.rejection_reason, JSON.stringify(approval.metadata)
     ];
 
     const result = await this.pool.query(query, values);
@@ -350,16 +458,17 @@ export class NeonIntegrationService {
   }
 
   // Event operations
-  async createEvent(event: Omit<DatabaseSchema['events'], 'id' | 'timestamp'>): Promise<string> {
+  async createEvent(event: Omit<DatabaseSchema['events'], 'id'>): Promise<string> {
     const query = `
-      INSERT INTO events (lead_id, type, channel, content, direction, agent_id, metadata)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO events (lead_id, type, source, content, data, direction, timestamp, agent_id, metadata)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id
     `;
 
     const values = [
-      event.lead_id, event.type, event.channel, event.content,
-      event.direction, event.agent_id, JSON.stringify(event.metadata)
+      event.lead_id, event.type, event.source, event.content,
+      JSON.stringify(event.data), event.direction, event.timestamp,
+      event.agent_id, JSON.stringify(event.metadata)
     ];
 
     const result = await this.pool.query(query, values);
@@ -376,6 +485,65 @@ export class NeonIntegrationService {
 
     const result = await this.pool.query(query, [leadId, limit]);
     return result.rows;
+  }
+  // Contact operations
+  async createContact(contact: Omit<DatabaseSchema['contacts'], 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+    const query = `
+      INSERT INTO contacts (channel, identifier, display_name, verified, metadata)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `;
+
+    const values = [
+      contact.channel, contact.identifier, contact.display_name,
+      contact.verified, JSON.stringify(contact.metadata)
+    ];
+
+    const result = await this.pool.query(query, values);
+    return result.rows[0].id;
+  }
+
+  // ICP Profile operations
+  async createICPProfile(profile: Omit<DatabaseSchema['icp_profiles'], 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+    const query = `
+      INSERT INTO icp_profiles (name, description, criteria_locations, criteria_investment, 
+                              criteria_professional, criteria_behavior, criteria_platforms,
+                              settings_maxLeadsPerDay, settings_discoveryFrequency, 
+                              settings_confidenceThreshold, settings_excludeDuplicates, 
+                              settings_enrichmentEnabled)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING id
+    `;
+
+    const values = [
+      profile.name, profile.description, profile.criteria_locations,
+      JSON.stringify(profile.criteria_investment), JSON.stringify(profile.criteria_professional),
+      JSON.stringify(profile.criteria_behavior), profile.criteria_platforms,
+      profile.settings_maxLeadsPerDay, profile.settings_discoveryFrequency,
+      profile.settings_confidenceThreshold, profile.settings_excludeDuplicates,
+      profile.settings_enrichmentEnabled
+    ];
+
+    const result = await this.pool.query(query, values);
+    return result.rows[0].id;
+  }
+
+  // Identity operations
+  async createIdentity(identity: Omit<DatabaseSchema['identities'], 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+    const query = `
+      INSERT INTO identities (platform, profile_url, auth_status, cookies, credentials, last_used, metadata)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `;
+
+    const values = [
+      identity.platform, identity.profile_url, identity.auth_status,
+      JSON.stringify(identity.cookies), JSON.stringify(identity.credentials),
+      identity.last_used, JSON.stringify(identity.metadata)
+    ];
+
+    const result = await this.pool.query(query, values);
+    return result.rows[0].id;
   }
 
   // Agent operations
@@ -491,19 +659,85 @@ export class NeonIntegrationService {
     leads: any[];
     approvals: any[];
     events: any[];
+    contacts?: any[];
+    icp_profiles?: any[];
+    identities?: any[];
   }): Promise<{ migrated: number; errors: string[] }> {
     const errors: string[] = [];
     let migrated = 0;
 
     try {
+      // Migrate contacts
+      if (csvData.contacts) {
+        for (const contact of csvData.contacts) {
+          try {
+            await this.createContact({
+              channel: contact.channel || 'whatsapp',
+              identifier: contact.identifier || '',
+              display_name: contact.display_name || '',
+              verified: String(contact.verified).toLowerCase() === 'true',
+              metadata: contact.metadata || {}
+            });
+            migrated++;
+          } catch (error) {
+            errors.push(`Failed to migrate contact ${contact.identifier}: ${error}`);
+          }
+        }
+      }
+
+      // Migrate ICP profiles
+      if (csvData.icp_profiles) {
+        for (const profile of csvData.icp_profiles) {
+          try {
+            await this.createICPProfile({
+              name: profile.name || '',
+              description: profile.description || '',
+              criteria_locations: profile.criteria_locations || [],
+              criteria_investment: profile.criteria_investment || {},
+              criteria_professional: profile.criteria_professional || {},
+              criteria_behavior: profile.criteria_behavior || {},
+              criteria_platforms: profile.criteria_platforms || [],
+              settings_maxLeadsPerDay: parseInt(profile.settings_maxLeadsPerDay) || 10,
+              settings_discoveryFrequency: profile.settings_discoveryFrequency || 'daily',
+              settings_confidenceThreshold: parseFloat(profile.settings_confidenceThreshold) || 0.70,
+              settings_excludeDuplicates: String(profile.settings_excludeDuplicates).toLowerCase() !== 'false',
+              settings_enrichmentEnabled: String(profile.settings_enrichmentEnabled).toLowerCase() !== 'false'
+            });
+            migrated++;
+          } catch (error) {
+            errors.push(`Failed to migrate ICP profile ${profile.name}: ${error}`);
+          }
+        }
+      }
+
+      // Migrate identities
+      if (csvData.identities) {
+        for (const identity of csvData.identities) {
+          try {
+            await this.createIdentity({
+              platform: identity.platform || '',
+              profile_url: identity.profile_url || '',
+              auth_status: identity.auth_status || 'unauthenticated',
+              cookies: identity.cookies || {},
+              credentials: identity.credentials || {},
+              last_used: identity.last_used ? new Date(identity.last_used) : null,
+              metadata: identity.metadata || {}
+            });
+            migrated++;
+          } catch (error) {
+            errors.push(`Failed to migrate identity ${identity.platform}: ${error}`);
+          }
+        }
+      }
+
       // Migrate leads
       for (const lead of csvData.leads) {
         try {
           await this.createLead({
-            first_name: lead.first_name || '',
-            last_name: lead.last_name || '',
+            first_name: lead.first_name || lead.name?.split(' ')[0] || '',
+            last_name: lead.last_name || lead.name?.split(' ').slice(1).join(' ') || '',
             email: lead.email || null,
-            phone: lead.phone || null,
+            phone: lead.phone || lead.phone_e164 || null,
             property_address: lead.property_address || null,
             city: lead.city || null,
             province: lead.province || null,
@@ -518,45 +752,52 @@ export class NeonIntegrationService {
           });
           migrated++;
         } catch (error) {
-          errors.push(`Failed to migrate lead ${lead.email}: ${error}`);
+          errors.push(`Failed to migrate lead ${lead.email || lead.lead_id}: ${error}`);
         }
       }
 
       // Migrate approvals
-      for (const approval of csvData.approvals) {
-        try {
-          await this.createApproval({
-            lead_id: approval.lead_id,
-            type: approval.type || 'message',
-            content: approval.content || '',
-            channel: approval.channel || 'whatsapp',
-            status: approval.status || 'pending',
-            ai_score: parseFloat(approval.ai_score) || 0,
-            reviewed_by: approval.reviewed_by || null,
-            reviewed_at: approval.reviewed_at ? new Date(approval.reviewed_at) : null,
-            metadata: approval.metadata || {}
-          });
-          migrated++;
-        } catch (error) {
-          errors.push(`Failed to migrate approval ${approval.id}: ${error}`);
+      if (csvData.approvals) {
+        for (const approval of csvData.approvals) {
+          try {
+            await this.createApproval({
+              lead_id: approval.lead_id,
+              type: approval.type || 'message',
+              content: approval.content || approval.draft_content || '',
+              channel: approval.channel || 'whatsapp',
+              status: approval.status || 'pending',
+              ai_score: parseFloat(approval.ai_score) || 0,
+              reviewed_by: approval.reviewed_by || approval.approved_by || null,
+              reviewed_at: (approval.reviewed_at || approval.approved_at) ? new Date(approval.reviewed_at || approval.approved_at) : null,
+              rejection_reason: approval.rejection_reason || null,
+              metadata: approval.metadata || {}
+            });
+            migrated++;
+          } catch (error) {
+            errors.push(`Failed to migrate approval ${approval.id || approval.approval_id}: ${error}`);
+          }
         }
       }
 
       // Migrate events
-      for (const event of csvData.events) {
-        try {
-          await this.createEvent({
-            lead_id: event.lead_id,
-            type: event.type || 'inbound',
-            channel: event.channel || 'whatsapp',
-            content: event.content || '',
-            direction: event.direction || 'in',
-            agent_id: event.agent_id || null,
-            metadata: event.metadata || {}
-          });
-          migrated++;
-        } catch (error) {
-          errors.push(`Failed to migrate event ${event.id}: ${error}`);
+      if (csvData.events) {
+        for (const event of csvData.events) {
+          try {
+            await this.createEvent({
+              lead_id: event.lead_id || null,
+              type: event.type || event.event_type || 'inbound',
+              source: event.source || 'csv_import',
+              content: event.content || '',
+              data: event.data || {},
+              direction: event.direction || null,
+              timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+              agent_id: event.agent_id || null,
+              metadata: event.metadata || {}
+            });
+            migrated++;
+          } catch (error) {
+            errors.push(`Failed to migrate event ${event.id || event.event_id}: ${error}`);
+          }
         }
       }
 

@@ -9,6 +9,8 @@ export const ConfigSchema = z.object({
 
     // Database Configuration
     DB_TYPE: z.enum(['csv', 'postgresql', 'supabase']).default('csv'),
+    DATABASE_URL: z.string().optional(),
+    DATABASE_POOLED_URL: z.string().optional(),
     SUPABASE_URL: z.string().url().optional(),
     SUPABASE_ANON_KEY: z.string().optional(),
     SUPABASE_SERVICE_KEY: z.string().optional(),

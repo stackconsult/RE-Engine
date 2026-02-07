@@ -21,7 +21,8 @@
     "format": "prettier -w .",
     "smoke": "node --enable-source-maps dist/ops/smoke.js",
     "migrate": "node migrate.js",
-    "migrate:status": "node migrate.js status"
+    "migrate:status": "node migrate.js status",
+    "migrate:csv-to-pg": "node dist/scripts/migrate-csv-to-pg.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
