@@ -1,4 +1,3 @@
-// @ts-nocheck - Supabase SDK query builder types need alignment (Phase 3)
 /**
  * Supabase Adapter - Production-ready Supabase operations
  * Follows RE Engine safety invariants and production rules
@@ -66,14 +65,7 @@ export class SupabaseAdapter {
     }
   ): Promise<ReadResult<T>> {
     try {
-      let query = this.client.from(table);
-
-      // Apply select columns if specified
-      if (options?.select) {
-        query = query.select(options.select);
-      } else {
-        query = query.select('*');
-      }
+      let query = this.client.from(table).select(options?.select || '*');
 
       // Apply filters
       if (filters) {
@@ -126,10 +118,11 @@ export class SupabaseAdapter {
     try {
       const { data, error } = await this.client
         .from(table)
-        .insert(records);
+        .insert(records as any)
+        .select();
 
       if (error) {
-        logError(error as Error, 'supabase-adapter-write-failed', { table });
+        logError(error as any as Error, 'supabase-adapter-write-failed', { table });
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
@@ -138,7 +131,7 @@ export class SupabaseAdapter {
         count: records.length
       });
 
-      return { success: true, recordsWritten: data?.length || records.length };
+      return { success: true, recordsWritten: (data as any[])?.length || records.length };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-write-error', { table });
       return {
@@ -155,26 +148,26 @@ export class SupabaseAdapter {
     updates: Partial<T>
   ): Promise<WriteResult> {
     try {
-      let query = this.client.from(table);
+      let query = (this.client.from(table) as any).update(updates);
 
       // Apply filters
       if (filters) {
         query = this.applyFilters(query, filters);
       }
 
-      const { data, error } = await query.update(updates);
+      const { data, error } = await (query as any).select();
 
       if (error) {
-        logError(error as Error, 'supabase-adapter-update-failed', { table });
+        logError(error as any as Error, 'supabase-adapter-update-failed', { table });
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
       logSystemEvent('supabase-adapter-update-success', 'info', {
         table,
-        count: data?.length || 0
+        count: (data as any[])?.length || 0
       });
 
-      return { success: true, recordsWritten: data?.length || 0 };
+      return { success: true, recordsWritten: (data as any[])?.length || 0 };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-update-error', { table });
       return {
@@ -190,26 +183,26 @@ export class SupabaseAdapter {
     filters: FilterOptions
   ): Promise<WriteResult> {
     try {
-      let query = this.client.from(table);
+      let query = this.client.from(table).delete();
 
       // Apply filters
       if (filters) {
         query = this.applyFilters(query, filters);
       }
 
-      const { data, error } = await query.delete();
+      const { data, error } = await (query as any).select();
 
       if (error) {
-        logError(error as Error, 'supabase-adapter-delete-failed', { table });
+        logError(error as any as Error, 'supabase-adapter-delete-failed', { table });
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
       logSystemEvent('supabase-adapter-delete-success', 'info', {
         table,
-        count: data?.length || 0
+        count: (data as any[])?.length || 0
       });
 
-      return { success: true, recordsWritten: data?.length || 0 };
+      return { success: true, recordsWritten: (data as any[])?.length || 0 };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-delete-error', { table });
       return {
@@ -226,16 +219,16 @@ export class SupabaseAdapter {
     onConflict?: string
   ): Promise<WriteResult> {
     try {
-      let query = this.client.from(table).upsert(records);
+      let query = this.client.from(table).upsert(records as any);
 
       if (onConflict) {
-        query = query.onConflict(onConflict);
+        query = (query as any).onConflict(onConflict);
       }
 
-      const { data, error } = await query.select();
+      const { data, error } = await (query as any).select();
 
       if (error) {
-        logError(error as Error, 'supabase-adapter-upsert-failed', { table });
+        logError(error as any as Error, 'supabase-adapter-upsert-failed', { table });
         return { success: false, recordsWritten: 0, error: error.message };
       }
 
@@ -244,7 +237,7 @@ export class SupabaseAdapter {
         count: records.length
       });
 
-      return { success: true, recordsWritten: data?.length || records.length };
+      return { success: true, recordsWritten: (data as any[])?.length || records.length };
     } catch (error) {
       logError(error as Error, 'supabase-adapter-upsert-error', { table });
       return {
@@ -260,14 +253,14 @@ export class SupabaseAdapter {
     filters?: FilterOptions
   ): Promise<{ success: boolean; count: number; error?: string }> {
     try {
-      let query = this.client.from(table);
+      let query = this.client.from(table).select('*', { count: 'exact', head: true });
 
       // Apply filters
       if (filters) {
         query = this.applyFilters(query, filters);
       }
 
-      const { data, error, count } = await query.select('*', { count: 'exact', head: true });
+      const { data, error, count } = await query;
 
       if (error) {
         logError(error as Error, 'supabase-adapter-count-failed', { table });
@@ -311,15 +304,15 @@ export class SupabaseAdapter {
   ) {
     const subscription = this.client
       .channel(`${table}-changes`)
-      .on('postgres_changes',
+      .on('postgres_changes' as any,
         {
           event: '*',
           schema: 'public',
           table: table as string
-        },
-        callback
+        } as any,
+        callback as any
       )
-      .subscribe((status: 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'CLOSED') => {
+      .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
           logSystemEvent('supabase-adapter-subscription-active', 'info', { table });
         } else if (status === 'CHANNEL_ERROR') {

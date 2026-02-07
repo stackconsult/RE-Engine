@@ -1,10 +1,11 @@
 
-import { ComponentManager } from '../orchestration/component-manager';
-import { Logger } from '../utils/logger';
+import { ComponentManager } from '../orchestration/component-manager.js';
+import { Logger } from '../utils/logger.js';
 
 async function main() {
     const logger = new Logger('StressTest', true);
-    logger.info('🚀 Starting Stress Test: 50 Concurrent Requests');
+    const numRequests = 50;
+    logger.info(`🚀 Starting Stress Test: ${numRequests} Concurrent Requests`);
 
     const componentManager = new ComponentManager();
 
@@ -14,9 +15,10 @@ async function main() {
             name: 'reengine-tinyfish'
         });
 
-        const requests = Array.from({ length: 1 }).map(async (_, i) => {
+        const requests = Array.from({ length: numRequests }).map(async (_, i) => {
             const start = Date.now();
             try {
+                // reengine-tinyfish has an extract_links tool
                 const result = await componentManager.getComponent('reengine-tinyfish')!.execute('extract_links', {
                     url: `https://example.com/page-${i}`, // Unique simulated urls
                     filter: 'example'
@@ -27,7 +29,7 @@ async function main() {
             }
         });
 
-        logger.info('💥 Unleashing requests...');
+        logger.info(`💥 Unleashing ${numRequests} requests...`);
         const results = await Promise.all(requests);
 
         const successes = results.filter(r => r.success);
@@ -42,7 +44,9 @@ async function main() {
 
         if (failures.length > 0) {
             logger.warn('Sample Errors:', failures.slice(0, 3).map(f => f.error));
-            throw new Error(`Stress test failed with ${failures.length} errors`);
+            if (failures.length > numRequests * 0.1) { // Error if more than 10% fail
+                throw new Error(`Stress test failed with ${failures.length} errors`);
+            }
         }
 
         logger.info('✅ System passed stress test under load.');

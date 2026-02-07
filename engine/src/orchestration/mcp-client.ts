@@ -127,21 +127,25 @@ export class MCPClient {
     }
 
     private resolveDefaultArgs(): string[] {
-        // Assumption: we are running from RE-Engine/engine
-        // MCP servers are in RE-Engine/mcp/<name>/dist/index.js
-
         // Map simplified names to directory names
         const dirMap: Record<string, string> = {
             'reengine-tinyfish': 'reengine-tinyfish',
             'reengine-vertexai': 'reengine-vertexai',
-            // Add others as needed
+            'reengine-core': 'reengine-core',
+            'reengine-integration': 'reengine-integration'
         };
 
         const dirName = dirMap[this.config.name] || this.config.name;
 
-        // Construct path relative to CWD (which should be engine/)
-        // We go up one level then into mcp/
-        const scriptPath = path.resolve(process.cwd(), `../mcp/${dirName}/dist/index.js`);
+        // Construct path relative to CWD
+        // If we are in engine/, go up one level then into mcp/
+        // If we are in root, go directly into mcp/
+        let scriptPath;
+        if (process.cwd().endsWith('/engine')) {
+            scriptPath = path.resolve(process.cwd(), `../mcp/${dirName}/dist/index.js`);
+        } else {
+            scriptPath = path.resolve(process.cwd(), `mcp/${dirName}/dist/index.js`);
+        }
 
         return [scriptPath];
     }
