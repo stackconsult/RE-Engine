@@ -47,7 +47,7 @@ A revolutionary AI-infused automation system for real estate professionals. Buil
 - **Audit Trail**: Complete message history and approval records
 - **Safety Controls**: Rate limiting and content filtering
 
-## 🌟 **Phase 6: Advanced Features (Operational)**
+## 🌟 **Phase 6: Advanced Features (Upcoming)**
 
 ### 🗄️ **PostgreSQL/Neon Database Integration**
 - **Unified Database Manager**: Combines Neon PostgreSQL and Supabase for optimal performance
@@ -751,7 +751,6 @@ npm run mcp:test:tinyfish
 - [WhatsApp Integration Guide](./docs/WHATSAPPI-INTEGRATION.md) - Complete WhatsApp setup
 - [Enhancement Summary](./docs/WHATSAPPI-ENHANCEMENT-SUMMARY.md) - Feature overview
 - [Deployment Guide](./DEPLOYMENT.md) - Production deployment instructions
-- [API Documentation](./docs/API.md) - REST API reference
 
 ## 🔒 Security
 
@@ -771,7 +770,7 @@ npm run mcp:test:tinyfish
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## 🆘 Support
 
