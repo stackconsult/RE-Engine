@@ -12,6 +12,7 @@ export interface JWTPayload {
   user_id: string;
   username: string;
   role: string;
+  tenant_id: string;
   iat?: number;
   exp?: number;
 }
@@ -23,6 +24,7 @@ export interface DatabaseRow {
   password_hash: string;
   role: 'admin' | 'operator' | 'viewer';
   permissions: string[];
+  tenant_id: string;
   active: boolean;
   created_at: string;
   last_login?: string;
@@ -35,6 +37,7 @@ export interface User {
   email: string;
   role: 'admin' | 'operator' | 'viewer';
   permissions: string[];
+  tenant_id: string;
   created_at: string;
   last_login?: string;
   active: boolean;
@@ -44,6 +47,7 @@ export interface AuthToken {
   token: string;
   user: Omit<User, 'permissions'>;
   permissions: string[];
+  tenant_id: string;
   expiresAt: Date;
 }
 
@@ -72,6 +76,7 @@ export class AuthService {
         password_hash VARCHAR(255) NOT NULL,
         role VARCHAR(20) NOT NULL DEFAULT 'viewer',
         permissions JSONB DEFAULT '[]',
+        tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
         active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -89,9 +94,10 @@ export class AuthService {
       const defaultPassword = 'admin123'; // Should be changed on first login
       const passwordHash = await this.hashPassword(defaultPassword);
 
+      const defaultTenantId = '00000000-0000-0000-0000-000000000000';
       await this.db.query(
-        'INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5)',
-        ['admin', 'admin@reengine.com', passwordHash, 'admin', JSON.stringify(['*'])]
+        'INSERT INTO users (username, email, password_hash, role, permissions, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)',
+        ['admin', 'admin@reengine.com', passwordHash, 'admin', JSON.stringify(['*']), defaultTenantId]
       );
 
       console.log('Default admin user created. Username: admin, Password: admin123');
@@ -138,7 +144,8 @@ export class AuthService {
       const payload: JWTPayload = {
         user_id: user.user_id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        tenant_id: user.tenant_id
       };
 
       // @ts-expect-error - JWT types are complex, this works at runtime
@@ -155,9 +162,11 @@ export class AuthService {
           role: user.role,
           created_at: user.created_at,
           last_login: user.last_login,
-          active: user.active
+          active: user.active,
+          tenant_id: user.tenant_id
         },
         permissions: user.permissions,
+        tenant_id: user.tenant_id,
         expiresAt: new Date(decoded.exp! * 1000)
       };
 
@@ -191,9 +200,11 @@ export class AuthService {
           role: user.role,
           created_at: user.created_at,
           last_login: user.last_login,
-          active: user.active
+          active: user.active,
+          tenant_id: user.tenant_id
         },
         permissions: user.permissions,
+        tenant_id: user.tenant_id,
         expiresAt: new Date(decoded.exp! * 1000)
       };
 
@@ -209,6 +220,7 @@ export class AuthService {
     password: string;
     role: 'admin' | 'operator' | 'viewer';
     permissions?: string[];
+    tenant_id?: string;
   }): Promise<User | null> {
     try {
       const existingUser = await this.db.query(
@@ -224,8 +236,8 @@ export class AuthService {
       const permissions = userData.permissions || this.getDefaultPermissions(userData.role);
 
       const result = await this.db.query(
-        'INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [userData.username, userData.email, passwordHash, userData.role, JSON.stringify(permissions)]
+        'INSERT INTO users (username, email, password_hash, role, permissions, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [userData.username, userData.email, passwordHash, userData.role, JSON.stringify(permissions), userData.tenant_id || '00000000-0000-0000-0000-000000000000']
       ) as DatabaseRow[];
 
       return result[0] as User;

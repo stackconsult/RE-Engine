@@ -8,6 +8,7 @@ import { Router, Request, Response } from 'express';
 import { UnifiedDatabaseManager } from '../database/unified-database-manager';
 import { Logger } from '../utils/logger';
 import { authenticateToken } from '../auth/auth.middleware';
+import { multiTenancyMiddleware, requireTenant } from '../middleware/multi-tenancy.middleware';
 
 export interface MobileAPIConfig {
   enablePushNotifications: boolean;
@@ -34,6 +35,8 @@ export class MobileAPIService {
   private setupRoutes(): void {
     // Authentication middleware for all mobile endpoints
     this.router.use(authenticateToken);
+    this.router.use(multiTenancyMiddleware);
+    this.router.use(requireTenant);
 
     // Lead management endpoints
     this.router.get('/leads', this.getLeads.bind(this));
@@ -80,7 +83,8 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const { status, limit = 20, offset = 0 } = req.query;
 
-      const leads = await this.dbManager.searchLeads({
+      const tenantId = req.tenantId!;
+      const leads = await this.dbManager.searchLeads(tenantId, {
         assigned_agent: agentId,
         status: status as string,
         limit: parseInt(limit as string),
@@ -106,8 +110,8 @@ export class MobileAPIService {
     try {
       const { id } = req.params;
       const agentId = req.user?.user.user_id;
-
-      const lead = await this.dbManager.getLead(id as string);
+      const tenantId = req.tenantId!;
+      const lead = await this.dbManager.getLead(id as string, tenantId);
 
       if (!lead) {
         res.status(404).json({
@@ -145,8 +149,9 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const updates = req.body;
 
+      const tenantId = req.tenantId!;
       // Verify lead ownership
-      const lead = await this.dbManager.getLead(id as string);
+      const lead = await this.dbManager.getLead(id as string, tenantId);
       if (!lead || (lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
@@ -155,7 +160,7 @@ export class MobileAPIService {
         return;
       }
 
-      const success = await this.dbManager.updateLead(id as string, updates);
+      const success = await this.dbManager.updateLead(id as string, updates, tenantId);
 
       res.json({
         success,
@@ -175,7 +180,8 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const { query, status, city, property_type, limit = 20, offset = 0 } = req.body;
 
-      const results = await this.dbManager.searchLeads({
+      const tenantId = req.tenantId!;
+      const results = await this.dbManager.searchLeads(tenantId, {
         assigned_agent: agentId,
         search: query,
         status,
@@ -203,8 +209,9 @@ export class MobileAPIService {
   // Approval management
   private async getPendingApprovals(req: Request, res: Response): Promise<void> {
     try {
+      const tenantId = req.tenantId!;
       const agentId = req.user?.user.user_id;
-      const approvals = await this.dbManager.getPendingApprovals();
+      const approvals = await this.dbManager.getPendingApprovals(tenantId);
 
       // Filter approvals for this agent's leads
       const agentApprovals = approvals.filter(approval => {
@@ -229,9 +236,10 @@ export class MobileAPIService {
   private async approveApproval(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const tenantId = req.tenantId!;
       const reviewedBy = req.user?.user.email;
 
-      const success = await this.dbManager.updateApprovalStatus(id as string, 'approved', reviewedBy);
+      const success = await this.dbManager.updateApprovalStatus(id as string, 'approved', reviewedBy, tenantId);
 
       if (success) {
         // Trigger the approval workflow (send message, etc.)
@@ -255,9 +263,10 @@ export class MobileAPIService {
     try {
       const { id } = req.params;
       const { reason } = req.body;
+      const tenantId = req.tenantId!;
       const reviewedBy = req.user?.user.email;
 
-      const success = await this.dbManager.updateApprovalStatus(id as string, 'rejected', reviewedBy);
+      const success = await this.dbManager.updateApprovalStatus(id as string, 'rejected', reviewedBy, tenantId);
 
       if (success) {
         // Log rejection reason
@@ -268,7 +277,7 @@ export class MobileAPIService {
           content: `Approval rejected by ${reviewedBy}. Reason: ${reason}`,
           direction: 'in',
           agent_id: req.user?.user.user_id,
-        });
+        }, tenantId);
       }
 
       res.json({
@@ -311,8 +320,9 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const { limit = 50 } = req.query;
 
+      const tenantId = req.tenantId!;
       // Verify lead ownership
-      const lead = await this.dbManager.getLead(id as string);
+      const lead = await this.dbManager.getLead(id as string, tenantId);
       if (!lead || (lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
@@ -321,7 +331,7 @@ export class MobileAPIService {
         return;
       }
 
-      const events = await this.dbManager.getLeadEvents(id as string, parseInt(limit as string));
+      const events = await this.dbManager.getLeadEvents(id as string, tenantId, parseInt(limit as string));
 
       res.json({
         success: true,
@@ -342,8 +352,9 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const eventData = req.body;
 
+      const tenantId = req.tenantId!;
       // Verify lead ownership
-      const lead = await this.dbManager.getLead(eventData.lead_id);
+      const lead = await this.dbManager.getLead(eventData.lead_id, tenantId);
       if (!lead || (lead as any).assigned_agent !== agentId) {
         res.status(403).json({
           success: false,
@@ -355,7 +366,7 @@ export class MobileAPIService {
       const eventId = await this.dbManager.createEvent({
         ...eventData,
         agent_id: agentId,
-      });
+      }, tenantId);
 
       res.json({
         success: true,
@@ -375,7 +386,8 @@ export class MobileAPIService {
   private async getAgentProfile(req: Request, res: Response): Promise<void> {
     try {
       const agentId = req.user?.user.user_id;
-      const agent = await this.dbManager.getAgentByEmail(req.user?.user.email);
+      const tenantId = req.tenantId!;
+      const agent = await this.dbManager.getAgentByEmail(req.user?.user.email, tenantId);
 
       res.json({
         success: true,
@@ -431,8 +443,9 @@ export class MobileAPIService {
   private async getDashboard(req: Request, res: Response): Promise<void> {
     try {
       const agentId = req.user?.user.user_id;
-      const metrics = await this.dbManager.getDashboardMetrics(agentId);
-      const recentLeads = await this.dbManager.searchLeads({
+      const tenantId = req.tenantId!;
+      const metrics = await this.dbManager.getDashboardMetrics(tenantId);
+      const recentLeads = await this.dbManager.searchLeads(tenantId, {
         assigned_agent: agentId,
         limit: 5,
       });
@@ -477,8 +490,9 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const { lastSync } = req.query;
 
+      const tenantId = req.tenantId!;
       // Get leads updated since last sync
-      const leads = await this.dbManager.searchLeads({
+      const leads = await this.dbManager.searchLeads(tenantId, {
         assigned_agent: agentId,
         limit: 1000, // Large limit for sync
       });
@@ -522,12 +536,13 @@ export class MobileAPIService {
       const agentId = req.user?.user.user_id;
       const { events } = req.body;
 
+      const tenantId = req.tenantId!;
       // Process offline events
       for (const event of events) {
         await this.dbManager.createEvent({
           ...event,
           agent_id: agentId,
-        });
+        }, tenantId);
       }
 
       res.json({

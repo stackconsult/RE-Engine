@@ -112,7 +112,9 @@ async function runMigration() {
             identities: csvData.identities.length,
         });
 
-        const result = await unifiedDb.migrateFromCSV(csvData);
+        // TODO: Multi-tenant migration - need to specify target tenant or create tenant-specific migrations
+        const DEFAULT_TENANT_ID = 'default';
+        const result = await unifiedDb.migrateFromCSV(csvData, DEFAULT_TENANT_ID);
 
         logger.info('Migration result:', {
             migratedCount: result.migrated,

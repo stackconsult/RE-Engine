@@ -64,6 +64,7 @@ export interface Database {
           last_retry_at?: string | null;
           created_at?: never;
           updated_at?: never;
+          tenant_id?: string;
         };
       };
       leads: {
@@ -83,6 +84,7 @@ export interface Database {
           metadata: Json | null;
           last_contacted_at: string | null;
           contact_count: number | null;
+          tenant_id: string;
         };
         Insert: {
           lead_id?: never;
@@ -127,6 +129,7 @@ export interface Database {
           data: Json | null;
           timestamp: string;
           metadata: Json | null;
+          tenant_id: string;
         };
         Insert: {
           event_id?: never;
@@ -135,6 +138,7 @@ export interface Database {
           data?: Json | null;
           timestamp?: never;
           metadata?: Json | null;
+          tenant_id: string;
         };
         Update: {
           event_id?: never;
@@ -143,6 +147,7 @@ export interface Database {
           data?: Json | null;
           timestamp?: never;
           metadata?: Json | null;
+          tenant_id?: string;
         };
       };
       contacts: {
@@ -155,6 +160,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
           metadata: Json | null;
+          tenant_id: string;
         };
         Insert: {
           contact_id?: never;
@@ -189,6 +195,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
           metadata: Json | null;
+          tenant_id: string;
         };
         Insert: {
           identity_id?: never;

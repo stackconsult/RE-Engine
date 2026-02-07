@@ -144,7 +144,7 @@ export class AdvancedAnalyticsService {
   }
 
   // Lead analytics
-  async getLeadAnalytics(timeframe: 'day' | 'week' | 'month' = 'week'): Promise<LeadAnalytics> {
+  async getLeadAnalytics(tenantId: string, timeframe: 'day' | 'week' | 'month' = 'week'): Promise<LeadAnalytics> {
     const cacheKey = `lead_analytics_${timeframe}`;
 
     if (this.config.cacheEnabled) {
@@ -153,10 +153,9 @@ export class AdvancedAnalyticsService {
     }
 
     try {
-      const baseMetrics = await this.dbManager.getDashboardMetrics();
-
+      const baseMetrics = await this.dbManager.getDashboardMetrics(tenantId);
       // Get detailed analytics from database
-      const detailedMetrics = await this.getDetailedLeadMetrics(timeframe);
+      const detailedMetrics = await this.getDetailedLeadMetrics(tenantId, timeframe);
 
       const analytics: LeadAnalytics = {
         totalLeads: baseMetrics.totalLeads,
@@ -181,10 +180,10 @@ export class AdvancedAnalyticsService {
     }
   }
 
-  private async getDetailedLeadMetrics(timeframe: string): Promise<any> {
+  private async getDetailedLeadMetrics(tenantId: string, timeframe: string): Promise<any> {
     // If in PostgreSQL mode, try to get real metrics
     try {
-      const metrics = await this.dbManager.getDashboardMetrics();
+      const metrics = await this.dbManager.getDashboardMetrics(tenantId);
 
       // If we have actual leadsByStatus from the database, use it
       if (metrics.leadsByStatus && Object.keys(metrics.leadsByStatus).length > 0) {
@@ -320,7 +319,7 @@ export class AdvancedAnalyticsService {
   }
 
   // Agent analytics
-  async getAgentAnalytics(): Promise<AgentAnalytics> {
+  async getAgentAnalytics(tenantId: string): Promise<AgentAnalytics> {
     const cacheKey = 'agent_analytics';
 
     if (this.config.cacheEnabled) {
@@ -386,7 +385,7 @@ export class AdvancedAnalyticsService {
   }
 
   // System analytics
-  async getSystemAnalytics(): Promise<SystemAnalytics> {
+  async getSystemAnalytics(tenantId: string): Promise<SystemAnalytics> {
     const cacheKey = 'system_analytics';
 
     if (this.config.cacheEnabled) {
@@ -512,7 +511,7 @@ export class AdvancedAnalyticsService {
   }
 
   // Real-time dashboard data
-  async getRealtimeDashboard(): Promise<{
+  async getRealtimeDashboard(tenantId: string): Promise<{
     leadAnalytics: LeadAnalytics;
     agentAnalytics: AgentAnalytics;
     systemAnalytics: SystemAnalytics;
@@ -527,9 +526,9 @@ export class AdvancedAnalyticsService {
   }> {
     try {
       const [leadAnalytics, agentAnalytics, systemAnalytics] = await Promise.all([
-        this.getLeadAnalytics(),
-        this.getAgentAnalytics(),
-        this.getSystemAnalytics(),
+        this.getLeadAnalytics(tenantId),
+        this.getAgentAnalytics(tenantId),
+        this.getSystemAnalytics(tenantId),
       ]);
 
       const alerts = this.generateAlerts(systemAnalytics, leadAnalytics);

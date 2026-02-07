@@ -7,6 +7,7 @@ declare global {
         interface Request {
             user?: AuthToken;
             service?: ServiceAuth;
+            tenantId?: string;
         }
     }
 }

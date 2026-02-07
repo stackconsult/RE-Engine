@@ -6,6 +6,10 @@
 import { Logger } from '../utils/logger';
 import { UnifiedDatabaseManager } from '../database/unified-database-manager';
 
+// TODO: CRM sync needs proper multi-tenant architecture
+// Background sync methods should be scoped per tenant or accept tenant context
+const DEFAULT_TENANT_ID = 'default'; // Temporary placeholder
+
 export interface CRMConfig {
   zillow: {
     enabled: boolean;
@@ -127,8 +131,8 @@ export class CRMIntegrationService {
     }
 
     try {
-      // Get active leads to find matching properties
-      const leads = await this.dbManager.searchLeads({
+      // TODO: Multi-tenant CRM sync - need to iterate over all tenants or scope sync per tenant
+      const leads = await this.dbManager.searchLeads(DEFAULT_TENANT_ID, {
         status: 'new',
         limit: 100,
       });
@@ -200,8 +204,8 @@ export class CRMIntegrationService {
     }
 
     try {
-      // Similar to Zillow sync but for Realtor.com
-      const leads = await this.dbManager.searchLeads({
+      // TODO: Multi-tenant CRM sync - need to iterate over all tenants or scope sync per tenant
+      const leads = await this.dbManager.searchLeads(DEFAULT_TENANT_ID, {
         status: 'qualified',
         limit: 50,
       });
@@ -312,7 +316,8 @@ export class CRMIntegrationService {
   // Property matching and recommendations
   private async processPropertyMatches(leadId: string, properties: PropertyData[], source: string): Promise<void> {
     try {
-      const lead = await this.dbManager.getLead(leadId);
+      // TODO: Multi-tenant - getLead needs tenantId parameter
+      const lead = await this.dbManager.getLead(leadId, DEFAULT_TENANT_ID);
       if (!lead) return;
 
       const matches: LeadMatch[] = [];

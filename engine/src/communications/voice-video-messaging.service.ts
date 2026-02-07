@@ -151,7 +151,7 @@ export class VoiceVideoMessagingService {
   }
 
   // Voice messaging
-  async sendVoiceMessage(leadId: string, agentId: string, audioBuffer: Buffer, phoneNumber: string): Promise<VoiceMessage> {
+  async sendVoiceMessage(leadId: string, agentId: string, audioBuffer: Buffer, phoneNumber: string, tenantId: string): Promise<VoiceMessage> {
     try {
       this.logger.info('Sending voice message', { leadId, agentId, phoneNumber });
 
@@ -210,7 +210,7 @@ export class VoiceVideoMessagingService {
           duration: messageResult.duration,
           sentiment,
         },
-      });
+      }, tenantId);
 
       this.logger.info('Voice message sent successfully', { messageId: voiceMessage.id });
       return voiceMessage;
@@ -220,7 +220,7 @@ export class VoiceVideoMessagingService {
     }
   }
 
-  async receiveVoiceMessage(leadId: string, phoneNumber: string, recordingUrl: string, duration: number): Promise<VoiceMessage> {
+  async receiveVoiceMessage(leadId: string, phoneNumber: string, recordingUrl: string, duration: number, tenantId: string): Promise<VoiceMessage> {
     try {
       this.logger.info('Receiving voice message', { leadId, phoneNumber, recordingUrl });
 
@@ -274,11 +274,11 @@ export class VoiceVideoMessagingService {
           duration,
           sentiment,
         },
-      });
+      }, tenantId);
 
       // Create approval for agent review
       if (sentiment === 'negative' || (summary && summary.includes('urgent'))) {
-        await this.createVoiceApproval(voiceMessage);
+        await this.createVoiceApproval(voiceMessage, tenantId);
       }
 
       this.logger.info('Voice message received successfully', { messageId: voiceMessage.id });
@@ -290,7 +290,7 @@ export class VoiceVideoMessagingService {
   }
 
   // Video calling
-  async scheduleVideoCall(leadId: string, agentId: string, scheduledFor: Date, participants: string[]): Promise<VideoCall> {
+  async scheduleVideoCall(leadId: string, agentId: string, scheduledFor: Date, participants: string[], tenantId: string): Promise<VideoCall> {
     try {
       this.logger.info('Scheduling video call', { leadId, agentId, scheduledFor });
 
@@ -339,7 +339,7 @@ export class VoiceVideoMessagingService {
           scheduledFor: scheduledFor.toISOString(),
           roomUrl: room.url,
         },
-      });
+      }, tenantId);
 
       // Send notifications to participants
       await this.sendVideoCallNotifications(videoCall);
@@ -352,7 +352,7 @@ export class VoiceVideoMessagingService {
     }
   }
 
-  async startInstantVideoCall(leadId: string, agentId: string): Promise<VideoCall> {
+  async startInstantVideoCall(leadId: string, agentId: string, tenantId: string): Promise<VideoCall> {
     try {
       this.logger.info('Starting instant video call', { leadId, agentId });
 
@@ -403,7 +403,7 @@ export class VoiceVideoMessagingService {
           callId: videoCall.id,
           roomUrl: room.url,
         },
-      });
+      }, tenantId);
 
       this.logger.info('Instant video call started', { callId: videoCall.id });
       return videoCall;
@@ -447,7 +447,7 @@ export class VoiceVideoMessagingService {
     }
   }
 
-  async endVideoCall(callId: string, reason?: string): Promise<VideoCall> {
+  async endVideoCall(callId: string, reason?: string, tenantId?: string): Promise<VideoCall> {
     try {
       const videoCall = this.activeCalls.get(callId);
 
@@ -494,7 +494,7 @@ export class VoiceVideoMessagingService {
           duration: videoCall.duration,
           recordingUrl: videoCall.recordingUrl,
         },
-      });
+      }, tenantId!);
 
       this.logger.info('Video call ended', { callId, duration: videoCall.duration });
       return videoCall;
@@ -631,7 +631,7 @@ export class VoiceVideoMessagingService {
     return null; // Placeholder
   }
 
-  private async createVoiceApproval(message: VoiceMessage): Promise<void> {
+  private async createVoiceApproval(message: VoiceMessage, tenantId: string): Promise<void> {
     // Create approval for voice message review
     await this.dbManager.createApproval({
       lead_id: message.leadId,
@@ -646,7 +646,7 @@ export class VoiceVideoMessagingService {
         transcript_snippet: message.transcription ? message.transcription.substring(0, 100) : '',
         duration: message.duration,
       }
-    } as any);
+    } as any, tenantId);
   }
 
   private async sendVideoCallNotifications(call: VideoCall): Promise<void> {

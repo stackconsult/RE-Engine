@@ -91,13 +91,13 @@ export class SupabaseIntegrationService {
   }
 
   // Lead Management Operations
-  async createLead(lead: Omit<Database['public']['Tables']['leads']['Insert'], 'lead_id'>): Promise<Database['public']['Tables']['leads']['Row']> {
+  async createLead(lead: Omit<Database['public']['Tables']['leads']['Insert'], 'lead_id'>, tenantId: string): Promise<Database['public']['Tables']['leads']['Row']> {
     const client = getSupabaseClient();
 
     try {
       const { data, error } = await client
         .from('leads')
-        .insert(lead as any)
+        .insert({ ...lead, tenant_id: tenantId } as any)
 
         .select()
         .single() as unknown as { data: Database['public']['Tables']['leads']['Row'] | null; error: any };
@@ -114,7 +114,7 @@ export class SupabaseIntegrationService {
     }
   }
 
-  async updateLead(leadId: string, updates: Partial<Database['public']['Tables']['leads']['Update']>): Promise<Database['public']['Tables']['leads']['Row']> {
+  async updateLead(leadId: string, updates: Partial<Database['public']['Tables']['leads']['Update']>, tenantId: string): Promise<Database['public']['Tables']['leads']['Row']> {
     const client = getSupabaseClient();
 
     try {
@@ -122,6 +122,7 @@ export class SupabaseIntegrationService {
         .from('leads') as any)
         .update(updates)
         .eq('lead_id', leadId)
+        .eq('tenant_id', tenantId)
         .select()
         .single() as unknown as { data: Database['public']['Tables']['leads']['Row'] | null; error: any };
 
@@ -137,7 +138,7 @@ export class SupabaseIntegrationService {
     }
   }
 
-  async getLead(leadId: string): Promise<Database['public']['Tables']['leads']['Row'] | null> {
+  async getLead(leadId: string, tenantId: string): Promise<Database['public']['Tables']['leads']['Row'] | null> {
     const client = getSupabaseClient();
 
     try {
@@ -145,6 +146,7 @@ export class SupabaseIntegrationService {
         .from('leads')
         .select('*')
         .eq('lead_id', leadId)
+        .eq('tenant_id', tenantId)
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = not found
@@ -159,7 +161,7 @@ export class SupabaseIntegrationService {
     }
   }
 
-  async listLeads(filters?: {
+  async listLeads(tenantId: string, filters?: {
     status?: string;
     limit?: number;
     offset?: number;
@@ -168,7 +170,7 @@ export class SupabaseIntegrationService {
     const client = getSupabaseClient();
 
     try {
-      let query = client.from('leads').select('*');
+      let query = client.from('leads').select('*').eq('tenant_id', tenantId);
 
       if (filters?.status) {
         query = query.eq('status', filters.status);
@@ -199,13 +201,13 @@ export class SupabaseIntegrationService {
   }
 
   // Approval Management Operations
-  async createApproval(approval: Omit<Database['public']['Tables']['approvals']['Insert'], 'approval_id'>): Promise<Database['public']['Tables']['approvals']['Row']> {
+  async createApproval(approval: Omit<Database['public']['Tables']['approvals']['Insert'], 'approval_id'>, tenantId: string): Promise<Database['public']['Tables']['approvals']['Row']> {
     const client = getSupabaseClient();
 
     try {
       const { data, error } = await client
         .from('approvals')
-        .insert(approval as any)
+        .insert({ ...approval, tenant_id: tenantId } as any)
         .select()
         .single() as unknown as { data: Database['public']['Tables']['approvals']['Row'] | null; error: any };
 
@@ -223,7 +225,7 @@ export class SupabaseIntegrationService {
     }
   }
 
-  async updateApproval(approvalId: string, updates: Partial<Database['public']['Tables']['approvals']['Update']>): Promise<Database['public']['Tables']['approvals']['Row']> {
+  async updateApproval(approvalId: string, updates: Partial<Database['public']['Tables']['approvals']['Update']>, tenantId: string): Promise<Database['public']['Tables']['approvals']['Row']> {
     const client = getSupabaseClient();
 
     try {
@@ -231,6 +233,7 @@ export class SupabaseIntegrationService {
         .from('approvals') as any)
         .update(updates)
         .eq('approval_id', approvalId)
+        .eq('tenant_id', tenantId)
         .select()
         .single() as unknown as { data: Database['public']['Tables']['approvals']['Row'] | null; error: any };
 
@@ -246,7 +249,7 @@ export class SupabaseIntegrationService {
     }
   }
 
-  async getApproval(approvalId: string): Promise<Database['public']['Tables']['approvals']['Row'] | null> {
+  async getApproval(approvalId: string, tenantId: string): Promise<Database['public']['Tables']['approvals']['Row'] | null> {
     const client = getSupabaseClient();
 
     try {
@@ -254,6 +257,7 @@ export class SupabaseIntegrationService {
         .from('approvals')
         .select('*')
         .eq('approval_id', approvalId)
+        .eq('tenant_id', tenantId)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -268,7 +272,7 @@ export class SupabaseIntegrationService {
     }
   }
 
-  async listApprovals(filters?: {
+  async listApprovals(tenantId: string, filters?: {
     status?: string;
     leadId?: string;
     limit?: number;
@@ -277,7 +281,7 @@ export class SupabaseIntegrationService {
     const client = getSupabaseClient();
 
     try {
-      let query = client.from('approvals').select('*');
+      let query = client.from('approvals').select('*').eq('tenant_id', tenantId);
 
       if (filters?.status) {
         query = query.eq('status', filters.status);
@@ -417,13 +421,13 @@ export class SupabaseIntegrationService {
     return data.publicUrl;
   }
 
-  async health(): Promise<boolean> {
-    const { leadsCount } = await this.getDatabaseStats();
+  async health(tenantId: string): Promise<boolean> {
+    const { leadsCount } = await this.getDatabaseStats(tenantId);
     return leadsCount >= 0;
   }
 
   // Analytics and Metrics
-  async getDatabaseStats(): Promise<{
+  async getDatabaseStats(tenantId: string): Promise<{
     leadsCount: number;
     approvalsCount: number;
     recentActivity: number;
@@ -432,8 +436,8 @@ export class SupabaseIntegrationService {
 
     try {
       const [leadsResult, approvalsResult] = await Promise.all([
-        client.from('leads').select('lead_id', { count: 'exact', head: true }),
-        client.from('approvals').select('approval_id', { count: 'exact', head: true })
+        client.from('leads').select('lead_id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+        client.from('approvals').select('approval_id', { count: 'exact', head: true }).eq('tenant_id', tenantId)
       ]);
 
       const leadsCount = leadsResult.count || 0;
@@ -444,6 +448,7 @@ export class SupabaseIntegrationService {
       const { count: recentActivity } = await client
         .from('events')
         .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
         .gte('created_at', oneDayAgo);
 
       return {
