@@ -237,12 +237,12 @@ class MonitoringSystem {
   }
 
   private triggerAlert(name: string, alert: AlertRule): void {
-    logger.error({
+    logger.error(`ALERT: ${alert.message}`, {
       alert: name,
       severity: alert.severity,
       metric: alert.metricName,
       value: this.metrics.get(alert.metricName)?.value,
-    }, `ALERT: ${alert.message}`);
+    });
   }
 }
 
@@ -317,7 +317,7 @@ export class EnhancedIntegrationServer {
       this.monitoring.recordMetric('system_health', isHealthy ? 1 : 0);
       
       if (!isHealthy) {
-        logger.warn({ neonHealth, supabaseHealth }, 'System health check failed');
+        logger.warn('System health check failed', { neonHealth, supabaseHealth });
       }
     } catch (error) {
       logger.error('Health check failed:', error);

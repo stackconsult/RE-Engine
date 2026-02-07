@@ -103,13 +103,13 @@ export class WhapiIntegration {
     logger.info(`Lead created: ${lead.id}, phone: ${phone}, source: ${source}`);
     
     // Audit log
-    logger.info({
+    logger.info('LEAD_CREATED %j', {
       leadId: lead.id,
       phone,
       name,
       source,
       timestamp: new Date().toISOString()
-    }, 'LEAD_CREATED %j');
+    });
 
     return lead;
   }
@@ -140,13 +140,13 @@ export class WhapiIntegration {
     logger.info(`Lead score updated: ${leadId}, score: ${lead.score}`);
     
     // Audit log
-    logger.info({
+    logger.info('LEAD_SCORED %j', {
       leadId,
       score: lead.score,
       factors,
       category: lead.score >= 80 ? 'hot' : lead.score >= 60 ? 'warm' : 'cold',
       timestamp: new Date().toISOString()
-    }, 'LEAD_SCORED %j');
+    });
 
     return lead;
   }
@@ -291,13 +291,13 @@ export class WhapiIntegration {
     logger.info(`Outreach sequence created: ${sequence.id}, lead: ${leadId}, name: ${name}, steps: ${steps.length}`);
 
     // Audit log
-    logger.info({
+    logger.info('SEQUENCE_CREATED %j', {
       sequenceId: sequence.id,
       leadId,
       name,
       totalSteps: steps.length,
       timestamp: new Date().toISOString()
-    }, 'SEQUENCE_CREATED %j');
+    });
 
     return sequence;
   }

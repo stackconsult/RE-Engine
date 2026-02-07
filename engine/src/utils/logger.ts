@@ -49,24 +49,49 @@ export class Logger {
     this.logLevel = this.config.level;
   }
 
-  debug(message: string, data?: any): void {
-    this.log(LogLevel.DEBUG, message, data);
+  debug(message: string, data?: any): void;
+  debug(data: any, message?: string): void;
+  debug(arg1: any, arg2?: any): void {
+    this.handleLog(LogLevel.DEBUG, arg1, arg2);
   }
 
-  info(message: string, data?: any): void {
-    this.log(LogLevel.INFO, message, data);
+  info(message: string, data?: any): void;
+  info(data: any, message?: string): void;
+  info(arg1: any, arg2?: any): void {
+    this.handleLog(LogLevel.INFO, arg1, arg2);
   }
 
-  warn(message: string, data?: any): void {
-    this.log(LogLevel.WARN, message, data);
+  warn(message: string, data?: any): void;
+  warn(data: any, message?: string): void;
+  warn(arg1: any, arg2?: any): void {
+    this.handleLog(LogLevel.WARN, arg1, arg2);
   }
 
-  error(message: string, data?: any): void {
-    this.log(LogLevel.ERROR, message, data);
+  error(message: string, data?: any): void;
+  error(data: any, message?: string | Error): void;
+  error(arg1: any, arg2?: any): void {
+    this.handleLog(LogLevel.ERROR, arg1, arg2);
   }
 
-  fatal(message: string, data?: any): void {
-    this.log(LogLevel.FATAL, message, data);
+  fatal(message: string, data?: any): void;
+  fatal(data: any, message?: string): void;
+  fatal(arg1: any, arg2?: any): void {
+    this.handleLog(LogLevel.FATAL, arg1, arg2);
+  }
+
+  private handleLog(level: LogLevel, arg1: any, arg2?: any): void {
+    let msg: string;
+    let data: any;
+
+    if (typeof arg1 === 'string') {
+      msg = arg1;
+      data = arg2;
+    } else {
+      data = arg1;
+      msg = typeof arg2 === 'string' ? arg2 : 'Log message omitted';
+    }
+
+    this.log(level, msg, data);
   }
 
   private log(level: LogLevel, message: string, data?: any): void {
@@ -108,9 +133,9 @@ export class Logger {
     const timestamp = entry.timestamp;
     const service = entry.service;
     const message = entry.message;
-    
+
     let logMessage = `[${timestamp}] ${levelName} ${service}: ${message}`;
-    
+
     if (entry.data) {
       logMessage += ` ${JSON.stringify(entry.data)}`;
     }

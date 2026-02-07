@@ -93,7 +93,7 @@ export class EnhancedVertexAIClient {
       // Apply caching if enabled
       const cacheKey = this.generateCacheKey(enhancedRequest);
       if (this.config.enableCaching && this.cache.has(cacheKey)) {
-        logger.info({ requestId, cacheKey }, 'Cache hit for request');
+        logger.info('Cache hit for request', { requestId, cacheKey });
         return this.cache.get(cacheKey);
       }
 
@@ -130,12 +130,12 @@ export class EnhancedVertexAIClient {
       // Analyze response quality
       const qualityAnalysis = this.analyzeResponseQuality(response, params);
       
-      logger.info({
+      logger.info('Content generated successfully', {
         requestId,
         latency,
         tokensUsed: response.response?.usageMetadata?.totalTokenCount,
         qualityScore: qualityAnalysis.score
-      }, 'Content generated successfully');
+      });
 
       return {
         ...response,
@@ -160,11 +160,11 @@ export class EnhancedVertexAIClient {
         errorType: error.name
       });
 
-      logger.error({
+      logger.error('Content generation failed', {
         requestId,
         error: error.message,
         latency
-      }, 'Content generation failed');
+      });
 
       throw error;
     }
@@ -428,10 +428,10 @@ CONTEXT: Current request is within the real estate domain.`;
         const delay = Math.pow(2, attempt) * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
         
-        logger.warn({
+        logger.warn(`Retry attempt ${attempt + 1}/${maxRetries}`, {
           error: lastError.message,
           delay
-        }, `Retry attempt ${attempt + 1}/${maxRetries}`);
+        });
       }
     }
     

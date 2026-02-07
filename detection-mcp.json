@@ -1,0 +1,352 @@
+{
+  "summary": {
+    "totalFiles": 25,
+    "totalIssues": 25,
+    "filesWithIssues": [
+      {
+        "path": "mcp/reengine-integration/src/enhanced-integration-server.ts",
+        "issueCount": 2,
+        "lines": [
+          240,
+          320
+        ]
+      },
+      {
+        "path": "mcp/reengine-outreach/src/whapi-integration.ts",
+        "issueCount": 3,
+        "lines": [
+          106,
+          143,
+          294
+        ]
+      },
+      {
+        "path": "mcp/reengine-outreach/src/workflow-automation.ts",
+        "issueCount": 3,
+        "lines": [
+          185,
+          258,
+          265
+        ]
+      },
+      {
+        "path": "mcp/reengine-vertexai/src/enhanced-api-client.ts",
+        "issueCount": 4,
+        "lines": [
+          96,
+          133,
+          163,
+          431
+        ]
+      },
+      {
+        "path": "mcp/reengine-vertexai/src/enhanced-vertexai-server.ts",
+        "issueCount": 2,
+        "lines": [
+          568,
+          577
+        ]
+      },
+      {
+        "path": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+        "issueCount": 8,
+        "lines": [
+          60,
+          79,
+          87,
+          448,
+          706,
+          712,
+          721,
+          731
+        ]
+      },
+      {
+        "path": "mcp/reengine-vertexai/src/skills/real-estate-analyst.skill.ts",
+        "issueCount": 3,
+        "lines": [
+          72,
+          107,
+          116
+        ]
+      }
+    ]
+  },
+  "issues": [
+    {
+      "file": "mcp/reengine-integration/src/enhanced-integration-server.ts",
+      "line": 240,
+      "column": 5,
+      "method": "error",
+      "currentCode": "logger.error(`ALERT: ${alert.message}`, {\n      alert: name,\n      severity: alert.severity,\n      metric: alert.metricName,\n      value: this.metrics.get(alert.metricName)?.value,\n    })",
+      "message": "ALERT: ${alert.message}",
+      "dataObject": "{\n      alert: name,\n      severity: alert.severity,\n      metric: alert.metricName,\n      value: this.metrics.get(alert.metricName)?.value,\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-integration/src/enhanced-integration-server.ts",
+      "line": 320,
+      "column": 9,
+      "method": "warn",
+      "currentCode": "logger.warn('System health check failed', { neonHealth, supabaseHealth })",
+      "message": "System health check failed",
+      "dataObject": "{ neonHealth, supabaseHealth }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-outreach/src/whapi-integration.ts",
+      "line": 106,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info('LEAD_CREATED %j', {\n      leadId: lead.id,\n      phone,\n      name,\n      source,\n      timestamp: new Date().toISOString()\n    })",
+      "message": "LEAD_CREATED %j",
+      "dataObject": "{\n      leadId: lead.id,\n      phone,\n      name,\n      source,\n      timestamp: new Date().toISOString()\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-outreach/src/whapi-integration.ts",
+      "line": 143,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info('LEAD_SCORED %j', {\n      leadId,\n      score: lead.score,\n      factors,\n      category: lead.score >= 80 ? 'hot' : lead.score >= 60 ? 'warm' : 'cold',\n      timestamp: new Date().toISOString()\n    })",
+      "message": "LEAD_SCORED %j",
+      "dataObject": "{\n      leadId,\n      score: lead.score,\n      factors,\n      category: lead.score >= 80 ? 'hot' : lead.score >= 60 ? 'warm' : 'cold',\n      timestamp: new Date().toISOString()\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-outreach/src/whapi-integration.ts",
+      "line": 294,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info('SEQUENCE_CREATED %j', {\n      sequenceId: sequence.id,\n      leadId,\n      name,\n      totalSteps: steps.length,\n      timestamp: new Date().toISOString()\n    })",
+      "message": "SEQUENCE_CREATED %j",
+      "dataObject": "{\n      sequenceId: sequence.id,\n      leadId,\n      name,\n      totalSteps: steps.length,\n      timestamp: new Date().toISOString()\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-outreach/src/workflow-automation.ts",
+      "line": 185,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info('WORKFLOW_RULE_CREATED %j', {\n      ruleId: newRule.id,\n      name: newRule.name,\n      trigger: newRule.trigger,\n      actions: newRule.actions.length,\n      timestamp: new Date().toISOString()\n    })",
+      "message": "WORKFLOW_RULE_CREATED %j",
+      "dataObject": "{\n      ruleId: newRule.id,\n      name: newRule.name,\n      trigger: newRule.trigger,\n      actions: newRule.actions.length,\n      timestamp: new Date().toISOString()\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-outreach/src/workflow-automation.ts",
+      "line": 258,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Workflow rule failed %j', {\n        executionId: execution.id,\n        ruleId: rule.id,\n        error: (error as Error).message\n      })",
+      "message": "Workflow rule failed %j",
+      "dataObject": "{\n        executionId: execution.id,\n        ruleId: rule.id,\n        error: (error as Error).message\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-outreach/src/workflow-automation.ts",
+      "line": 265,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('WORKFLOW_FAILED %j', {\n        executionId: execution.id,\n        ruleId: rule.id,\n        error: (error as Error).message,\n        timestamp: new Date().toISOString()\n      })",
+      "message": "WORKFLOW_FAILED %j",
+      "dataObject": "{\n        executionId: execution.id,\n        ruleId: rule.id,\n        error: (error as Error).message,\n        timestamp: new Date().toISOString()\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/enhanced-api-client.ts",
+      "line": 96,
+      "column": 9,
+      "method": "info",
+      "currentCode": "logger.info('Cache hit for request', { requestId, cacheKey })",
+      "message": "Cache hit for request",
+      "dataObject": "{ requestId, cacheKey }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/enhanced-api-client.ts",
+      "line": 133,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Content generated successfully', {\n        requestId,\n        latency,\n        tokensUsed: response.response?.usageMetadata?.totalTokenCount,\n        qualityScore: qualityAnalysis.score\n      })",
+      "message": "Content generated successfully",
+      "dataObject": "{\n        requestId,\n        latency,\n        tokensUsed: response.response?.usageMetadata?.totalTokenCount,\n        qualityScore: qualityAnalysis.score\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/enhanced-api-client.ts",
+      "line": 163,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Content generation failed', {\n        requestId,\n        error: error.message,\n        latency\n      })",
+      "message": "Content generation failed",
+      "dataObject": "{\n        requestId,\n        error: error.message,\n        latency\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/enhanced-api-client.ts",
+      "line": 431,
+      "column": 9,
+      "method": "warn",
+      "currentCode": "logger.warn(`Retry attempt ${attempt + 1}/${maxRetries}`, {\n          error: lastError.message,\n          delay\n        })",
+      "message": "Retry attempt ${attempt + 1}/${maxRetries}",
+      "dataObject": "{\n          error: lastError.message,\n          delay\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/enhanced-vertexai-server.ts",
+      "line": 568,
+      "column": 3,
+      "method": "info",
+      "currentCode": "logger.info('Enhanced RE Engine VertexAI MCP server started', {\n    version: '2.0.0',\n    projectId: vertexConfig.projectId,\n    location: vertexConfig.location,\n    model: vertexConfig.model,\n    features: ['skills', 'governance', 'memory', 'enhanced_api']\n  })",
+      "message": "Enhanced RE Engine VertexAI MCP server started",
+      "dataObject": "{\n    version: '2.0.0',\n    projectId: vertexConfig.projectId,\n    location: vertexConfig.location,\n    model: vertexConfig.model,\n    features: ['skills', 'governance', 'memory', 'enhanced_api']\n  }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/enhanced-vertexai-server.ts",
+      "line": 577,
+      "column": 3,
+      "method": "info",
+      "currentCode": "logger.info('Enhanced components initialized', {\n    client: 'EnhancedVertexAIClient',\n    skills: 1,\n    governanceRules: governanceRules.getGovernanceMetrics().totalRules,\n    caching: vertexConfig.enableCaching,\n    retry: vertexConfig.enableRetry\n  })",
+      "message": "Enhanced components initialized",
+      "dataObject": "{\n    client: 'EnhancedVertexAIClient',\n    skills: 1,\n    governanceRules: governanceRules.getGovernanceMetrics().totalRules,\n    caching: vertexConfig.enableCaching,\n    retry: vertexConfig.enableRetry\n  }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 60,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info('Applying governance rules', {\n      requestType: context.requestType,\n      userId: context.userId,\n      location: context.location\n    })",
+      "message": "Applying governance rules",
+      "dataObject": "{\n      requestType: context.requestType,\n      userId: context.userId,\n      location: context.location\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 79,
+      "column": 13,
+      "method": "warn",
+      "currentCode": "logger.warn('Critical rule triggered block', {\n              ruleId: rule.id,\n              reason: result.reason\n            })",
+      "message": "Critical rule triggered block",
+      "dataObject": "{\n              ruleId: rule.id,\n              reason: result.reason\n            }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 87,
+      "column": 9,
+      "method": "error",
+      "currentCode": "logger.error('Rule execution failed', {\n          ruleId: rule.id,\n          error: error.message\n        })",
+      "message": "Rule execution failed",
+      "dataObject": "{\n          ruleId: rule.id,\n          error: error.message\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 448,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Rule action execution failed', {\n        ruleId: rule.id,\n        error: error.message\n      })",
+      "message": "Rule action execution failed",
+      "dataObject": "{\n        ruleId: rule.id,\n        error: error.message\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 706,
+      "column": 5,
+      "method": "info",
+      "currentCode": "logger.info('Governance rule added', { ruleId: rule.id, name: rule.name })",
+      "message": "Governance rule added",
+      "dataObject": "{ ruleId: rule.id, name: rule.name }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 712,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Governance rule removed', { ruleId })",
+      "message": "Governance rule removed",
+      "dataObject": "{ ruleId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 721,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Governance rule enabled', { ruleId })",
+      "message": "Governance rule enabled",
+      "dataObject": "{ ruleId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/rules/real-estate-governance.rules.ts",
+      "line": 731,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Governance rule disabled', { ruleId })",
+      "message": "Governance rule disabled",
+      "dataObject": "{ ruleId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/skills/real-estate-analyst.skill.ts",
+      "line": 72,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Starting real estate analysis', {\n        type: request.type,\n        location: request.location,\n        conversationId\n      })",
+      "message": "Starting real estate analysis",
+      "dataObject": "{\n        type: request.type,\n        location: request.location,\n        conversationId\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/skills/real-estate-analyst.skill.ts",
+      "line": 107,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('Real estate analysis completed', {\n        type: request.type,\n        confidence: analysisResult.analysis.confidence,\n        processingTime: Date.now() - startTime\n      })",
+      "message": "Real estate analysis completed",
+      "dataObject": "{\n        type: request.type,\n        confidence: analysisResult.analysis.confidence,\n        processingTime: Date.now() - startTime\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "mcp/reengine-vertexai/src/skills/real-estate-analyst.skill.ts",
+      "line": 116,
+      "column": 7,
+      "method": "error",
+      "currentCode": "logger.error('Real estate analysis failed', {\n        error: error.message,\n        type: request.type\n      })",
+      "message": "Real estate analysis failed",
+      "dataObject": "{\n        error: error.message,\n        type: request.type\n      }",
+      "severity": "high",
+      "fixable": true
+    }
+  ]
+}

@@ -565,22 +565,22 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   
-  logger.info({
+  logger.info('Enhanced RE Engine VertexAI MCP server started', {
     version: '2.0.0',
     projectId: vertexConfig.projectId,
     location: vertexConfig.location,
     model: vertexConfig.model,
     features: ['skills', 'governance', 'memory', 'enhanced_api']
-  }, 'Enhanced RE Engine VertexAI MCP server started');
+  });
   
   // Log initialization status
-  logger.info({
+  logger.info('Enhanced components initialized', {
     client: 'EnhancedVertexAIClient',
     skills: 1,
     governanceRules: governanceRules.getGovernanceMetrics().totalRules,
     caching: vertexConfig.enableCaching,
     retry: vertexConfig.enableRetry
-  }, 'Enhanced components initialized');
+  });
 }
 
 if (require.main === module) {

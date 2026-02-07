@@ -69,11 +69,11 @@ export class RealEstateAnalystSkill {
     const startTime = Date.now();
     
     try {
-      logger.info({
+      logger.info('Starting real estate analysis', {
         type: request.type,
         location: request.location,
         conversationId
-      }, 'Starting real estate analysis');
+      });
 
       // Build enhanced prompt with domain expertise
       const enhancedPrompt = this.buildDomainSpecificPrompt(request);
@@ -104,19 +104,19 @@ export class RealEstateAnalystSkill {
       const cacheKey = this.generateCacheKey(request);
       this.analysisCache.set(cacheKey, analysisResult);
 
-      logger.info({
+      logger.info('Real estate analysis completed', {
         type: request.type,
         confidence: analysisResult.analysis.confidence,
         processingTime: Date.now() - startTime
-      }, 'Real estate analysis completed');
+      });
 
       return analysisResult;
 
     } catch (error) {
-      logger.error({
+      logger.error('Real estate analysis failed', {
         error: error.message,
         type: request.type
-      }, 'Real estate analysis failed');
+      });
       throw error;
     }
   }

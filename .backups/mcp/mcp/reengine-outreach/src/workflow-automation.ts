@@ -182,13 +182,13 @@ export class WorkflowAutomation {
     logger.info(`Workflow rule created: ${newRule.id}, name: ${newRule.name}`);
     
     // Audit log
-    logger.info({
+    logger.info('WORKFLOW_RULE_CREATED %j', {
       ruleId: newRule.id,
       name: newRule.name,
       trigger: newRule.trigger,
       actions: newRule.actions.length,
       timestamp: new Date().toISOString()
-    }, 'WORKFLOW_RULE_CREATED %j');
+    });
 
     return newRule;
   }
@@ -255,19 +255,19 @@ export class WorkflowAutomation {
       execution.status = 'failed';
       execution.error = (error as Error).message;
       
-      logger.error({
+      logger.error('Workflow rule failed %j', {
         executionId: execution.id,
         ruleId: rule.id,
         error: (error as Error).message
-      }, 'Workflow rule failed %j');
+      });
 
       // Audit log
-      logger.info({
+      logger.info('WORKFLOW_FAILED %j', {
         executionId: execution.id,
         ruleId: rule.id,
         error: (error as Error).message,
         timestamp: new Date().toISOString()
-      }, 'WORKFLOW_FAILED %j');
+      });
     }
 
     return execution;

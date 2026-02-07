@@ -57,11 +57,11 @@ export class RealEstateGovernanceRules {
   async applyGovernance(context: GovernanceContext): Promise<GovernanceResult[]> {
     const results: GovernanceResult[] = [];
     
-    logger.info({
+    logger.info('Applying governance rules', {
       requestType: context.requestType,
       userId: context.userId,
       location: context.location
-    }, 'Applying governance rules');
+    });
 
     // Sort rules by priority
     const sortedRules = Array.from(this.rules.values())
@@ -76,18 +76,18 @@ export class RealEstateGovernanceRules {
           
           // Stop processing on critical blocks
           if (result.action === 'block' && rule.priority === 'critical') {
-            logger.warn({
+            logger.warn('Critical rule triggered block', {
               ruleId: rule.id,
               reason: result.reason
-            }, 'Critical rule triggered block');
+            });
             break;
           }
         }
       } catch (error) {
-        logger.error({
+        logger.error('Rule execution failed', {
           ruleId: rule.id,
           error: error.message
-        }, 'Rule execution failed');
+        });
       }
     }
 
@@ -445,10 +445,10 @@ export class RealEstateGovernanceRules {
         }
       };
     } catch (error) {
-      logger.error({
+      logger.error('Rule action execution failed', {
         ruleId: rule.id,
         error: error.message
-      }, 'Rule action execution failed');
+      });
 
       return {
         ruleId: rule.id,
@@ -703,13 +703,13 @@ export class RealEstateGovernanceRules {
    */
   addRule(rule: GovernanceRule): void {
     this.rules.set(rule.id, rule);
-    logger.info({ ruleId: rule.id, name: rule.name }, 'Governance rule added');
+    logger.info('Governance rule added', { ruleId: rule.id, name: rule.name });
   }
 
   removeRule(ruleId: string): boolean {
     const removed = this.rules.delete(ruleId);
     if (removed) {
-      logger.info({ ruleId }, 'Governance rule removed');
+      logger.info('Governance rule removed', { ruleId });
     }
     return removed;
   }
@@ -718,7 +718,7 @@ export class RealEstateGovernanceRules {
     const rule = this.rules.get(ruleId);
     if (rule) {
       rule.enabled = true;
-      logger.info({ ruleId }, 'Governance rule enabled');
+      logger.info('Governance rule enabled', { ruleId });
       return true;
     }
     return false;
@@ -728,7 +728,7 @@ export class RealEstateGovernanceRules {
     const rule = this.rules.get(ruleId);
     if (rule) {
       rule.enabled = false;
-      logger.info({ ruleId }, 'Governance rule disabled');
+      logger.info('Governance rule disabled', { ruleId });
       return true;
     }
     return false;

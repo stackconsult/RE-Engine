@@ -1,0 +1,1084 @@
+{
+  "summary": {
+    "totalFiles": 121,
+    "totalIssues": 80,
+    "filesWithIssues": [
+      {
+        "path": "engine/src/ai/fixes-and-optimizations.ts",
+        "issueCount": 4,
+        "lines": [
+          146,
+          232,
+          270,
+          471
+        ]
+      },
+      {
+        "path": "engine/src/ai/magical-automation-engine.ts",
+        "issueCount": 2,
+        "lines": [
+          158,
+          185
+        ]
+      },
+      {
+        "path": "engine/src/ai/operational-agents.ts",
+        "issueCount": 1,
+        "lines": [
+          170
+        ]
+      },
+      {
+        "path": "engine/src/ai/property-matching-engine.ts",
+        "issueCount": 4,
+        "lines": [
+          239,
+          1056,
+          1067,
+          1090
+        ]
+      },
+      {
+        "path": "engine/src/api/mobile-api.service.ts",
+        "issueCount": 1,
+        "lines": [
+          632
+        ]
+      },
+      {
+        "path": "engine/src/api/server.ts",
+        "issueCount": 3,
+        "lines": [
+          247,
+          310,
+          330
+        ]
+      },
+      {
+        "path": "engine/src/api/workflow-api.ts",
+        "issueCount": 9,
+        "lines": [
+          47,
+          103,
+          129,
+          177,
+          195,
+          217,
+          261,
+          395,
+          449
+        ]
+      },
+      {
+        "path": "engine/src/communications/voice-video-messaging.service.ts",
+        "issueCount": 14,
+        "lines": [
+          156,
+          215,
+          225,
+          284,
+          295,
+          347,
+          357,
+          408,
+          442,
+          499,
+          616,
+          621,
+          626,
+          654
+        ]
+      },
+      {
+        "path": "engine/src/database/unified-database-manager.ts",
+        "issueCount": 5,
+        "lines": [
+          151,
+          193,
+          248,
+          283,
+          486
+        ]
+      },
+      {
+        "path": "engine/src/integrations/crm-integration.service.ts",
+        "issueCount": 1,
+        "lines": [
+          340
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/fallback-manager.ts",
+        "issueCount": 1,
+        "lines": [
+          39
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/master-orchestrator.ts",
+        "issueCount": 2,
+        "lines": [
+          136,
+          147
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/performance-monitor.ts",
+        "issueCount": 1,
+        "lines": [
+          344
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/resource-manager.ts",
+        "issueCount": 1,
+        "lines": [
+          113
+        ]
+      },
+      {
+        "path": "engine/src/orchestration/workflow-execution-engine.ts",
+        "issueCount": 3,
+        "lines": [
+          86,
+          95,
+          338
+        ]
+      },
+      {
+        "path": "engine/src/services/workflow-service.ts",
+        "issueCount": 5,
+        "lines": [
+          72,
+          99,
+          126,
+          141,
+          183
+        ]
+      },
+      {
+        "path": "engine/src/test/mock-postgresql-test.ts",
+        "issueCount": 7,
+        "lines": [
+          217,
+          243,
+          261,
+          278,
+          326,
+          351,
+          366
+        ]
+      },
+      {
+        "path": "engine/src/test/postgresql-integration.test.ts",
+        "issueCount": 9,
+        "lines": [
+          341,
+          368,
+          386,
+          404,
+          435,
+          464,
+          497,
+          505,
+          520
+        ]
+      },
+      {
+        "path": "engine/src/test/standalone-postgresql-test.ts",
+        "issueCount": 7,
+        "lines": [
+          304,
+          331,
+          349,
+          367,
+          413,
+          436,
+          451
+        ]
+      }
+    ]
+  },
+  "issues": [
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 146,
+      "column": 10,
+      "method": "warn",
+      "currentCode": "logger.warn(`⚠️ Issue reported: ${issueWithId.type} - ${issueWithId.description}`, {\n      severity: issueWithId.severity,\n      category: issueWithId.category,\n      location: issueWithId.location\n    })",
+      "message": "⚠️ Issue reported: ${issueWithId.type} - ${issueWithId.description}",
+      "dataObject": "{\n      severity: issueWithId.severity,\n      category: issueWithId.category,\n      location: issueWithId.location\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 232,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Fix applied successfully: ${issueId}`, {\n        action: result.action,\n        duration: result.duration,\n        improvements: result.improvements.length\n      })",
+      "message": "✅ Fix applied successfully: ${issueId}",
+      "dataObject": "{\n        action: result.action,\n        duration: result.duration,\n        improvements: result.improvements.length\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 270,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Optimization applied successfully: ${optimizationId}`, {\n        improvement: result.improvement,\n        duration: result.duration,\n        details: result.details\n      })",
+      "message": "✅ Optimization applied successfully: ${optimizationId}",
+      "dataObject": "{\n        improvement: result.improvement,\n        duration: result.duration,\n        details: result.details\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/fixes-and-optimizations.ts",
+      "line": 471,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Auto-fix successful: ${issue.id}`, {\n          action: result.action,\n          improvements: result.improvements.length\n        })",
+      "message": "✅ Auto-fix successful: ${issue.id}",
+      "dataObject": "{\n          action: result.action,\n          improvements: result.improvements.length\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/magical-automation-engine.ts",
+      "line": 158,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('🪄 Executing magical automation:', {\n      type: request.type,\n      complexity: request.complexity,\n      magicLevel: this.config.magicLevel\n    })",
+      "message": "🪄 Executing magical automation:",
+      "dataObject": "{\n      type: request.type,\n      complexity: request.complexity,\n      magicLevel: this.config.magicLevel\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/magical-automation-engine.ts",
+      "line": 185,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✨ Magical automation completed successfully', {\n        agent: agent.name,\n        executionTime: optimizedResult.executionTime,\n        magicScore: optimizedResult.magicScore\n      })",
+      "message": "✨ Magical automation completed successfully",
+      "dataObject": "{\n        agent: agent.name,\n        executionTime: optimizedResult.executionTime,\n        magicScore: optimizedResult.magicScore\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/operational-agents.ts",
+      "line": 170,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Training completed: ${agentId} - ${skillId}`, {\n        success: trainingResult.success,\n        performance: trainingResult.performance,\n        improvements: trainingResult.improvements.length\n      })",
+      "message": "✅ Training completed: ${agentId} - ${skillId}",
+      "dataObject": "{\n        success: trainingResult.success,\n        performance: trainingResult.performance,\n        improvements: trainingResult.improvements.length\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/property-matching-engine.ts",
+      "line": 239,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Finding property matches', { leadId, limit })",
+      "message": "Finding property matches",
+      "dataObject": "{ leadId, limit }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/property-matching-engine.ts",
+      "line": 1056,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Storing matching result for learning', { leadId: result.leadId })",
+      "message": "Storing matching result for learning",
+      "dataObject": "{ leadId: result.leadId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/property-matching-engine.ts",
+      "line": 1067,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Recording property feedback', { leadId, propertyId, feedback })",
+      "message": "Recording property feedback",
+      "dataObject": "{ leadId, propertyId, feedback }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/ai/property-matching-engine.ts",
+      "line": 1090,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Updating learning models', { leadId })",
+      "message": "Updating learning models",
+      "dataObject": "{ leadId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/mobile-api.service.ts",
+      "line": 632,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`Approval workflow triggered`, { approvalId, action })",
+      "message": "Approval workflow triggered",
+      "dataObject": "{ approvalId, action }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/server.ts",
+      "line": 247,
+      "column": 14,
+      "method": "debug",
+      "currentCode": "logger.debug(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {\n          method: req.method,\n          path: req.path,\n          statusCode: res.statusCode,\n          duration,\n          userAgent: req.get('User-Agent'),\n          ip: req.ip\n        })",
+      "message": "${req.method} ${req.path} - ${res.statusCode} (${duration}ms)",
+      "dataObject": "{\n          method: req.method,\n          path: req.path,\n          statusCode: res.statusCode,\n          duration,\n          userAgent: req.get('User-Agent'),\n          ip: req.ip\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/server.ts",
+      "line": 310,
+      "column": 12,
+      "method": "error",
+      "currentCode": "logger.error('Unhandled error', {\n        error: error.message,\n        method: req.method,\n        path: req.path,\n        body: req.body,\n        query: req.query\n      })",
+      "message": "Unhandled error",
+      "dataObject": "{\n        error: error.message,\n        method: req.method,\n        path: req.path,\n        body: req.body,\n        query: req.query\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/server.ts",
+      "line": 330,
+      "column": 12,
+      "method": "error",
+      "currentCode": "logger.error('Unhandled Rejection', { promise, reason })",
+      "message": "Unhandled Rejection",
+      "dataObject": "{ promise, reason }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 47,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🔄 API: Execute workflow request', {\n        workflowId: request.workflowId,\n        priority: request.priority,\n        userId: req.headers['x-user-id']\n      })",
+      "message": "🔄 API: Execute workflow request",
+      "dataObject": "{\n        workflowId: request.workflowId,\n        priority: request.priority,\n        userId: req.headers['x-user-id']\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 103,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('✅ API: Workflow execution queued', {\n        executionId,\n        workflowId: request.workflowId\n      })",
+      "message": "✅ API: Workflow execution queued",
+      "dataObject": "{\n        executionId,\n        workflowId: request.workflowId\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 129,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🔍 API: Get execution status', { executionId })",
+      "message": "🔍 API: Get execution status",
+      "dataObject": "{ executionId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 177,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🛑 API: Cancel execution', { executionId })",
+      "message": "🛑 API: Cancel execution",
+      "dataObject": "{ executionId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 195,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('✅ API: Execution cancelled', { executionId })",
+      "message": "✅ API: Execution cancelled",
+      "dataObject": "{ executionId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 217,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('📋 API: Get workflows', { category })",
+      "message": "📋 API: Get workflows",
+      "dataObject": "{ category }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 261,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🔍 API: Get workflow details', { workflowId })",
+      "message": "🔍 API: Get workflow details",
+      "dataObject": "{ workflowId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 395,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('🚀 API: Execute workflow immediately', {\n        workflowId: request.workflowId,\n        userId: req.headers['x-user-id']\n      })",
+      "message": "🚀 API: Execute workflow immediately",
+      "dataObject": "{\n        workflowId: request.workflowId,\n        userId: req.headers['x-user-id']\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/api/workflow-api.ts",
+      "line": 449,
+      "column": 7,
+      "method": "info",
+      "currentCode": "logger.info('✅ API: Workflow executed immediately', {\n        workflowId: request.workflowId,\n        success: result.success,\n        executionTime: result.executionTime\n      })",
+      "message": "✅ API: Workflow executed immediately",
+      "dataObject": "{\n        workflowId: request.workflowId,\n        success: result.success,\n        executionTime: result.executionTime\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 156,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Sending voice message', { leadId, agentId, phoneNumber })",
+      "message": "Sending voice message",
+      "dataObject": "{ leadId, agentId, phoneNumber }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 215,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Voice message sent successfully', { messageId: voiceMessage.id })",
+      "message": "Voice message sent successfully",
+      "dataObject": "{ messageId: voiceMessage.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 225,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Receiving voice message', { leadId, phoneNumber, recordingUrl })",
+      "message": "Receiving voice message",
+      "dataObject": "{ leadId, phoneNumber, recordingUrl }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 284,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Voice message received successfully', { messageId: voiceMessage.id })",
+      "message": "Voice message received successfully",
+      "dataObject": "{ messageId: voiceMessage.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 295,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Scheduling video call', { leadId, agentId, scheduledFor })",
+      "message": "Scheduling video call",
+      "dataObject": "{ leadId, agentId, scheduledFor }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 347,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Video call scheduled successfully', { callId: videoCall.id })",
+      "message": "Video call scheduled successfully",
+      "dataObject": "{ callId: videoCall.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 357,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Starting instant video call', { leadId, agentId })",
+      "message": "Starting instant video call",
+      "dataObject": "{ leadId, agentId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 408,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Instant video call started', { callId: videoCall.id })",
+      "message": "Instant video call started",
+      "dataObject": "{ callId: videoCall.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 442,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`Participant joined video call`, { callId, participantId, role })",
+      "message": "Participant joined video call",
+      "dataObject": "{ callId, participantId, role }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 499,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Video call ended', { callId, duration: videoCall.duration })",
+      "message": "Video call ended",
+      "dataObject": "{ callId, duration: videoCall.duration }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 616,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Storing voice message', { messageId: message.id })",
+      "message": "Storing voice message",
+      "dataObject": "{ messageId: message.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 621,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Storing video call', { callId: call.id })",
+      "message": "Storing video call",
+      "dataObject": "{ callId: call.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 626,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Updating video call', { callId: call.id })",
+      "message": "Updating video call",
+      "dataObject": "{ callId: call.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/communications/voice-video-messaging.service.ts",
+      "line": 654,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Sending video call notifications', { callId: call.id })",
+      "message": "Sending video call notifications",
+      "dataObject": "{ callId: call.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/database/unified-database-manager.ts",
+      "line": 151,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Lead created successfully', { neonId, email: lead.email })",
+      "message": "Lead created successfully",
+      "dataObject": "{ neonId, email: lead.email }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/database/unified-database-manager.ts",
+      "line": 193,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Lead updated successfully', { id, updates })",
+      "message": "Lead updated successfully",
+      "dataObject": "{ id, updates }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/database/unified-database-manager.ts",
+      "line": 248,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Approval created successfully', { neonId, lead_id: approval.lead_id })",
+      "message": "Approval created successfully",
+      "dataObject": "{ neonId, lead_id: approval.lead_id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/database/unified-database-manager.ts",
+      "line": 283,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info('Approval status updated', { id, status, reviewedBy })",
+      "message": "Approval status updated",
+      "dataObject": "{ id, status, reviewedBy }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/database/unified-database-manager.ts",
+      "line": 486,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info('Database event emitted', { event, data })",
+      "message": "Database event emitted",
+      "dataObject": "{ event, data }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/integrations/crm-integration.service.ts",
+      "line": 340,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`Processed ${matches.length} property matches for lead ${leadId}`, { source })",
+      "message": "Processed ${matches.length} property matches for lead ${leadId}",
+      "dataObject": "{ source }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/fallback-manager.ts",
+      "line": 39,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Handling failure for workflow ${failure.workflowId}`, {\n      stepId: failure.stepId,\n      error: failure.error,\n      severity: failure.severity\n    })",
+      "message": "🔄 Handling failure for workflow ${failure.workflowId}",
+      "dataObject": "{\n      stepId: failure.stepId,\n      error: failure.error,\n      severity: failure.severity\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/master-orchestrator.ts",
+      "line": 136,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Starting workflow ${workflowId}`, { traceId: executionContext.traceId })",
+      "message": "🔄 Starting workflow ${workflowId}",
+      "dataObject": "{ traceId: executionContext.traceId }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/master-orchestrator.ts",
+      "line": 147,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Workflow ${workflowId} completed successfully`, {\n        traceId: executionContext.traceId,\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      })",
+      "message": "✅ Workflow ${workflowId} completed successfully",
+      "dataObject": "{\n        traceId: executionContext.traceId,\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/performance-monitor.ts",
+      "line": 344,
+      "column": 10,
+      "method": "debug",
+      "currentCode": "logger.debug('📊 Metrics aggregated:', {\n      dataPoints: recentData.length,\n      workflowSuccessRate: this.metrics.workflowExecution.successRate,\n      modelSelectionTime: this.metrics.modelSelection.selectionTime\n    })",
+      "message": "📊 Metrics aggregated:",
+      "dataObject": "{\n      dataPoints: recentData.length,\n      workflowSuccessRate: this.metrics.workflowExecution.successRate,\n      modelSelectionTime: this.metrics.modelSelection.selectionTime\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/resource-manager.ts",
+      "line": 113,
+      "column": 10,
+      "method": "debug",
+      "currentCode": "logger.debug('Resource check:', { available, needed })",
+      "message": "Resource check:",
+      "dataObject": "{ available, needed }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/workflow-execution-engine.ts",
+      "line": 86,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Starting workflow execution ${executionId}`, {\n      workflowId: workflow.id,\n      workflowName: workflow.name,\n      stepCount: workflow.steps.length\n    })",
+      "message": "🔄 Starting workflow execution ${executionId}",
+      "dataObject": "{\n      workflowId: workflow.id,\n      workflowName: workflow.name,\n      stepCount: workflow.steps.length\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/workflow-execution-engine.ts",
+      "line": 95,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Workflow execution ${executionId} completed`, {\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      })",
+      "message": "✅ Workflow execution ${executionId} completed",
+      "dataObject": "{\n        executionTime: result.executionTime,\n        stepsCompleted: result.stepsCompleted,\n        stepsFailed: result.stepsFailed\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/orchestration/workflow-execution-engine.ts",
+      "line": 338,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Step ${step.id} completed successfully`, {\n          attempt: attempt + 1,\n          executionTime: Date.now() - startTime\n        })",
+      "message": "✅ Step ${step.id} completed successfully",
+      "dataObject": "{\n          attempt: attempt + 1,\n          executionTime: Date.now() - startTime\n        }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 72,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🔄 Queueing workflow execution: ${request.workflowId}`, {\n      executionId,\n      priority: request.priority || 'medium'\n    })",
+      "message": "🔄 Queueing workflow execution: ${request.workflowId}",
+      "dataObject": "{\n      executionId,\n      priority: request.priority || 'medium'\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 99,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🚀 Executing workflow immediately: ${request.workflowId}`, {\n      executionId\n    })",
+      "message": "🚀 Executing workflow immediately: ${request.workflowId}",
+      "dataObject": "{\n      executionId\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 126,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info(`✅ Workflow execution completed: ${request.workflowId}`, {\n        executionId,\n        executionTime: result.executionTime,\n        success: result.success\n      })",
+      "message": "✅ Workflow execution completed: ${request.workflowId}",
+      "dataObject": "{\n        executionId,\n        executionTime: result.executionTime,\n        success: result.success\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 141,
+      "column": 12,
+      "method": "error",
+      "currentCode": "logger.error(`❌ Workflow execution failed: ${request.workflowId}`, {\n        executionId,\n        error: executionStatus.error\n      })",
+      "message": "❌ Workflow execution failed: ${request.workflowId}",
+      "dataObject": "{\n        executionId,\n        error: executionStatus.error\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/services/workflow-service.ts",
+      "line": 183,
+      "column": 10,
+      "method": "info",
+      "currentCode": "logger.info(`🛑 Cancelling workflow execution: ${execution.workflowId}`, {\n      executionId\n    })",
+      "message": "🛑 Cancelling workflow execution: ${execution.workflowId}",
+      "dataObject": "{\n      executionId\n    }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 217,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Agent created', { id: agent.id, name: agent.name })",
+      "message": "✅ Agent created",
+      "dataObject": "{ id: agent.id, name: agent.name }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 243,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Lead created', { id: lead.id, name: `${lead.first_name} ${lead.last_name}` })",
+      "message": "✅ Lead created",
+      "dataObject": "{ id: lead.id, name: `${lead.first_name} ${lead.last_name}` }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 261,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Approval created', { id: approval.id, type: approval.type })",
+      "message": "✅ Approval created",
+      "dataObject": "{ id: approval.id, type: approval.type }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 278,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Event created', { id: event.id, type: event.type })",
+      "message": "✅ Event created",
+      "dataObject": "{ id: event.id, type: event.type }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 326,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Cache performance test', { \n        time: `${cacheTime}ms`, \n        operations: 2000,\n        avgPerOp: `${cacheTime / 2000}ms`,\n        hitRate: `${stats.hitRate.toFixed(2)}%`\n      })",
+      "message": "✅ Cache performance test",
+      "dataObject": "{ \n        time: `${cacheTime}ms`, \n        operations: 2000,\n        avgPerOp: `${cacheTime / 2000}ms`,\n        hitRate: `${stats.hitRate.toFixed(2)}%`\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 351,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Query performance', { time: `${queryTime}ms` })",
+      "message": "✅ Query performance",
+      "dataObject": "{ time: `${queryTime}ms` }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/mock-postgresql-test.ts",
+      "line": 366,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Connection pool performance', { \n        time: `${poolTime}ms`, \n        queries: 10,\n        avgPerQuery: `${poolTime / 10}ms`\n      })",
+      "message": "✅ Connection pool performance",
+      "dataObject": "{ \n        time: `${poolTime}ms`, \n        queries: 10,\n        avgPerQuery: `${poolTime / 10}ms`\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 341,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Agent created:', { id: agent.id, name: agent.name })",
+      "message": "Agent created:",
+      "dataObject": "{ id: agent.id, name: agent.name }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 368,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Lead created:', { id: lead.id, name: `${lead.first_name} ${lead.last_name}` })",
+      "message": "Lead created:",
+      "dataObject": "{ id: lead.id, name: `${lead.first_name} ${lead.last_name}` }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 386,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Approval created:', { id: approval.id, type: approval.type })",
+      "message": "Approval created:",
+      "dataObject": "{ id: approval.id, type: approval.type }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 404,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Event created:', { id: event.id, type: event.type })",
+      "message": "Event created:",
+      "dataObject": "{ id: event.id, type: event.type }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 435,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info('Cache hit successful:', { leadId: cachedLead.id })",
+      "message": "Cache hit successful:",
+      "dataObject": "{ leadId: cachedLead.id }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 464,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Memory recall test:', {\n        lead: relatedData.lead ? 'found' : 'missing',\n        approvals: relatedData.approvals.length,\n        events: relatedData.events.length,\n      })",
+      "message": "Memory recall test:",
+      "dataObject": "{\n        lead: relatedData.lead ? 'found' : 'missing',\n        approvals: relatedData.approvals.length,\n        events: relatedData.events.length,\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 497,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Query performance:', { time: `${queryTime}ms` })",
+      "message": "Query performance:",
+      "dataObject": "{ time: `${queryTime}ms` }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 505,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Cache performance:', { time: `${cacheTime}ms`, hit: cachedData ? 'success' : 'miss' })",
+      "message": "Cache performance:",
+      "dataObject": "{ time: `${cacheTime}ms`, hit: cachedData ? 'success' : 'miss' }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/postgresql-integration.test.ts",
+      "line": 520,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('Connection pool performance:', { \n        time: `${poolTime}ms`, \n        queries: 10,\n        avgPerQuery: `${poolTime / 10}ms`\n      })",
+      "message": "Connection pool performance:",
+      "dataObject": "{ \n        time: `${poolTime}ms`, \n        queries: 10,\n        avgPerQuery: `${poolTime / 10}ms`\n      }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 304,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Agent created', { id: agent.id, name: agent.name })",
+      "message": "✅ Agent created",
+      "dataObject": "{ id: agent.id, name: agent.name }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 331,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Lead created', { id: lead.id, name: `${lead.first_name} ${lead.last_name}` })",
+      "message": "✅ Lead created",
+      "dataObject": "{ id: lead.id, name: `${lead.first_name} ${lead.last_name}` }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 349,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Approval created', { id: approval.id, type: approval.type })",
+      "message": "✅ Approval created",
+      "dataObject": "{ id: approval.id, type: approval.type }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 367,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Event created', { id: event.id, type: event.type })",
+      "message": "✅ Event created",
+      "dataObject": "{ id: event.id, type: event.type }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 413,
+      "column": 14,
+      "method": "info",
+      "currentCode": "logger.info('✅ Cache size limits working', { size: stats.size })",
+      "message": "✅ Cache size limits working",
+      "dataObject": "{ size: stats.size }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 436,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Query performance', { time: `${queryTime}ms` })",
+      "message": "✅ Query performance",
+      "dataObject": "{ time: `${queryTime}ms` }",
+      "severity": "high",
+      "fixable": true
+    },
+    {
+      "file": "engine/src/test/standalone-postgresql-test.ts",
+      "line": 451,
+      "column": 12,
+      "method": "info",
+      "currentCode": "logger.info('✅ Connection pool performance', { \n        time: `${poolTime}ms`, \n        queries: 10,\n        avgPerQuery: `${poolTime / 10}ms`\n      })",
+      "message": "✅ Connection pool performance",
+      "dataObject": "{ \n        time: `${poolTime}ms`, \n        queries: 10,\n        avgPerQuery: `${poolTime / 10}ms`\n      }",
+      "severity": "high",
+      "fixable": true
+    }
+  ]
+}

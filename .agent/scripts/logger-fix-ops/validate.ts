@@ -29,11 +29,11 @@ async function validateSyntax(files: string[]): Promise<boolean> {
                 true
             );
 
-            const diagnostics = (sourceFile as any).parseDiagnostics as ts.Diagnostic[];
+            const diagnostics = (sourceFile as any).parseDiagnostics || [];
             if (diagnostics.length > 0) {
                 console.error(`Syntax error in ${file}:`);
-                diagnostics.forEach((d: ts.Diagnostic) => {
-                    const { line, character } = sourceFile.getLineAndCharacterOfPosition(d.start!);
+                diagnostics.forEach((d: any) => {
+                    const { line, character } = sourceFile.getLineAndCharacterOfPosition(d.start || 0);
                     console.error(`  Line ${line + 1}, Col ${character + 1}: ${d.messageText}`);
                 });
                 passed = false;
