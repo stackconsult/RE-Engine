@@ -4,9 +4,9 @@
  */
 
 import { EventEmitter } from 'events';
-import { Component, ComponentHealth } from '../types/orchestration.types';
-import { Logger } from '../utils/logger';
-import { MCPClient } from './mcp-client';
+import { Component, ComponentHealth } from '../types/orchestration.types.js';
+import { Logger } from '../utils/logger.js';
+import { MCPClient } from './mcp-client.js';
 
 export interface ComponentManagerConfig {
   healthCheckInterval: number;
@@ -33,6 +33,23 @@ export class ComponentManager extends EventEmitter {
       ...config
     };
     this.logger = new Logger('ComponentManager', true);
+  }
+
+  /**
+   * Register a pre-built component manually
+   */
+  registerComponent(component: Component): void {
+    if (!component.name) {
+      throw new Error('Component name is required');
+    }
+    this.components.set(component.name, component);
+    this.healthStatus.set(component.name, {
+      status: 'healthy',
+      lastCheck: Date.now(),
+      metrics: { manual: 1 }
+    });
+    this.logger.info(`✅ Component ${component.name} registered manually`);
+    this.emit('component:registered', { name: component.name, component });
   }
 
   /**

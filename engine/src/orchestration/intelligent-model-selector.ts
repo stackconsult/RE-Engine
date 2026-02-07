@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { AIModel, ModelRequirements, ModelPerformance, TaskType } from '../types/orchestration.types';
-import { Logger } from '../utils/logger';
+import { AIModel, ModelRequirements, ModelPerformance, TaskType } from '../types/orchestration.types.js';
+import { Logger } from '../utils/logger.js';
 
 export interface ModelSelectorConfig {
   enablePerformanceTracking: boolean;

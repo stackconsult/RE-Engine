@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { Component, Workflow, WorkflowResult, ExecutionContext, WorkflowFailure, RecoveryResult } from '../types/orchestration.types.js';
+import { Component, Workflow, WorkflowResult, ExecutionContext, WorkflowFailure, RecoveryResult, MasterOrchestratorConfig, OrchestratorDependencies } from '../types/orchestration.types.js';
 import { ComponentManager } from './component-manager.js';
 import { WorkflowExecutionEngine } from './workflow-execution-engine.js';
 import { IntelligentModelSelector } from './intelligent-model-selector.js';
@@ -14,15 +14,6 @@ import { GuardrailSystem } from './guardrail-system.js';
 import { ResourceManager } from './resource-manager.js';
 import { PerformanceMonitor } from './performance-monitor.js';
 import { Logger } from '../utils/logger.js';
-import { OrchestratorDependencies } from '../types/orchestration.types.js';
-
-export interface MasterOrchestratorConfig {
-  maxConcurrentWorkflows: number;
-  defaultTimeout: number;
-  healthCheckInterval: number;
-  enableAutoScaling: boolean;
-  enableDetailedLogging: boolean;
-}
 
 export class MasterOrchestrator extends EventEmitter {
   private components: Map<string, Component> = new Map();

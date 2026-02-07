@@ -3,6 +3,14 @@
  * Complete type system for the RE Engine orchestration layer
  */
 
+export interface MasterOrchestratorConfig {
+  maxConcurrentWorkflows: number;
+  defaultTimeout: number;
+  healthCheckInterval: number;
+  enableAutoScaling: boolean;
+  enableDetailedLogging: boolean;
+}
+
 // Core Component Types
 export interface Component {
   name: string;
@@ -111,16 +119,16 @@ export interface OrchestratorDependencies {
 
 export interface AIModel {
   id: string;
-name: string;
-type: 'local' | 'cloud';
-provider: string;
-contextWindow: number;
-costPerToken: number;
-isLocal: boolean;
-capabilities: string[];
-specialties ?: string[];
-performance: ModelPerformance;
-_rankingScore ?: number; // Internal use for debugging
+  name: string;
+  type: 'local' | 'cloud';
+  provider: string;
+  contextWindow: number;
+  costPerToken: number;
+  isLocal: boolean;
+  capabilities: string[];
+  specialties?: string[];
+  performance: ModelPerformance;
+  _rankingScore?: number; // Internal use for debugging
 }
 
 export interface ModelRequirements {

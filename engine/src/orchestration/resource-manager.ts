@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { ResourceRequirements, ResourceAllocation, AllocatedResource } from '../types/orchestration.types';
-import { Logger } from '../utils/logger';
+import { ResourceRequirements, ResourceAllocation, AllocatedResource } from '../types/orchestration.types.js';
+import { Logger } from '../utils/logger.js';
 
 export interface ResourceManagerConfig {
   enableAutoScaling: boolean;

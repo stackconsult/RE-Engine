@@ -3,8 +3,8 @@
  * Bridges the gap between ProductionBootstrapService (DI) and MasterOrchestrator (Legacy)
  */
 
-import { MasterOrchestrator, MasterOrchestratorConfig } from './master-orchestrator.js';
-import { OrchestratorDependencies } from '../types/orchestration.types.js';
+import { MasterOrchestrator } from './master-orchestrator.js';
+import { OrchestratorDependencies, MasterOrchestratorConfig } from '../types/orchestration.types.js';
 
 export class OrchestratorFactory {
     /**

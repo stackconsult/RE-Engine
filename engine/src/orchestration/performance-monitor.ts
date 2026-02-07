@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 export interface PerformanceMetrics {
   workflowExecution: {
@@ -63,7 +63,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   recordPerformance(data: PerformanceData): void {
     this.performanceData.push(data);
-    
+
     // Keep data size manageable
     if (this.performanceData.length > this.maxDataPoints) {
       this.performanceData = this.performanceData.slice(-this.maxDataPoints / 2);
@@ -71,7 +71,7 @@ export class PerformanceMonitor extends EventEmitter {
 
     // Update relevant metrics
     this.updateMetrics(data);
-    
+
     this.logger.debug('📊 Performance data recorded:', data);
   }
 
@@ -87,15 +87,15 @@ export class PerformanceMonitor extends EventEmitter {
    */
   getPerformanceData(startTime?: number, endTime?: number): PerformanceData[] {
     let data = [...this.performanceData];
-    
+
     if (startTime) {
       data = data.filter(d => d.timestamp >= startTime);
     }
-    
+
     if (endTime) {
       data = data.filter(d => d.timestamp <= endTime);
     }
-    
+
     return data;
   }
 
@@ -104,7 +104,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   getWorkflowPerformance(workflowId: string): any {
     const workflowData = this.performanceData.filter(d => d.workflowId === workflowId);
-    
+
     if (workflowData.length === 0) {
       return null;
     }
@@ -130,7 +130,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   getComponentPerformance(component: string): any {
     const componentData = this.performanceData.filter(d => d.component === component);
-    
+
     if (componentData.length === 0) {
       return null;
     }
@@ -168,7 +168,7 @@ export class PerformanceMonitor extends EventEmitter {
       clearInterval(this.aggregationInterval);
       this.aggregationInterval = null;
     }
-    
+
     this.logger.info('📊 Performance monitor shutdown');
   }
 
@@ -227,7 +227,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private updateWorkflowMetrics(data: PerformanceData): void {
     const workflowData = this.performanceData.filter(d => d.action.includes('workflow'));
-    
+
     if (workflowData.length === 0) return;
 
     // Calculate average time
@@ -250,7 +250,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private updateModelSelectionMetrics(data: PerformanceData): void {
     const modelData = this.performanceData.filter(d => d.action.includes('model_selection'));
-    
+
     if (modelData.length === 0) return;
 
     // Calculate selection time
@@ -271,7 +271,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private updateFallbackMetrics(data: PerformanceData): void {
     const fallbackData = this.performanceData.filter(d => d.action.includes('fallback'));
-    
+
     if (fallbackData.length === 0) return;
 
     // Calculate recovery time
@@ -293,7 +293,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   private updateGuardrailMetrics(data: PerformanceData): void {
     const guardrailData = this.performanceData.filter(d => d.action.includes('guardrail'));
-    
+
     if (guardrailData.length === 0) return;
 
     // Calculate evaluation time
@@ -305,7 +305,7 @@ export class PerformanceMonitor extends EventEmitter {
 
     // Calculate violation prevention
     const violationData = guardrailData.filter(d => d.metadata?.violation);
-    const preventionRate = guardrailData.length > 0 ? 
+    const preventionRate = guardrailData.length > 0 ?
       ((guardrailData.length - violationData.length) / guardrailData.length) * 100 : 100;
     this.metrics.guardrails.violationPrevention = preventionRate;
 
@@ -327,10 +327,10 @@ export class PerformanceMonitor extends EventEmitter {
   private aggregateMetrics(): void {
     const now = Date.now();
     const oneHourAgo = now - 3600000; // 1 hour ago
-    
+
     // Get recent data for aggregation
     const recentData = this.performanceData.filter(d => d.timestamp >= oneHourAgo);
-    
+
     if (recentData.length === 0) return;
 
     // Emit aggregated metrics

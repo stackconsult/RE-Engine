@@ -5,9 +5,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { Workflow, WorkflowStep, WorkflowResult, ExecutionContext, StepResult, StepQueue, ResultCollector } from '../types/orchestration.types.js';
+import { Workflow, WorkflowStep, WorkflowResult, ExecutionContext, StepResult, MasterOrchestratorConfig } from '../types/orchestration.types.js';
 import { Logger } from '../utils/logger.js';
-import { MasterOrchestratorConfig } from './master-orchestrator.js';
 import { ComponentManager } from './component-manager.js';
 import { IntelligentModelSelector } from './intelligent-model-selector.js';
 import { FallbackManager } from './fallback-manager.js';
@@ -22,14 +21,14 @@ export interface WorkflowExecutionConfig extends Partial<MasterOrchestratorConfi
 }
 
 export class WorkflowExecutionEngine extends EventEmitter {
-  private config: MasterOrchestratorConfig;
+  private config: WorkflowExecutionConfig;
   private logger: Logger;
   private activeExecutions: Map<string, WorkflowExecution> = new Map();
 
-  // Core Managers
+  // Core Dependencies
   private componentManager: ComponentManager;
-  private fallbackManager: FallbackManager;
   private modelSelector: IntelligentModelSelector;
+  private fallbackManager: FallbackManager;
   private guardrails: GuardrailSystem;
   private dependencies?: OrchestratorDependencies;
 
@@ -42,15 +41,28 @@ export class WorkflowExecutionEngine extends EventEmitter {
     dependencies?: OrchestratorDependencies
   ) {
     super();
-    this.config = config;
+    // Map Master config to Engine config with defaults
+    this.config = {
+      ...config,
+      maxConcurrentSteps: 10,
+      defaultStepTimeout: config.defaultTimeout || 30000,
+      enablePerformanceTracking: true,
+      enableDetailedLogging: config.enableDetailedLogging
+    };
+
     this.componentManager = componentManager;
     this.fallbackManager = fallbackManager;
     this.modelSelector = modelSelector;
     this.guardrails = guardrails;
     this.dependencies = dependencies;
 
-    // Use injected logger if available
     this.logger = dependencies?.logger || new Logger('WorkflowExecutionEngine', this.config.enableDetailedLogging);
+
+    // Initialize dependencies if not provided (should be provided by Master)
+    if (!this.modelSelector) this.modelSelector = new IntelligentModelSelector(); // Fallback safety
+    if (!this.guardrails) this.guardrails = new GuardrailSystem(); // Fallback safety
+    if (!this.componentManager) throw new Error('ComponentManager is required');
+    if (!this.fallbackManager) throw new Error('FallbackManager is required');
   }
 
   /**
@@ -166,12 +178,11 @@ export class WorkflowExecutionEngine extends EventEmitter {
   // Private Methods
 
   private async handleExecutionFailure(execution: WorkflowExecution, error: any): Promise<any> {
-    // Try to recover from the failure
     const recoveryResult = await this.fallbackManager.handleFailure({
-      workflowId: execution.workflow.id,
-      stepId: execution.getCurrentStepId(),
+      workflowId: execution.getWorkflow().id,
+      stepId: execution.getCurrentStepId() || 'unknown',
       error: error.message,
-      context: execution.context,
+      context: execution.getContext(),
       timestamp: Date.now()
     });
 
@@ -286,7 +297,15 @@ class WorkflowExecution {
     };
   }
 
-  getCurrentStepId(): string | null {
+  public getWorkflow(): Workflow {
+    return this.workflow;
+  }
+
+  public getContext(): ExecutionContext {
+    return this.context;
+  }
+
+  public getCurrentStepId(): string | null {
     return this.currentStepId;
   }
 
@@ -404,79 +423,35 @@ class WorkflowExecution {
 
     const prompt = this.buildPrompt(step.parameters, this.context);
 
-    const response = await model.complete({
+    const response = await component.execute(step.action || 'complete', {
+      modelId: model.id,
       messages: [{ role: 'user', content: prompt }],
       temperature: step.parameters.temperature || 0.7,
-      maxTokens: step.parameters.maxTokens || 2000
+      maxTokens: step.parameters.maxTokens || 2000,
+      ...step.parameters
     });
 
     return this.parseLLMResponse(response, step.parameters.outputFormat);
   }
 
   private async executeMCPStep(component: any, step: WorkflowStep): Promise<any> {
-    const tool = component.getTool(step.action);
-    if (!tool) {
-      throw new Error(`MCP tool ${step.action} not found`);
-    }
-
-    return await tool.execute(step.parameters);
+    return await component.execute(step.action, step.parameters);
   }
 
   private async executeWebStep(component: any, step: WorkflowStep): Promise<any> {
-    const browser = await component.getBrowser();
-    const page = await browser.newPage();
-
-    try {
-      if (step.action === 'navigate') {
-        await page.goto(step.parameters.url);
-      } else if (step.action === 'scrape') {
-        const result = await page.evaluate(step.parameters.script);
-        return result;
-      } else if (step.action === 'interact') {
-        await this.performWebInteraction(page, step.parameters);
-      }
-
-      return await this.extractWebData(page, step.parameters);
-    } finally {
-      await page.close();
-    }
+    return await component.execute(step.action, step.parameters);
   }
 
   private async executeMobileStep(component: any, step: WorkflowStep): Promise<any> {
-    switch (step.action) {
-      case 'send_imessage':
-        return await component.sendiMessage(step.parameters.to, step.parameters.message);
-      case 'send_sms':
-        return await component.sendSMS(step.parameters.to, step.parameters.message);
-      case 'make_call':
-        return await component.makeCall(step.parameters.to, step.parameters.message);
-      default:
-        throw new Error(`Unknown mobile action: ${step.action}`);
-    }
+    return await component.execute(step.action, step.parameters);
   }
 
   private async executeDatabaseStep(component: any, step: WorkflowStep): Promise<any> {
-    switch (step.action) {
-      case 'insert':
-        return await component.insert(step.parameters.table, step.parameters.data);
-      case 'update':
-        return await component.update(step.parameters.table, step.parameters.id, step.parameters.data);
-      case 'select':
-        return await component.select(step.parameters.table, step.parameters.query);
-      case 'delete':
-        return await component.delete(step.parameters.table, step.parameters.id);
-      default:
-        throw new Error(`Unknown database action: ${step.action}`);
-    }
+    return await component.execute(step.action, step.parameters);
   }
 
   private async executeAPIStep(component: any, step: WorkflowStep): Promise<any> {
-    return await component.callAPI({
-      method: step.parameters.method || 'GET',
-      url: step.parameters.url,
-      headers: step.parameters.headers || {},
-      body: step.parameters.body
-    });
+    return await component.execute(step.action || 'call', step.parameters);
   }
 
   private async tryFallback(step: WorkflowStep, error: any): Promise<StepResult> {

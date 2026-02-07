@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { FallbackStrategy, WorkflowFailure, RecoveryResult } from '../types/orchestration.types';
-import { Logger } from '../utils/logger';
+import { FallbackStrategy, WorkflowFailure, RecoveryResult } from '../types/orchestration.types.js';
+import { Logger } from '../utils/logger.js';
 
 export interface FallbackManagerConfig {
   enableAutoRecovery: boolean;

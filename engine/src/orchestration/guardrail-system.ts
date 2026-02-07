@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { GuardrailRule, ValidationResult, RuleEvaluation, Action, Workflow, ExecutionContext } from '../types/orchestration.types';
-import { Logger } from '../utils/logger';
+import { GuardrailRule, ValidationResult, RuleEvaluation, Action, Workflow, ExecutionContext } from '../types/orchestration.types.js';
+import { Logger } from '../utils/logger.js';
 
 export interface GuardrailSystemConfig {
   enableStrictMode: boolean;
