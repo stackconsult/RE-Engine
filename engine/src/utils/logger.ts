@@ -1,7 +1,6 @@
-/**
- * Logger Utility
  * Structured logging for the RE Engine orchestration system
- */
+  */
+import { ConfigService } from "../config/config.service.js";
 
 export enum LogLevel {
   DEBUG = 0,
@@ -168,7 +167,7 @@ export class Logger {
   private logStructured(entry: LogEntry): void {
     // Structured logging for external systems
     // This could send to ELK, Splunk, CloudWatch, etc.
-    if (process.env.NODE_ENV === 'production') {
+    if (ConfigService.getInstance().get('NODE_ENV') === 'production') {
       // Send to external logging service
       this.sendToExternalService(entry);
     }

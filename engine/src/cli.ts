@@ -6,8 +6,9 @@
  */
 
 import { Command } from 'commander';
-import { createAPIServer } from './api/server';
-import { Logger } from './utils/logger';
+import { createAPIServer } from './api/server.js';
+import { Logger } from './utils/logger.js';
+import { ConfigService } from './config/config.service.js';
 
 const program = new Command();
 const logger = new Logger('REEngineCLI', true);
@@ -36,6 +37,19 @@ program
       logger.info('🚀 Starting RE Engine API Server...');
       logger.info('📋 Configuration:', options);
 
+      const configSvc = ConfigService.getInstance();
+      const defaultConfig = {
+        port: configSvc.get('PORT'),
+        host: configSvc.get('HOST'),
+        environment: configSvc.get('NODE_ENV') as any,
+        enableCors: true,
+        enableCompression: true,
+        enableRateLimit: true,
+        rateLimitWindow: 15 * 60 * 1000,
+        rateLimitMax: 100,
+        enableDetailedLogging: configSvc.get('NODE_ENV') !== 'production',
+      };
+
       const server = createAPIServer({
         port: parseInt(options.port),
         host: options.host,
@@ -43,7 +57,8 @@ program
         enableCors: options.cors,
         enableCompression: options.compression,
         enableRateLimit: options.rateLimit,
-        enableDetailedLogging: options.verbose
+        enableDetailedLogging: options.verbose,
+        ...defaultConfig, // CLI options override config service defaults
       });
 
       await server.start();
@@ -136,10 +151,11 @@ program
       logger.info(`   Uptime: ${process.uptime()}s`);
 
       // Environment
+      const config = ConfigService.getInstance();
       logger.info('🌍 Environment:');
-      logger.info(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`   PORT: ${process.env.PORT || '3000'}`);
-      logger.info(`   HOST: ${process.env.HOST || 'localhost'}`);
+      logger.info(`   NODE_ENV: ${config.get('NODE_ENV')}`);
+      logger.info(`   PORT: ${config.get('PORT')}`);
+      logger.info(`   HOST: ${config.get('HOST')}`);
 
       // Dependencies check
       logger.info('📦 Dependencies:');
@@ -157,7 +173,7 @@ program
       }
 
       // Check for TinyFish API
-      if (process.env.TINYFISH_API_KEY) {
+      if (ConfigService.getInstance().get('TINYFISH_API_KEY')) {
         logger.info('   ✅ TinyFish: API key configured');
       } else {
         logger.info('   ❌ TinyFish: API key not configured');

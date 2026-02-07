@@ -5,6 +5,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { serviceAuthMiddleware, generateServiceToken, ServiceAuth } from './middleware/service-auth.js';
 import { logger } from './observability/logger.js';
+import { ConfigService } from './config/config.service.js';
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  origin: ConfigService.getInstance().get('ALLOWED_ORIGINS').split(','),
   credentials: true
 }));
 
@@ -52,7 +53,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '0.1.0'
+    version: '0.1.0' // Simplified, or could move to config if needed
   });
 });
 
@@ -96,14 +97,15 @@ app.post('/auth/token', async (req, res) => {
 // Service API Key Validation Function
 async function validateServiceApiKey(serviceId: string, apiKey: string): Promise<{ valid: boolean, permissions?: any }> {
   try {
+    const config = ConfigService.getInstance();
     // For now, use fallback registry (can be enhanced with database later)
     const fallbackService = {
-      'reengine-engine': { apiKey: process.env.ENGINE_API_KEY || 'dev-key', permissions: { read: true, write: true, admin: true } },
-      'reengine-browser': { apiKey: process.env.BROWSER_API_KEY || 'dev-key', permissions: { read: true, write: true, execute: true } },
-      'reengine-tinyfish': { apiKey: process.env.TINYFISH_API_KEY || 'dev-key', permissions: { read: true, write: true, scrape: true } },
-      'reengine-llama': { apiKey: process.env.LLAMA_API_KEY || 'dev-key', permissions: { read: true, write: true, model: true } },
-      'reengine-core': { apiKey: process.env.CORE_API_KEY || 'dev-key', permissions: { read: true, write: true, orchestrate: true } },
-      'reengine-outreach': { apiKey: process.env.OUTREACH_API_KEY || 'dev-key', permissions: { read: true, write: true, outreach: true } }
+      'reengine-engine': { apiKey: config.get('ENGINE_API_KEY'), permissions: { read: true, write: true, admin: true } },
+      'reengine-browser': { apiKey: config.get('BROWSER_API_KEY'), permissions: { read: true, write: true, execute: true } },
+      'reengine-tinyfish': { apiKey: config.get('TINYFISH_API_KEY') || 'dev-key', permissions: { read: true, write: true, scrape: true } },
+      'reengine-llama': { apiKey: config.get('LLAMA_API_KEY'), permissions: { read: true, write: true, model: true } },
+      'reengine-core': { apiKey: config.get('CORE_API_KEY'), permissions: { read: true, write: true, orchestrate: true } },
+      'reengine-outreach': { apiKey: config.get('OUTREACH_API_KEY'), permissions: { read: true, write: true, outreach: true } }
     };
 
     const service = fallbackService[serviceId as keyof typeof fallbackService];
@@ -146,7 +148,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
   res.status(error.status || 500).json({
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    message: ConfigService.getInstance().get('NODE_ENV') === 'development' ? error.message : 'Something went wrong'
   });
 });
 

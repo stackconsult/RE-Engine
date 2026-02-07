@@ -1,10 +1,12 @@
 import pino from "pino";
 import path from "path";
 import { hostname } from "os";
+import { ConfigService } from "../config/config.service.js";
 
 // Create a production-ready logger configuration
-const isProduction = process.env.NODE_ENV === 'production';
-const logLevel = process.env.LOG_LEVEL || 'info';
+const config = ConfigService.getInstance();
+const isProduction = config.get('NODE_ENV') === 'production';
+const logLevel = config.get('LOG_LEVEL') || 'info';
 
 // Base logger configuration
 const baseConfig = {
@@ -37,10 +39,10 @@ const baseConfig = {
     remove: true,
   },
   // Transport configuration
-  transport: isProduction 
+  transport: isProduction
     ? {
       target: 'pino/file',
-      options: { 
+      options: {
         destination: path.join(process.cwd(), 'logs', 'app.log'),
         mkdir: true
       }
@@ -53,7 +55,7 @@ const baseConfig = {
         ignore: 'pid,hostname'
       }
     }
-  };
+};
 
 // Create child loggers for different modules
 export const logger = pino(baseConfig);
@@ -81,11 +83,11 @@ export const logDatabaseOperation = (operation: string, table: string, duration?
     table,
     timestamp: new Date().toISOString()
   };
-  
+
   if (duration !== undefined) {
     logData.duration = `${duration}ms`;
   }
-  
+
   if (error) {
     logData.error = error.message;
     dbLogger.error(logData);
@@ -101,15 +103,15 @@ export const logApiRequest = (method: string, url: string, statusCode: number, d
     statusCode,
     timestamp: new Date().toISOString()
   };
-  
+
   if (duration !== undefined) {
     logData.duration = `${duration}ms`;
   }
-  
+
   if (userId) {
     logData.userId = userId;
   }
-  
+
   if (statusCode >= 400) {
     apiLogger.warn(logData);
   } else {
@@ -134,7 +136,7 @@ export const logSystemEvent = (event: string, severity: 'info' | 'warn' | 'error
     metadata,
     timestamp: new Date().toISOString()
   };
-  
+
   switch (severity) {
     case 'error':
       logger.error(logData);
@@ -170,7 +172,7 @@ export const logError = (error: Error, context?: string, metadata?: Record<strin
     metadata,
     timestamp: new Date().toISOString()
   };
-  
+
   logger.error(logData);
 };
 

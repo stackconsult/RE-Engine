@@ -11,6 +11,7 @@ import {
   ServiceStatus, HealthCheckResult, SecurityStatus, PerformanceMetrics, MetricsConfig,
   JWTManager, EncryptionManager
 } from './types.js';
+import { ConfigService } from '../config/config.service.js';
 
 export interface ProductionBootstrapDependencies {
   healthMonitor: HealthMonitor;
@@ -117,9 +118,11 @@ export class ProductionBootstrapService {
   }
 
   private async initializeSecurity(): Promise<void> {
+    const config = ConfigService.getInstance();
+
     // STEP 2.1.1: JWT Configuration
     await this.jwtManager.configure({
-      secret: process.env.JWT_SECRET || 'dev-secret',
+      secret: config.get('JWT_SECRET'),
       algorithm: 'HS256',
       expiresIn: '24h',
       issuer: 'reengine-production',
@@ -130,7 +133,7 @@ export class ProductionBootstrapService {
     // STEP 2.1.2: Encryption Setup
     await this.encryptionManager.configure({
       algorithm: 'aes-256-gcm',
-      key: process.env.ENCRYPTION_KEY || 'dev-key-must-be-32-chars-long!',
+      key: config.get('ENCRYPTION_KEY') || 'dev-key-must-be-32-chars-long!',
       ivLength: 16
     });
 
@@ -190,13 +193,15 @@ export class ProductionBootstrapService {
   }
 
   private async bootstrapDatabaseConnections(): Promise<void> {
+    const config = ConfigService.getInstance();
+
     // STEP 2.5.1: Supabase Connection
     await this.supabaseService.connect({
-      url: process.env.SUPABASE_URL,
-      anonKey: process.env.SUPABASE_ANON_KEY,
-      serviceKey: process.env.SUPABASE_SERVICE_KEY,
-      poolSize: parseInt(process.env.DATABASE_POOL_SIZE || '20'),
-      timeout: parseInt(process.env.DATABASE_TIMEOUT || '30000')
+      url: config.get('SUPABASE_URL') || '',
+      anonKey: config.get('SUPABASE_ANON_KEY') || '',
+      serviceKey: config.get('SUPABASE_SERVICE_KEY') || '',
+      poolSize: config.get('DATABASE_POOL_SIZE'),
+      timeout: config.get('DATABASE_TIMEOUT')
     });
 
     // STEP 2.5.2: Connection Pool Setup
@@ -235,9 +240,11 @@ export class ProductionBootstrapService {
       updateAgeOnGet: true
     }); */
 
+    const config = ConfigService.getInstance();
+
     // STEP 2.6.3: Message Queue Setup
     await this.messageQueue.connect({
-      url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
+      url: config.get('RABBITMQ_URL'),
       prefetch: 10,
       retryDelay: 5000,
       maxRetries: 3
@@ -260,11 +267,13 @@ export class ProductionBootstrapService {
       startup: '/health/startup'
     });
 
+    const config = ConfigService.getInstance();
+
     // STEP 2.7.2: Metrics Collection
     await this.healthMonitor.setupMetrics({
       prometheus: {
         enabled: true,
-        port: parseInt(process.env.PROMETHEUS_PORT || '9090'),
+        port: config.get('PROMETHEUS_PORT'),
         path: '/metrics',
         collectDefaultMetrics: true
       },
@@ -273,7 +282,7 @@ export class ProductionBootstrapService {
 
     // STEP 2.7.3: Alerting Configuration
     await this.healthMonitor.setupAlerting({
-      webhook: process.env.ALERT_WEBHOOK_URL,
+      webhook: config.get('ALERT_WEBHOOK_URL'),
       thresholds: {
         errorRate: 0.05,
         responseTime: 5000,

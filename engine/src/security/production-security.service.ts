@@ -13,6 +13,7 @@ import {
   DDoSProtection,
   IPWhitelist
 } from '../production/types.js';
+import { ConfigService } from '../config/config.service.js';
 export interface ProductionSecurityDependencies {
   jwtManager: JWTManager;
   encryptionManager: EncryptionManager;
@@ -88,8 +89,9 @@ export class ProductionSecurityService {
   }
 
   private async configureJWTSecurity(): Promise<void> {
+    const config = ConfigService.getInstance();
     await this.jwtManager.configure({
-      secret: process.env.JWT_SECRET || 'dev-secret',
+      secret: config.get('JWT_SECRET'),
       algorithm: 'HS256',
       expiresIn: '24h',
       issuer: 'reengine-production',
@@ -100,9 +102,10 @@ export class ProductionSecurityService {
   }
 
   private async configureDataEncryption(): Promise<void> {
+    const config = ConfigService.getInstance();
     await this.encryptionManager.configure({
       algorithm: 'aes-256-gcm',
-      key: process.env.ENCRYPTION_KEY || 'dev-key-must-be-32-chars-long!',
+      key: config.get('ENCRYPTION_KEY') || 'dev-key-must-be-32-chars-long!',
       ivLength: 16
     });
     // Note: Field-level encryption deferred - interface doesn't support configureFieldEncryption
@@ -110,11 +113,12 @@ export class ProductionSecurityService {
 
   private async configureAPISecurity(): Promise<void> {
     // API Key Management
+    const config = ConfigService.getInstance();
     await this.apiKeyManager.configure({
       algorithm: 'HS256',
       expiresIn: '1h',
       rateLimit: 1000,
-      ipWhitelist: process.env.API_IP_WHITELIST?.split(',') || []
+      ipWhitelist: config.get('API_IP_WHITELIST')?.split(',') || []
     });
 
     // Request Validation
@@ -136,9 +140,10 @@ export class ProductionSecurityService {
     });
 
     // IP Whitelisting
+    const config = ConfigService.getInstance();
     await this.ipWhitelist.configure({
       enabled: true,
-      allowedIPs: process.env.ALLOWED_IPS?.split(',') || [],
+      allowedIPs: config.get('ALLOWED_IPS')?.split(',') || [],
       defaultAction: 'deny'
     });
   }

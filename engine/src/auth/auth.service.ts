@@ -6,6 +6,7 @@
 import * as jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getDatabase } from '../database/index.js';
+import { ConfigService } from '../config/config.service.js';
 
 export interface JWTPayload {
   user_id: string;
@@ -52,7 +53,7 @@ export class AuthService {
   private tokenExpiry: string;
 
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+    this.jwtSecret = ConfigService.getInstance().get('JWT_SECRET');
     this.tokenExpiry = '24h';
   }
 
@@ -77,22 +78,35 @@ export class AuthService {
         last_login TIMESTAMP
       );
     `;
-    
+
     await this.db.query(sql);
+  }
+
+  private async configureJWTSecurity(): Promise<void> {
+    const config = ConfigService.getInstance();
+    await this.jwtManager.configure({
+      secret: config.get('JWT_SECRET'),
+      algorithm: 'HS256',
+      expiresIn: '24h',
+      issuer: 'reengine-production',
+      audience: 'reengine-users',
+      clockTolerance: 60
+    });
+    // Note: Refresh token strategy deferred - interface doesn't support configureRefreshTokens
   }
 
   private async createDefaultAdmin(): Promise<void> {
     const existingAdmin = await this.db.query('SELECT * FROM users WHERE role = $1', ['admin']) as DatabaseRow[];
-    
+
     if (existingAdmin.length === 0) {
       const defaultPassword = 'admin123'; // Should be changed on first login
       const passwordHash = await this.hashPassword(defaultPassword);
-      
+
       await this.db.query(
         'INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5)',
         ['admin', 'admin@reengine.com', passwordHash, 'admin', JSON.stringify(['*'])]
       );
-      
+
       console.log('Default admin user created. Username: admin, Password: admin123');
     }
   }
@@ -115,36 +129,44 @@ export class AuthService {
         'SELECT * FROM users WHERE username = $1 AND active = TRUE',
         [username]
       ) as DatabaseRow[];
-      
+
       if (users.length === 0) {
         return null;
       }
-      
+
       const user = users[0];
       const isValidPassword = await this.verifyPassword(password, user.password_hash);
-      
+
       if (!isValidPassword) {
         return null;
       }
-      
+
+      // IP Whitelisting
+      const config = ConfigService.getInstance();
+      await this.ipWhitelist.configure({
+        enabled: true,
+        allowedIPs: config.get('ALLOWED_IPS')?.split(',') || [],
+        defaultAction: 'deny'
+      });
+
       // Update last login
       await this.db.query(
         'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1',
         [user.user_id]
       );
-      
+
       // Generate JWT token
       const payload: JWTPayload = {
         user_id: user.user_id,
         username: user.username,
         role: user.role
       };
-      
+
       // @ts-expect-error - JWT types are complex, this works at runtime
       const token = jwt.sign(payload, this.jwtSecret, { expiresIn: this.tokenExpiry });
-      
+
       const decoded = jwt.decode(token) as JWTPayload;
-      
+
       return {
         token,
         user: {
@@ -159,7 +181,7 @@ export class AuthService {
         permissions: user.permissions,
         expiresAt: new Date(decoded.exp! * 1000)
       };
-      
+
     } catch (error) {
       console.error('Authentication error:', error);
       return null;
@@ -169,18 +191,26 @@ export class AuthService {
   async verifyToken(token: string): Promise<AuthToken | null> {
     try {
       const decoded = jwt.verify(token, this.jwtSecret) as JWTPayload;
-      
+
       const users = await this.db.query(
         'SELECT * FROM users WHERE user_id = $1 AND active = TRUE',
         [decoded.user_id]
       ) as DatabaseRow[];
-      
+
       if (users.length === 0) {
         return null;
       }
-      
+
       const user = users[0];
-      
+      // API Key Management
+      const config = ConfigService.getInstance();
+      await this.apiKeyManager.configure({
+        algorithm: 'HS256',
+        expiresIn: '1h',
+        rateLimit: 1000,
+        ipWhitelist: config.get('API_IP_WHITELIST')?.split(',') || []
+      });
+
       return {
         token,
         user: {
@@ -195,7 +225,7 @@ export class AuthService {
         permissions: user.permissions,
         expiresAt: new Date(decoded.exp! * 1000)
       };
-      
+
     } catch (error) {
       console.error('Token verification error:', error);
       return null;
@@ -214,21 +244,21 @@ export class AuthService {
         'SELECT user_id FROM users WHERE username = $1 OR email = $2',
         [userData.username, userData.email]
       ) as DatabaseRow[];
-      
+
       if (existingUser.length > 0) {
         throw new Error('User with this username or email already exists');
       }
-      
+
       const passwordHash = await this.hashPassword(userData.password);
       const permissions = userData.permissions || this.getDefaultPermissions(userData.role);
-      
+
       const result = await this.db.query(
         'INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [userData.username, userData.email, passwordHash, userData.role, JSON.stringify(permissions)]
       ) as DatabaseRow[];
-      
+
       return result[0] as User;
-      
+
     } catch (error) {
       console.error('User creation error:', error);
       return null;
@@ -254,31 +284,31 @@ export class AuthService {
         'SELECT permissions FROM users WHERE user_id = $1 AND active = TRUE',
         [userId]
       ) as DatabaseRow[];
-      
+
       if (users.length === 0) {
         return false;
       }
-      
+
       const permissions = users[0].permissions || [];
-      
+
       // Wildcard permission
       if (permissions.includes('*')) {
         return true;
       }
-      
+
       // Exact match
       if (permissions.includes(permission)) {
         return true;
       }
-      
+
       // Wildcard category (e.g., 'approvals.*')
       const [category] = permission.split('.');
       if (permissions.includes(`${category}.*`)) {
         return true;
       }
-      
+
       return false;
-      
+
     } catch (error) {
       console.error('Permission check error:', error);
       return false;
@@ -291,26 +321,26 @@ export class AuthService {
         'SELECT password_hash FROM users WHERE user_id = $1 AND active = TRUE',
         [userId]
       ) as DatabaseRow[];
-      
+
       if (users.length === 0) {
         return false;
       }
-      
+
       const isValidOldPassword = await this.verifyPassword(oldPassword, users[0].password_hash!);
-      
+
       if (!isValidOldPassword) {
         return false;
       }
-      
+
       const newPasswordHash = await this.hashPassword(newPassword);
-      
+
       await this.db.query(
         'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
         [newPasswordHash, userId]
       );
-      
+
       return true;
-      
+
     } catch (error) {
       console.error('Password change error:', error);
       return false;

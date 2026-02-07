@@ -14,6 +14,7 @@ import { WorkflowService, WorkflowTemplateService, workflowTemplateService } fro
 import { MasterOrchestrator } from '../orchestration/master-orchestrator';
 import { createWorkflowAPIRouter, createTemplateAPIRouter } from './workflow-api';
 import { Logger } from '../utils/logger';
+import { ConfigService } from '../config/config.service.js';
 
 export interface ServerConfig {
   port: number;
@@ -41,16 +42,17 @@ export class REEngineAPIServer extends EventEmitter {
   constructor(config?: Partial<ServerConfig>) {
     super();
 
+    const configSvc = ConfigService.getInstance();
     const defaultConfig = {
-      port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
-      host: process.env.HOST || 'localhost',
-      environment: (process.env.NODE_ENV as any) || 'development',
+      port: configSvc.get('PORT'),
+      host: configSvc.get('HOST'),
+      environment: configSvc.get('NODE_ENV') as any,
       enableCors: true,
       enableCompression: true,
       enableRateLimit: true,
       rateLimitWindow: 15 * 60 * 1000, // 15 minutes
       rateLimitMax: 100, // 100 requests per window
-      enableDetailedLogging: process.env.NODE_ENV !== 'production',
+      enableDetailedLogging: configSvc.get('NODE_ENV') !== 'production',
       ...config
     };
 
@@ -265,7 +267,7 @@ export class REEngineAPIServer extends EventEmitter {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        version: process.env.npm_package_version || '1.0.0',
+        version: '1.0.0',
         environment: this.config.environment
       });
     });
@@ -274,7 +276,7 @@ export class REEngineAPIServer extends EventEmitter {
     this.app.get('/api', (req: Request, res: Response) => {
       res.json({
         name: 'RE Engine API',
-        version: process.env.npm_package_version || '1.0.0',
+        version: '1.0.0',
         description: 'Real Estate Automation API',
         endpoints: {
           workflows: '/api/workflows',
@@ -363,8 +365,9 @@ export class REEngineAPIServer extends EventEmitter {
     }
 
     // Add production origins from environment
-    if (process.env.ALLOWED_ORIGINS) {
-      origins.push(...process.env.ALLOWED_ORIGINS.split(','));
+    const configOrigins = ConfigService.getInstance().get('ALLOWED_ORIGINS');
+    if (configOrigins) {
+      origins.push(...configOrigins.split(','));
     }
 
     return origins;
