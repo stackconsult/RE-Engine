@@ -1,3 +1,4 @@
+/**
  * Structured logging for the RE Engine orchestration system
   */
 import { ConfigService } from "../config/config.service.js";

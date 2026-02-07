@@ -1,70 +1,40 @@
-# RE Engine - Production Dockerfile
-FROM node:22-alpine AS base
+# Multi-stage Dockerfile for RE Engine Core
+FROM node:22-alpine AS builder
 
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat curl
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+# Copy root and engine package files for dependency installation
+COPY package*.json ./
+COPY engine/package*.json ./engine/
 
-# Install Google Cloud SDK
-RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz && \
-    tar -xf google-cloud-cli-linux-x86_64.tar.gz && \
-    ./google-cloud-sdk/install.sh --usage-reporting=false --path-completion=false --command-completion=false && \
-    rm -rf google-cloud-cli-linux-x86_64.tar.gz
+# Install dependencies (utilizing npm workspaces)
+RUN npm install
 
-# Add gcloud to PATH
-ENV PATH=$PATH:/app/google-cloud-sdk/bin
+# Copy engine source code
+COPY engine/ ./engine/
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/google-cloud-sdk ./google-cloud-sdk
-COPY . .
-
-# Build the application
+# Build the engine
+WORKDIR /app/engine
 RUN npm run build
 
-# Production image, copy all necessary files
-FROM base AS runner
+# Production Stage
+FROM node:22-alpine
+
 WORKDIR /app
 
+# Copy only the necessary files for production
+COPY --from=builder /app/engine/dist ./dist
+COPY --from=builder /app/engine/package*.json ./
+
+# Install only production dependencies
+RUN npm install --omit=dev
+
+# Set environment variables
 ENV NODE_ENV=production
+ENV PORT=3000
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 reengine
-
-# Copy built application
-COPY --from=builder --chown=reengine:nodejs /app/dist ./dist
-COPY --from=builder --chown=reengine:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=reengine:nodejs /app/google-cloud-sdk ./google-cloud-sdk
-COPY --from=builder --chown=reengine:nodejs /app/package.json ./package.json
-
-# Create logs directory
-RUN mkdir -p /app/logs && chown reengine:nodejs /app/logs
-
-# Copy migration scripts
-COPY --from=builder --chown=reengine:nodejs /app/src/database/migrations ./src/database/migrations
-COPY --from=builder --chown=reengine:nodejs /app/migrate.js ./migrate.js
-
-# Add gcloud to PATH
-ENV PATH=$PATH:/app/google-cloud-sdk/bin
-
-USER reengine
-
+# Expose the API port
 EXPOSE 3000
 
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node dist/health-check.js || exit 1
-
+# Start the engine
 CMD ["node", "dist/index.js"]

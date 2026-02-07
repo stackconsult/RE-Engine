@@ -82,19 +82,6 @@ export class AuthService {
     await this.db.query(sql);
   }
 
-  private async configureJWTSecurity(): Promise<void> {
-    const config = ConfigService.getInstance();
-    await this.jwtManager.configure({
-      secret: config.get('JWT_SECRET'),
-      algorithm: 'HS256',
-      expiresIn: '24h',
-      issuer: 'reengine-production',
-      audience: 'reengine-users',
-      clockTolerance: 60
-    });
-    // Note: Refresh token strategy deferred - interface doesn't support configureRefreshTokens
-  }
-
   private async createDefaultAdmin(): Promise<void> {
     const existingAdmin = await this.db.query('SELECT * FROM users WHERE role = $1', ['admin']) as DatabaseRow[];
 
@@ -140,14 +127,6 @@ export class AuthService {
       if (!isValidPassword) {
         return null;
       }
-
-      // IP Whitelisting
-      const config = ConfigService.getInstance();
-      await this.ipWhitelist.configure({
-        enabled: true,
-        allowedIPs: config.get('ALLOWED_IPS')?.split(',') || [],
-        defaultAction: 'deny'
-      });
 
       // Update last login
       await this.db.query(
@@ -202,14 +181,6 @@ export class AuthService {
       }
 
       const user = users[0];
-      // API Key Management
-      const config = ConfigService.getInstance();
-      await this.apiKeyManager.configure({
-        algorithm: 'HS256',
-        expiresIn: '1h',
-        rateLimit: 1000,
-        ipWhitelist: config.get('API_IP_WHITELIST')?.split(',') || []
-      });
 
       return {
         token,

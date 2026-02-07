@@ -6,8 +6,19 @@ import rateLimit from 'express-rate-limit';
 import { serviceAuthMiddleware, generateServiceToken, ServiceAuth } from './middleware/service-auth.js';
 import { logger } from './observability/logger.js';
 import { ConfigService } from './config/config.service.js';
+import { initSentry } from './observability/sentry.js';
+import * as Sentry from "@sentry/node";
 
 const app = express();
+
+// Initialize Sentry before any other middleware
+initSentry();
+
+// Sentry request handler must be first
+// Note: In newer Sentry SDKs, this is done via Sentry.setupExpressErrorHandler(app) 
+// but we'll follow the standard pattern for v8/v7 if needed or use the wrapper.
+// For now, let's use the standard requestHandler.
+Sentry.setupExpressErrorHandler(app);
 
 // Security middleware
 app.use(helmet({

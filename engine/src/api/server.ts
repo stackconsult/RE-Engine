@@ -261,7 +261,7 @@ export class REEngineAPIServer extends EventEmitter {
   }
 
   private setupRoutes(): void {
-    // Health check
+    // Health check (Liveness) - Basic check if process is running
     this.app.get('/health', (req: Request, res: Response) => {
       res.json({
         status: 'healthy',
@@ -269,6 +269,18 @@ export class REEngineAPIServer extends EventEmitter {
         uptime: process.uptime(),
         version: '1.0.0',
         environment: this.config.environment
+      });
+    });
+
+    // Ready check (Readiness) - Deeper check if dependencies are ready
+    this.app.get('/ready', async (req: Request, res: Response) => {
+      const dependencies = await this.getDependencyStatus();
+      const allReady = Object.values(dependencies).every(d => d.status === 'up');
+
+      res.status(allReady ? 200 : 503).json({
+        status: allReady ? 'ready' : 'not ready',
+        timestamp: new Date().toISOString(),
+        dependencies
       });
     });
 
@@ -350,6 +362,32 @@ export class REEngineAPIServer extends EventEmitter {
       await this.shutdown();
       process.exit(0);
     });
+  }
+
+  private async getDependencyStatus(): Promise<Record<string, { status: 'up' | 'down', details?: any }>> {
+    const status: Record<string, { status: 'up' | 'down', details?: any }> = {};
+
+    // Check Database
+    try {
+      // Basic check if database is initialized
+      const db = (await import('../database/index.js')).getDatabase();
+      status.database = { status: 'up' };
+    } catch (error) {
+      status.database = { status: 'down', details: 'Database connection failed' };
+    }
+
+    // Check Orchestrator
+    try {
+      if (this.orchestrator) {
+        status.orchestrator = { status: 'up' };
+      } else {
+        status.orchestrator = { status: 'down' };
+      }
+    } catch (error) {
+      status.orchestrator = { status: 'down' };
+    }
+
+    return status;
   }
 
   private getCorsOrigins(): string[] {
