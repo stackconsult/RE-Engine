@@ -5,15 +5,20 @@
 
 import { NeonIntegrationService } from './neon-integration.service.js';
 import { SupabaseIntegrationService } from './supabase-integration.service.js';
+import { CSVConnection } from './csv.js';
 import { Logger } from '../utils/logger.js';
 import { Database } from './supabase.types.js';
 import { InsertDto, UpdateDto } from './db-types.js';
 
 export interface DatabaseConfig {
+  dbType: 'postgresql' | 'csv' | 'supabase';
   neon: {
     connectionString: string;
     pooledConnectionString: string;
     maxConnections: number;
+  };
+  csv?: {
+    dataDir: string;
   };
   supabase: {
     url: string;
@@ -39,6 +44,7 @@ export type AgentData = any;
 export class UnifiedDatabaseManager {
   private neon: NeonIntegrationService;
   private supabase: SupabaseIntegrationService;
+  private csv: CSVConnection | null = null;
   private logger: Logger;
   private config: DatabaseConfig;
   private isInitialized = false;
@@ -54,6 +60,10 @@ export class UnifiedDatabaseManager {
       ssl: true,
       applicationName: 're-engine-phase6',
     });
+
+    if (config.dbType === 'csv' && config.csv) {
+      this.csv = new CSVConnection(config.csv);
+    }
 
     this.supabase = new SupabaseIntegrationService({
       enableRealtime: config.features.realtimeEnabled,
@@ -73,11 +83,16 @@ export class UnifiedDatabaseManager {
     this.logger.info('Initializing unified database manager...');
 
     try {
-      // Initialize both database systems
-      await Promise.all([
-        this.neon.initialize(),
-        this.supabase.initialize(),
-      ]);
+      // Initialize systems based on mode
+      const initializationTasks: Promise<void>[] = [this.supabase.initialize()];
+
+      if (this.config.dbType === 'postgresql') {
+        initializationTasks.push(this.neon.initialize());
+      } else if (this.config.dbType === 'csv' && this.csv) {
+        initializationTasks.push(this.csv.connect());
+      }
+
+      await Promise.all(initializationTasks);
 
       // Set up real-time subscriptions if enabled
       if (this.config.features.realtimeEnabled) {
@@ -137,19 +152,33 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
-      // Create in Neon (primary storage)
-      const neonId = await this.neon.createLead(lead as any);
+      let leadId: string;
 
-      // Create in Supabase (for real-time and auth)
-      const supabaseResult = await this.supabase.createLead({
-        ...lead,
-        id: neonId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as any);
+      if (this.config.dbType === 'postgresql') {
+        // Create in Neon (primary storage)
+        leadId = await this.neon.createLead(lead as any);
+      } else {
+        // Create in CSV
+        const result = await this.csv?.query('INSERT INTO leads (first_name, last_name, email, phone_e164, source, status) VALUES (?, ?, ?, ?, ?, ?)', [
+          lead.first_name, lead.last_name, lead.email, lead.phone_e164, lead.source, lead.status
+        ]);
+        leadId = result?.id || `lead-${Date.now()}`;
+      }
 
-      this.logger.info('Lead created successfully', { neonId, email: lead.email });
-      return neonId;
+      // Create in Supabase (for real-time and auth) - always sync for now
+      try {
+        await this.supabase.createLead({
+          ...lead,
+          id: leadId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (syncError) {
+        this.logger.warn('Failed to sync lead to Supabase', syncError);
+      }
+
+      this.logger.info('Lead created successfully', { leadId, email: lead.email });
+      return leadId;
     } catch (error) {
       this.logger.error('Failed to create lead', error instanceof Error ? error : new Error(String(error)));
       throw error;
@@ -160,10 +189,18 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
-      // Try Neon first (primary source)
-      const neonLead = await this.neon.getLead(id);
-      if (neonLead) {
-        return this.mapNeonLeadToSupabase(neonLead);
+      if (this.config.dbType === 'postgresql') {
+        // Try Neon first (primary source)
+        const neonLead = await this.neon.getLead(id);
+        if (neonLead) {
+          return this.mapNeonLeadToSupabase(neonLead);
+        }
+      } else {
+        // Try CSV
+        const results = await this.csv?.query('SELECT * FROM leads WHERE id = ?', [id]);
+        if (results && results.length > 0) {
+          return results[0];
+        }
       }
 
       // Fallback to Supabase
@@ -181,17 +218,33 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
-      // Update in Neon
-      const neonSuccess = await this.neon.updateLead(id, updates as any);
+      let success = false;
 
-      // Update in Supabase
-      const supabaseResult = await this.supabase.updateLead(id, {
-        ...updates,
-        updated_at: new Date().toISOString(),
-      } as any);
+      if (this.config.dbType === 'postgresql') {
+        // Update in Neon
+        success = await this.neon.updateLead(id, updates as any);
+      } else {
+        // Update in CSV
+        const setClauses = Object.entries(updates)
+          .map(([key, _]) => `${key} = ?`)
+          .join(', ');
+        const values = [...Object.values(updates), id];
+        await this.csv?.query(`UPDATE leads SET ${setClauses} WHERE id = ?`, values);
+        success = true;
+      }
+
+      // Update in Supabase - always sync
+      try {
+        await this.supabase.updateLead(id, {
+          ...updates,
+          updated_at: new Date().toISOString(),
+        } as any);
+      } catch (syncError) {
+        this.logger.warn('Failed to sync lead update to Supabase', syncError);
+      }
 
       this.logger.info('Lead updated successfully', { id, updates });
-      return neonSuccess;
+      return success;
     } catch (error) {
       this.logger.error('Failed to update lead', error instanceof Error ? error : new Error(String(error)));
       throw error;
@@ -210,17 +263,25 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
-      // Use Supabase for advanced search (mapping to listLeads for now)
-      // Note: Full text search support requires updating SupabaseIntegrationService.listLeads
+      if (this.config.dbType === 'postgresql') {
+        // Query Neon for leads
+        const neonLeads = await this.neon.searchLeads(criteria as any);
+        return {
+          leads: neonLeads.map(l => this.mapNeonLeadToSupabase(l)),
+          total: neonLeads.length // Simplified for now
+        };
+      }
+
+      // Fallback to Supabase for advanced search
       const result = await this.supabase.listLeads({
-        status: criteria.status,
+        status: criteria.status as any,
         limit: criteria.limit || 20,
         offset: criteria.offset || 0,
       });
 
       return {
         leads: result,
-        total: result.length, // Valid approximation as listLeads returns Row[]
+        total: result.length,
       };
     } catch (error) {
       this.logger.error('Failed to search leads', error instanceof Error ? error : new Error(String(error)));
@@ -229,24 +290,53 @@ export class UnifiedDatabaseManager {
   }
 
   // Approval operations
-  async createApproval(approval: Omit<ApprovalData, 'id' | 'created_at'>): Promise<string> {
+  async createApproval(approval: any): Promise<string> {
     this.ensureInitialized();
 
     try {
-      // Create in Neon
-      const neonId = await this.neon.createApproval(approval as any);
+      let approvalId: string;
+
+      if (this.config.dbType === 'postgresql') {
+        // Create in Neon
+        approvalId = await this.neon.createApproval({
+          lead_id: approval.lead_id,
+          type: approval.type || approval.action_type || 'message',
+          content: approval.content || approval.draft_text || '',
+          channel: approval.channel || 'whatsapp',
+          status: approval.status || 'pending',
+          ai_score: approval.ai_score || 0,
+          metadata: approval.metadata || {}
+        } as any);
+      } else {
+        // Create in CSV
+        const result = await this.csv?.query('INSERT INTO approvals (lead_id, type, content, channel, status) VALUES (?, ?, ?, ?, ?)', [
+          approval.lead_id,
+          approval.type || approval.action_type || 'message',
+          approval.content || approval.draft_text || '',
+          approval.channel || 'whatsapp',
+          approval.status || 'pending'
+        ]);
+        approvalId = result?.id || `appr-${Date.now()}`;
+      }
 
       // Create in Supabase for real-time
-      const supabaseResult = await this.supabase.createApproval({
-        ...approval,
-        approval_id: neonId, // Use neonId as approval_id
-        created_at: new Date().toISOString(),
-      } as any);
+      try {
+        await this.supabase.createApproval({
+          lead_id: approval.lead_id,
+          channel: approval.channel || 'whatsapp',
+          action_type: approval.type || approval.action_type || 'send',
+          draft_text: approval.content || approval.draft_text || '',
+          draft_to: approval.draft_to || '',
+          status: approval.status || 'pending',
+          approval_id: approvalId,
+          created_at: new Date().toISOString(),
+        } as any);
+      } catch (syncError) {
+        this.logger.warn('Failed to sync approval to Supabase', syncError);
+      }
 
-
-
-      this.logger.info('Approval created successfully', { neonId, lead_id: approval.lead_id });
-      return neonId;
+      this.logger.info('Approval created successfully', { approvalId, lead_id: approval.lead_id });
+      return approvalId;
     } catch (error) {
       this.logger.error('Failed to create approval', error instanceof Error ? error : new Error(String(error)));
       throw error;
@@ -257,8 +347,12 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
+      if (this.config.dbType === 'postgresql') {
+        const neonApprovals = await this.neon.getPendingApprovals();
+        return neonApprovals.map(a => this.mapNeonApprovalToSupabase(a)) as any[];
+      }
       const approvals = await this.supabase.listApprovals({ status: 'pending' });
-      return approvals as any[]; // Type align
+      return approvals as any[];
     } catch (error) {
       this.logger.error('Failed to get pending approvals', error instanceof Error ? error : new Error(String(error)));
       throw error;
@@ -269,23 +363,28 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
-      // Update in Neon
-      const neonSuccess = await this.neon.updateApprovalStatus(id, status, reviewedBy);
+      let success = false;
+
+      if (this.config.dbType === 'postgresql') {
+        // Update in Neon
+        success = await this.neon.updateApprovalStatus(id, status, reviewedBy);
+      } else {
+        // Update in CSV
+        await this.csv?.query('UPDATE approvals SET status = ?, reviewed_by = ?, reviewed_at = ? WHERE id = ?', [
+          status, reviewedBy, new Date().toISOString(), id
+        ]);
+        success = true;
+      }
 
       // Update in Supabase for real-time
       try {
-        if (status === 'approved') {
-          // Implement approval logic
-        }
-
-        const supabaseResult = await this.supabase.updateApproval(id, { status, reviewed_by: reviewedBy } as any);
-
-        this.logger.info('Approval status updated', { id, status, reviewedBy });
-        return neonSuccess;
-      } catch (error) {
-        this.logger.error('Failed to update approval status in Supabase', error instanceof Error ? error : new Error(String(error)));
-        throw error;
+        await this.supabase.updateApproval(id, { status, reviewed_by: reviewedBy, updated_at: new Date().toISOString() } as any);
+      } catch (syncError) {
+        this.logger.warn('Failed to sync approval status to Supabase', syncError);
       }
+
+      this.logger.info('Approval status updated', { id, status, reviewedBy });
+      return success;
     } catch (error) {
       this.logger.error('Failed to update approval status', error instanceof Error ? error : new Error(String(error)));
       throw error;
@@ -327,7 +426,20 @@ export class UnifiedDatabaseManager {
     this.ensureInitialized();
 
     try {
-      // Get metrics from Supabase (real-time dashboard)
+      if (this.config.dbType === 'postgresql') {
+        const metrics = await this.neon.getLeadMetrics('week');
+        return {
+          totalLeads: metrics.totalLeads,
+          pendingApprovals: 0, // Need to implement in neon or get from sup
+          conversionRate: metrics.conversionRate,
+          activeLeads: metrics.newLeads,
+          recentActivity: [],
+          leadsByStatus: metrics.leadsByStatus,
+          leadsBySource: metrics.leadsBySource,
+        };
+      }
+
+      // Fallback to Supabase (real-time dashboard)
       const stats = await this.supabase.getDatabaseStats();
 
       return {
@@ -464,9 +576,20 @@ export class UnifiedDatabaseManager {
   private mapNeonLeadToSupabase(neonLead: any): LeadData {
     return {
       ...neonLead,
-      lead_id: neonLead.id, // Map Neon 'id' to Supabase 'lead_id'
+      lead_id: neonLead.id,
+      phone_e164: neonLead.phone, // Map 'phone' from Neon to 'phone_e164' for Supabase
       metadata: neonLead.metadata || {}
-    } as any; // Cast as any to avoid strict type issues with generated supabase types
+    } as any;
+  }
+
+  private mapNeonApprovalToSupabase(neonApproval: any): ApprovalData {
+    return {
+      ...neonApproval,
+      approval_id: neonApproval.id,
+      action_type: neonApproval.type,
+      draft_text: neonApproval.content,
+      metadata: neonApproval.metadata || {}
+    } as any;
   }
 
   private async testNeonConnection(): Promise<boolean> {

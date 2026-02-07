@@ -68,10 +68,14 @@ async function runMigration() {
     const dataDir = path.resolve(__dirname, '../../../data');
 
     const unifiedDb = new UnifiedDatabaseManager({
+        dbType: (config.get('DB_TYPE') as 'postgresql' | 'csv' | 'supabase') || 'postgresql',
         neon: {
             connectionString: (config.get('DATABASE_URL') as string) || '',
             pooledConnectionString: (config.get('DATABASE_POOLED_URL') as string) || (config.get('DATABASE_URL') as string) || '',
             maxConnections: (config.get('DATABASE_POOL_SIZE') as number) || 20,
+        },
+        csv: {
+            dataDir: path.resolve(__dirname, '../../../data'),
         },
         supabase: {
             url: (config.get('SUPABASE_URL') as string) || '',

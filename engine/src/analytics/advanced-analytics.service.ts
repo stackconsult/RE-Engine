@@ -182,8 +182,32 @@ export class AdvancedAnalyticsService {
   }
 
   private async getDetailedLeadMetrics(timeframe: string): Promise<any> {
-    // This would query the database for detailed metrics
-    // For now, return placeholder data
+    // If in PostgreSQL mode, try to get real metrics
+    try {
+      const metrics = await this.dbManager.getDashboardMetrics();
+
+      // If we have actual leadsByStatus from the database, use it
+      if (metrics.leadsByStatus && Object.keys(metrics.leadsByStatus).length > 0) {
+        return {
+          leadsByStatus: metrics.leadsByStatus,
+          leadsBySource: metrics.leadsBySource,
+          leadsByCity: {}, // Need to implement in NeonIntegration
+          leadsByPropertyType: {}, // Need to implement in NeonIntegration
+          leadsByPriceRange: {}, // Need to implement in NeonIntegration
+          conversionFunnel: {
+            new: metrics.leadsByStatus['new'] || 0,
+            contacted: metrics.leadsByStatus['contacted'] || 0,
+            qualified: metrics.leadsByStatus['qualified'] || 0,
+            converted: metrics.leadsByStatus['converted'] || 0,
+            closed: metrics.leadsByStatus['closed'] || 0,
+          },
+        };
+      }
+    } catch (error) {
+      this.logger.warn('Failed to fetch real-time detailed metrics, falling back to mock data', error);
+    }
+
+    // Fallback placeholder data
     return {
       leadsByStatus: {
         new: 45,
