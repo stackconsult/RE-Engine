@@ -1,204 +1,116 @@
 ---
-name: RE-Engine Agent Skills Repository
-description: Executable SOPs for complex development tasks - reduces hallucination and error rates
+name: Universal Agent Skills Repository
+description: Collection of executable SOPs with automatic trigger detection
 ---
 
-# Agent Skills Repository
+# Universal Agent Skills Repository
 
-These skills act as **executable standard operating procedures (SOPs)**. When you need to perform a complex task, invoke the appropriate skill by name and follow the protocol exactly.
-
-**Usage:** Prompt with *"Execute Skill: [Skill Name]"* to run the protocol.
+**SYSTEM INSTRUCTION:** You (the Agent) MUST scan this file at the start of every task. If a user request matches a **Trigger**, you must AUTOMATICALLY execute the corresponding protocol without being asked.
 
 ---
 
-## Skill 1: Safe Schema Update (PostgreSQL/Neon)
-
-**Trigger**: "Update the database schema" or "Add field to [Table]"
-**Prerequisites**: Clean git status
+## Skill 1: Safe Schema Update
+**Trigger**: User asks to "update database", "add field", "change schema", or "migrate DB".
+**Prerequisites**: Clean git status.
 
 ### Protocol:
-
-1. **Analyze**: Read relevant migration files in `engine/src/database/migrations/`
-2. **Safety Check**:
-   - Does this change delete data? (If yes, **STOP** and ask for confirmation)
-   - Is there a corresponding TypeScript type that needs updating?
+1. **Analyze**: Locate migration files (e.g., `migrations/*.sql`, `prisma/schema.prisma`).
+2. **Safety Check**: 
+   - Ask: "Does this delete data?" (If yes, STOP).
+   - Check: Are there dependent types/models?
 3. **Execute**:
-   - Create new migration file: `XXX_[descriptive_name].sql`
-   - Ensure `IF NOT EXISTS` for CREATE statements
-   - Add `tenant_id` column if multi-tenant table
-4. **Verification**:
-   - Run: `npm run typecheck` to ensure no type errors
-   - Check that new fields are reflected in service types
-
----
-
-## Skill 2: Safe Service Implementation
-
-**Trigger**: "Create new service" or "Add feature to service"
-**Philosophy**: Multi-tenant by default, type-safe always
-
-### Protocol:
-
-1. **Scaffold**:
-   - Create service file in `engine/src/[domain]/[name].service.ts`
-   - Import necessary types and Logger
-2. **Multi-Tenancy Check**:
-   - **CRITICAL**: All database operations MUST include `tenantId` parameter
-   - Follow parameter order convention: `tenantId` first for search, second for CRUD
-3. **Error Handling**:
-   - Wrap all async operations in `try/catch`
-   - Log errors with `this.logger.error()`
-   - Re-throw for caller handling
-4. **Verification**:
-   - Run: `npm run typecheck`
-   - Ensure no `any` types unless absolutely necessary
-
----
-
-## Skill 3: Green-Light Feature Dev (TDD)
-
-**Trigger**: "Implement feature [X]"
-**Philosophy**: Write the test *before* the code to prevent logic drift
-
-### Protocol:
-
-1. **Scaffold**: Create a new test file `tests/integration/[feature].test.ts`
-2. **Draft Test**: Write a test case that fails (Red)
-   - *Example*: `expect(service.calculateScore(lead)).toBe('A')`
-3. **Implement**:
-   - Create/Edit the service file in `engine/src/`
-   - Write the *minimum* code needed to satisfy the test
-4. **Loop**:
-   - Run: `npm test -- [feature]`
-   - If Fail: Fix logic
-   - If Pass: Run `npm run lint` to clean up
-
----
-
-## Skill 4: Full MCP Swarm Deployment
-
-**Trigger**: "Rebuild all MCP servers" or "Deploy AI tools"
-**Context**: RE-Engine relies on multiple MCP servers
-
-### Protocol:
-
-1. **Clean**: Run `rm -rf dist` in all MCP directories (prevent stale artifacts)
-2. **Build Loop**:
-   ```bash
-   cd mcp/[server-name] && npm install && npm run build
-   ```
-3. **Config Check**:
-   - Read MCP settings file
-   - Verify paths point to new `dist/index.js` files
-4. **Restart**: Instruct user to "Restart the MCP Host / IDE" to reload
-
----
-
-## Skill 5: New Automation Workflow
-
-**Trigger**: "Create a new automation flow" (e.g., WhatsApp -> AI -> CRM)
-
-### Protocol:
-
-1. **Define Trigger**:
-   - Create handler in `engine/src/engine/` or appropriate directory
-   - Ensure it validates incoming payload
-2. **Define Action**:
-   - Create a service method in `engine/src/`
-   - **Rule**: Must wrap external calls in `try/catch`
-3. **Approval Gate**:
-   - **CRITICAL**: Does this send a message? If yes, insert a record into `approvals` table
-   - *Code Pattern*: `await this.dbManager.createApproval({ ... }, tenantId)`
-4. **Wiring**:
-   - Register the trigger in the appropriate router/API
-
----
-
-## Skill 6: CRM Adapter Implementation
-
-**Trigger**: "Add CRM integration" or "Implement [Provider] sync"
-**Context**: CRM adapters follow Strategy Pattern
-
-### Protocol:
-
-1. **Create Adapter**: `engine/src/integrations/adapters/[provider]-adapter.ts`
-2. **Implement Interface**:
-   ```typescript
-   export interface CRMAdapter {
-     searchProperties(criteria: PropertySearchCriteria): Promise<PropertyData[]>;
-     getPropertyDetails(externalId: string): Promise<PropertyData | null>;
-     validateCredentials(): Promise<boolean>;
-   }
-   ```
-3. **Multi-Tenancy**:
-   - Store credentials per tenant
-   - Scope all data by `tenantId`
-4. **Rate Limiting**:
-   - Implement exponential backoff
-   - Track API usage per tenant
-5. **Verification**:
-   - Write integration tests with mock responses
-   - Test tenant isolation
-
----
-
-## Skill 7: Session Audit (Cost & Hygiene)
-
-**Trigger**: "Audit session" or "Prepare for commit"
-
-### Protocol:
-
-1. **Token Check**: Report current session cost
-2. **File Cleanup**:
-   - Did we create temporary files? Delete them
-   - Check for `console.log` statements that should be removed
-3. **Lint**: Run `npm run lint -- --fix`
-4. **Typecheck**: Run `npm run typecheck`
-5. **Summary**: Generate a 3-bullet summary of changes for Git commit message
-
----
-
-## Skill 8: Database Migration Execution
-
-**Trigger**: "Run database migrations" or "Apply schema changes"
-**Prerequisites**: Neon database connection available
-
-### Protocol:
-
-1. **Backup Check**: Verify recent backup exists or create one
-2. **Review**: Read migration files in order
-3. **Execute**:
-   - Connect to Neon database
-   - Run migrations in transaction
-   - Rollback on first error
+   - Create migration file with timestamp/slug.
+   - Use idempotent SQL (`IF NOT EXISTS`).
+   - If multi-tenant, ensure `tenant_id` context is preserved.
 4. **Verify**:
-   - Test connection
-   - Verify new tables/columns exist
-   - Run smoke test query
+   - Run type checking (e.g., `npm run typecheck`).
+   - Verify DB connection.
 
 ---
 
-## How to Use These Skills
+## Skill 2: Robust Service Implementation
+**Trigger**: User asks to "create service", "add logic", "implement business rule".
+**Philosophy**: Defensiveness & Observability.
 
-### Method 1: Direct Invocation
-```
-"Execute Skill: Safe Schema Update for adding a last_contacted_at field to leads table"
-```
+### Protocol:
+1. **Scaffold**: Create file following project patterns (`*.service.ts`, `*.go`).
+2. **Context Check**:
+   - **Multi-Tenancy**: MUST scope by Tenant ID.
+   - **Logging**: MUST inject Logger.
+3. **Error Handling**:
+   - Wrap public methods in `try/catch`.
+   - Log specific errors, not just generic messages.
+4. **Verify**:
+   - Run linter/type-checker.
 
-### Method 2: Context Loading
-At session start, read this file to load all skills into context.
+---
 
-### Method 3: Linked from CLAUDE.md
-Add this to your `CLAUDE.md`:
-```markdown
-## 🧠 Agent Skills
-Defined in `.agent/skills/agent-skills-repository/SKILL.md`. Execute with "Run Skill: [Name]":
-- Safe Schema Update
-- Safe Service Implementation
-- Green-Light Feature Dev (TDD)
-- Full MCP Swarm Deployment
-- New Automation Workflow
-- CRM Adapter Implementation
-- Session Audit
-- Database Migration Execution
-```
+## Skill 3: Test-Driven Feature (Green-Light)
+**Trigger**: User asks to "implement feature", "add functionality", "fix bug".
+**Philosophy**: Test First.
+
+### Protocol:
+1. **Scaffold Test**: Create a test file (`*.test.ts`, `*_test.go`) *before* implementation.
+2. **Red State**: Write a test case that replicates the requirement/bug and FAILS.
+3. **Implement**: Write minimal code to pass the test.
+4. **Green State**: Run test to verify PASS.
+5. **Refactor**: Clean up code while keeping test Green.
+
+---
+
+## Skill 4: Tooling & Infrastructure Deployment
+**Trigger**: User asks to "rebuild tools", "update MCP", "deploy infrastructure".
+
+### Protocol:
+1. **Clean**: Remove stale artifacts (`dist/`, `build/`).
+2. **Build**: Run build commands for all affected packages.
+3. **Config**: Verify configuration paths/envs align with new build.
+4. **Restart**: Explicitly tell user to restart their environment/host.
+
+---
+
+## Skill 5: Safe Automation Workflow
+**Trigger**: User asks to "automate X", "create workflow", "connect trigger".
+
+### Protocol:
+1. **Trigger Definition**: Validate incoming payloads (signatures, schemas).
+2. **Action Definition**: Isolate business logic from trigger code.
+3. **Safety Gate**:
+   - **Outbound Check**: If sending messages/money, ADD AN APPROVAL STEP.
+   - **Rate Limit**: implementation protection.
+4. **Wiring**: Connect trigger to action via router/config.
+
+---
+
+## Skill 6: External Integration (Adapter Pattern)
+**Trigger**: User asks to "integrate [Service]", "connect [API]", "sync with [Provider]".
+
+### Protocol:
+1. **Adapter Interface**: Define a generic interface (e.g., `CRMAdapter`) first.
+2. **Implementation**: Create specific provider class (e.g., `ZillowAdapter`).
+3. **Resilience**:
+   - Implement exponential backoff for rate limits.
+   - Handle auth token refresh automatically.
+4. **Isolation**: Verification tests must mock the external API.
+
+---
+
+## Skill 7: Session Audit & Hygiene
+**Trigger**: User says "prepare commit", "wrap up", "audit".
+
+### Protocol:
+1. **Cleanup**: Delete temp files (`temp.*`, `debug.log`).
+2. **Quality Check**: Run lint and type-check.
+3. **Summary**: Generate a concise bullet-point summary of changes.
+4. **Commit Suggestion**: Propose a conventional commit message.
+
+---
+
+## Skill 8: Migration Execution
+**Trigger**: User says "run migrations", "apply changes".
+
+### Protocol:
+1. **Backup**: Suggest/Check for backup.
+2. **Dry Run**: If possible, inspect SQL/Plan.
+3. **Execute**: Run migration command.
+4. **Smoke Test**: Query the DB to verify new schema elements exist.
