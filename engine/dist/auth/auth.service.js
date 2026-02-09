@@ -28,6 +28,7 @@ export class AuthService {
         password_hash VARCHAR(255) NOT NULL,
         role VARCHAR(20) NOT NULL DEFAULT 'viewer',
         permissions JSONB DEFAULT '[]',
+        tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
         active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +42,8 @@ export class AuthService {
         if (existingAdmin.length === 0) {
             const defaultPassword = 'admin123'; // Should be changed on first login
             const passwordHash = await this.hashPassword(defaultPassword);
-            await this.db.query('INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5)', ['admin', 'admin@reengine.com', passwordHash, 'admin', JSON.stringify(['*'])]);
+            const defaultTenantId = '00000000-0000-0000-0000-000000000000';
+            await this.db.query('INSERT INTO users (username, email, password_hash, role, permissions, tenant_id) VALUES ($1, $2, $3, $4, $5, $6)', ['admin', 'admin@reengine.com', passwordHash, 'admin', JSON.stringify(['*']), defaultTenantId]);
             console.log('Default admin user created. Username: admin, Password: admin123');
         }
     }
@@ -72,7 +74,8 @@ export class AuthService {
             const payload = {
                 user_id: user.user_id,
                 username: user.username,
-                role: user.role
+                role: user.role,
+                tenant_id: user.tenant_id
             };
             // @ts-expect-error - JWT types are complex, this works at runtime
             const token = jwt.sign(payload, this.jwtSecret, { expiresIn: this.tokenExpiry });
@@ -86,9 +89,11 @@ export class AuthService {
                     role: user.role,
                     created_at: user.created_at,
                     last_login: user.last_login,
-                    active: user.active
+                    active: user.active,
+                    tenant_id: user.tenant_id
                 },
                 permissions: user.permissions,
+                tenant_id: user.tenant_id,
                 expiresAt: new Date(decoded.exp * 1000)
             };
         }
@@ -114,9 +119,11 @@ export class AuthService {
                     role: user.role,
                     created_at: user.created_at,
                     last_login: user.last_login,
-                    active: user.active
+                    active: user.active,
+                    tenant_id: user.tenant_id
                 },
                 permissions: user.permissions,
+                tenant_id: user.tenant_id,
                 expiresAt: new Date(decoded.exp * 1000)
             };
         }
@@ -133,7 +140,7 @@ export class AuthService {
             }
             const passwordHash = await this.hashPassword(userData.password);
             const permissions = userData.permissions || this.getDefaultPermissions(userData.role);
-            const result = await this.db.query('INSERT INTO users (username, email, password_hash, role, permissions) VALUES ($1, $2, $3, $4, $5) RETURNING *', [userData.username, userData.email, passwordHash, userData.role, JSON.stringify(permissions)]);
+            const result = await this.db.query('INSERT INTO users (username, email, password_hash, role, permissions, tenant_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [userData.username, userData.email, passwordHash, userData.role, JSON.stringify(permissions), userData.tenant_id || '00000000-0000-0000-0000-000000000000']);
             return result[0];
         }
         catch (error) {
