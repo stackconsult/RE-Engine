@@ -3,20 +3,21 @@
  * Tests the production-ready Supabase service implementation
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, before } from 'node:test';
+import assert from 'node:assert';
 import { SupabaseServiceImpl } from '../src/production/dependencies.js';
 import { SupabaseConfig, SupabaseConnectionConfig } from '../src/production/types.js';
 
 describe('Supabase Production Integration', () => {
   let supabaseService: SupabaseServiceImpl;
 
-  beforeAll(() => {
+  before(() => {
     supabaseService = new SupabaseServiceImpl();
   });
 
   it('should initialize SupabaseService', () => {
-    expect(supabaseService).toBeDefined();
-    expect(supabaseService).toBeInstanceOf(SupabaseServiceImpl);
+    assert.ok(supabaseService);
+    assert.ok(supabaseService instanceof SupabaseServiceImpl);
   });
 
   it('should configure SupabaseService with mock config', async () => {
@@ -42,7 +43,7 @@ describe('Supabase Production Integration', () => {
     };
 
     // Should not throw during configuration
-    await expect(supabaseService.configure(config)).resolves.not.toThrow();
+    await assert.doesNotReject(async () => await supabaseService.configure(config));
   });
 
   it('should handle connection configuration', async () => {
@@ -62,87 +63,87 @@ describe('Supabase Production Integration', () => {
       await supabaseService.connect(connectionConfig);
     } catch (error) {
       // Expected to fail with mock credentials
-      expect(error).toBeInstanceOf(Error);
+      assert.ok(error instanceof Error);
     }
   });
 
   it('should perform health check', async () => {
     const healthResult = await supabaseService.healthCheck();
-    
+
     // Should return health check result structure
-    expect(healthResult).toHaveProperty('status');
-    expect(healthResult).toHaveProperty('connection');
-    expect(healthResult).toHaveProperty('database');
-    expect(healthResult).toHaveProperty('realtime');
-    expect(healthResult).toHaveProperty('storage');
-    expect(healthResult).toHaveProperty('auth');
-    expect(healthResult).toHaveProperty('latency');
-    expect(healthResult).toHaveProperty('lastChecked');
-    
+    assert.ok('status' in healthResult);
+    assert.ok('connection' in healthResult);
+    assert.ok('database' in healthResult);
+    assert.ok('realtime' in healthResult);
+    assert.ok('storage' in healthResult);
+    assert.ok('auth' in healthResult);
+    assert.ok('latency' in healthResult);
+    assert.ok('lastChecked' in healthResult);
+
     // Status should be one of the expected values
-    expect(['healthy', 'unhealthy', 'degraded']).toContain(healthResult.status);
+    assert.ok(['healthy', 'unhealthy', 'degraded'].includes(healthResult.status));
   });
 
   it('should check migrations', async () => {
     const migrationStatus = await supabaseService.checkMigrations();
-    
-    expect(migrationStatus).toHaveProperty('current');
-    expect(migrationStatus).toHaveProperty('latest');
-    expect(migrationStatus).toHaveProperty('pending');
-    expect(migrationStatus).toHaveProperty('completed');
-    expect(migrationStatus).toHaveProperty('status');
-    
-    expect(['up-to-date', 'pending', 'error']).toContain(migrationStatus.status);
+
+    assert.ok('current' in migrationStatus);
+    assert.ok('latest' in migrationStatus);
+    assert.ok('pending' in migrationStatus);
+    assert.ok('completed' in migrationStatus);
+    assert.ok('status' in migrationStatus);
+
+    assert.ok(['up-to-date', 'pending', 'error'].includes(migrationStatus.status));
   });
 
   it('should optimize indexes', async () => {
     const optimizationResult = await supabaseService.optimizeIndexes();
-    
-    expect(optimizationResult).toHaveProperty('optimized');
-    expect(optimizationResult).toHaveProperty('indexesOptimized');
-    expect(optimizationResult).toHaveProperty('improvements');
-    expect(optimizationResult).toHaveProperty('performanceGain');
-    expect(optimizationResult).toHaveProperty('duration');
-    
-    expect(typeof optimizationResult.optimized).toBe('boolean');
-    expect(typeof optimizationResult.duration).toBe('number');
+
+    assert.ok('optimized' in optimizationResult);
+    assert.ok('indexesOptimized' in optimizationResult);
+    assert.ok('improvements' in optimizationResult);
+    assert.ok('performanceGain' in optimizationResult);
+    assert.ok('duration' in optimizationResult);
+
+    assert.strictEqual(typeof optimizationResult.optimized, 'boolean');
+    assert.strictEqual(typeof optimizationResult.duration, 'number');
   });
 
   it('should get metrics', async () => {
     const metrics = await supabaseService.getMetrics();
-    
-    expect(metrics).toHaveProperty('connections');
-    expect(metrics).toHaveProperty('queries');
-    expect(metrics).toHaveProperty('realtime');
-    expect(metrics).toHaveProperty('storage');
-    
-    expect(metrics.connections).toHaveProperty('active');
-    expect(metrics.connections).toHaveProperty('idle');
-    expect(metrics.connections).toHaveProperty('total');
-    
-    expect(metrics.queries).toHaveProperty('total');
-    expect(metrics.queries).toHaveProperty('successful');
-    expect(metrics.queries).toHaveProperty('failed');
-    expect(metrics.queries).toHaveProperty('averageExecutionTime');
+
+    assert.ok('connections' in metrics);
+    assert.ok('queries' in metrics);
+    assert.ok('realtime' in metrics);
+    assert.ok('storage' in metrics);
+
+    assert.ok('active' in metrics.connections);
+    assert.ok('idle' in metrics.connections);
+    assert.ok('total' in metrics.connections);
+
+    assert.ok('total' in metrics.queries);
+    assert.ok('successful' in metrics.queries);
+    assert.ok('failed' in metrics.queries);
+    assert.ok('averageExecutionTime' in metrics.queries);
   });
 
   it('should get statistics', async () => {
     const statistics = await supabaseService.getStatistics();
-    
-    expect(statistics).toHaveProperty('uptime');
-    expect(statistics).toHaveProperty('totalQueries');
-    expect(statistics).toHaveProperty('totalTransactions');
-    expect(statistics).toHaveProperty('totalSubscriptions');
-    expect(statistics).toHaveProperty('averageResponseTime');
-    expect(statistics).toHaveProperty('errorRate');
-    expect(statistics).toHaveProperty('throughput');
-    expect(statistics).toHaveProperty('lastReset');
-    
-    expect(typeof statistics.uptime).toBe('number');
-    expect(typeof statistics.errorRate).toBe('number');
+
+    assert.ok('uptime' in statistics);
+    assert.ok('totalQueries' in statistics);
+    assert.ok('totalTransactions' in statistics);
+    assert.ok('totalSubscriptions' in statistics);
+    assert.ok('averageResponseTime' in statistics);
+    assert.ok('errorRate' in statistics);
+    assert.ok('throughput' in statistics);
+    assert.ok('lastReset' in statistics);
+
+    assert.strictEqual(typeof statistics.uptime, 'number');
+    assert.strictEqual(typeof statistics.errorRate, 'number');
   });
 
   it('should handle disconnect', async () => {
-    await expect(supabaseService.disconnect()).resolves.not.toThrow();
+    await assert.doesNotReject(async () => await supabaseService.disconnect());
   });
 });

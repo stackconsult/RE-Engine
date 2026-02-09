@@ -4,10 +4,14 @@ import { CsvStore } from "../src/store/csv/csvStore.js";
 import { ApprovalService } from "../src/approvals/approvalService.js";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from 'node:url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 describe("ApprovalService", () => {
     it("creates and approves a draft", async () => {
-        const tmp = path.join("/Users/kirtissiemens/.gemini/tmp/48988562a6ad217ad9a52dcc8d28f1d5d0edeed18d0b9311e9f17102177477ae", `reengine_test_${Date.now()}`);
-        await fs.mkdir(tmp, { recursive: true });
+        const tmpBase = path.join(__dirname, 'tmp');
+        await fs.mkdir(tmpBase, { recursive: true });
+        const tmp = await fs.mkdtemp(path.join(tmpBase, 'reengine_test_'));
         const store = new CsvStore(tmp);
         const svc = new ApprovalService(store);
         const draft = await svc.createDraft({

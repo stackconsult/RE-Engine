@@ -32,6 +32,7 @@ export class CSVConnection {
         }
     }
     async query(sql, params) {
+        console.log('CSV Query:', sql, params);
         // Simple SQL-like query parser for CSV operations
         const trimmedSql = sql.trim().toLowerCase();
         if (trimmedSql.startsWith('select')) {
@@ -47,6 +48,7 @@ export class CSVConnection {
             return this.handleDelete(trimmedSql, params);
         }
         else {
+            console.error('Unsupported SQL:', sql);
             throw new Error(`Unsupported SQL operation: ${sql}`);
         }
     }
@@ -184,7 +186,15 @@ export class CSVConnection {
     }
     filterData(data, whereClause, params) {
         // Simple WHERE clause parsing
-        const conditions = whereClause.split('and').map(cond => cond.trim());
+        let resolvedClause = whereClause;
+        if (params && params.length > 0) {
+            let paramIndex = 0;
+            resolvedClause = whereClause.replace(/\?/g, () => {
+                const val = params[paramIndex++];
+                return typeof val === 'string' ? `'${val}'` : String(val);
+            });
+        }
+        const conditions = resolvedClause.split('and').map(cond => cond.trim());
         return data.filter(record => {
             return conditions.every(condition => {
                 const [field, operator, value] = condition.split(/\s+/);

@@ -45,6 +45,7 @@ export class CSVConnection implements DatabaseConnection {
   }
 
   async query(sql: string, params?: any[]): Promise<any> {
+    console.log('CSV Query:', sql, params);
     // Simple SQL-like query parser for CSV operations
     const trimmedSql = sql.trim().toLowerCase();
 
@@ -57,6 +58,7 @@ export class CSVConnection implements DatabaseConnection {
     } else if (trimmedSql.startsWith('delete')) {
       return this.handleDelete(trimmedSql, params);
     } else {
+      console.error('Unsupported SQL:', sql);
       throw new Error(`Unsupported SQL operation: ${sql}`);
     }
   }
@@ -74,7 +76,7 @@ export class CSVConnection implements DatabaseConnection {
 
     const tableName = match[1];
     const data = await this.loadCSV(tableName);
-    
+
     // Simple WHERE clause support
     if (sql.includes('where')) {
       const whereMatch = sql.match(/where\s+(.+?)(?:\s+order\s+by|\s+limit|$)/i);
@@ -132,7 +134,7 @@ export class CSVConnection implements DatabaseConnection {
     // Parse SET clause
     const setPairs = setClause.split(',').map(pair => pair.trim());
     const updates: any = {};
-    
+
     setPairs.forEach(pair => {
       const [key, value] = pair.split('=').map(s => s.trim());
       updates[key] = value.replace(/['"]/g, '');
@@ -167,7 +169,7 @@ export class CSVConnection implements DatabaseConnection {
 
   private async loadCSV(tableName: string): Promise<any[]> {
     const cacheKey = tableName;
-    
+
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
     }
@@ -175,25 +177,25 @@ export class CSVConnection implements DatabaseConnection {
     try {
       const filePath = path.join(this.dataDir, `${tableName}.csv`);
       const content = await fs.readFile(filePath, 'utf-8');
-      
+
       const records: any[] = [];
       const lines = content.split('\n').filter(line => line.trim());
-      
+
       if (lines.length <= 1) {
         this.cache.set(cacheKey, records);
         return records;
       }
 
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      
+
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
         const record: any = {};
-        
+
         headers.forEach((header, index) => {
           record[header] = values[index] || '';
         });
-        
+
         records.push(record);
       }
 
@@ -208,7 +210,7 @@ export class CSVConnection implements DatabaseConnection {
 
   private async saveCSV(tableName: string, data: any[]): Promise<void> {
     const filePath = path.join(this.dataDir, `${tableName}.csv`);
-    
+
     if (data.length === 0) {
       await fs.writeFile(filePath, '');
       return;
@@ -217,11 +219,11 @@ export class CSVConnection implements DatabaseConnection {
     const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(','),
-      ...data.map(record => 
+      ...data.map(record =>
         headers.map(header => {
           const value = record[header] || '';
-          return typeof value === 'string' && value.includes(',') 
-            ? `"${value}"` 
+          return typeof value === 'string' && value.includes(',')
+            ? `"${value}"`
             : value;
         }).join(',')
       )
@@ -233,13 +235,22 @@ export class CSVConnection implements DatabaseConnection {
 
   private filterData(data: any[], whereClause: string, params?: any[]): any[] {
     // Simple WHERE clause parsing
-    const conditions = whereClause.split('and').map(cond => cond.trim());
-    
+    let resolvedClause = whereClause;
+    if (params && params.length > 0) {
+      let paramIndex = 0;
+      resolvedClause = whereClause.replace(/\?/g, () => {
+        const val = params[paramIndex++];
+        return typeof val === 'string' ? `'${val}'` : String(val);
+      });
+    }
+
+    const conditions = resolvedClause.split('and').map(cond => cond.trim());
+
     return data.filter(record => {
       return conditions.every(condition => {
         const [field, operator, value] = condition.split(/\s+/);
         const recordValue = record[field];
-        
+
         switch (operator) {
           case '=':
             return recordValue === value.replace(/['"]/g, '');

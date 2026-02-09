@@ -1,6 +1,7 @@
 import { ConfigSchema, AppConfig } from './config.schema.js';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,7 +14,22 @@ export class ConfigService {
     private constructor() {
         // Load .env from the root directory
         const rootPath = path.resolve(__dirname, '../../../');
-        dotenv.config({ path: path.join(rootPath, '.env') });
+
+        // Try loading test.config.env first (fallback for permissions issues)
+        const testEnvPath = path.join(rootPath, 'test.config.env');
+        if (fs.existsSync(testEnvPath)) {
+            console.log('🔌 ConfigService loading fallback env from:', testEnvPath);
+            dotenv.config({ path: testEnvPath });
+        }
+
+        const envPath = path.join(rootPath, '.env');
+        console.log('🔌 ConfigService loading .env from:', envPath);
+        const dotEnvResult = dotenv.config({ path: envPath });
+        if (dotEnvResult.error) {
+            console.error('❌ Error loading .env:', dotEnvResult.error);
+        } else {
+            console.log('✅ Loaded .env keys:', Object.keys(dotEnvResult.parsed || {}).length);
+        }
 
         // Validate environment variables
         const result = ConfigSchema.safeParse(process.env);

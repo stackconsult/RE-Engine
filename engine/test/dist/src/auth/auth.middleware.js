@@ -1,3 +1,4 @@
+// Phase 3 Strict
 /**
  * Authentication Middleware for Web Dashboard
  * JWT token verification and user session management
@@ -39,15 +40,18 @@ export class AuthMiddleware {
                 if (!req.user) {
                     return res.status(401).json({ error: 'Not authenticated' });
                 }
-                const hasPermission = await this.authService.hasPermission(req.user.user.user_id, requiredPermission);
-                if (!hasPermission) {
-                    return res.status(403).json({ error: 'Insufficient permissions' });
+                if (!req.user.permissions.includes(requiredPermission)) {
+                    return res.status(403).json({
+                        error: 'Insufficient permissions',
+                        required: requiredPermission,
+                        current: req.user.permissions
+                    });
                 }
                 next();
             }
             catch (error) {
                 console.error('Authorization error:', error);
-                res.status(403).json({ error: 'Authorization failed' });
+                res.status(500).json({ error: 'Authorization check failed' });
             }
         };
     }
@@ -155,4 +159,5 @@ export class AuthMiddleware {
         await this.authService.close();
     }
 }
+export const authenticateToken = new AuthMiddleware().authenticate();
 //# sourceMappingURL=auth.middleware.js.map

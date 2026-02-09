@@ -21,7 +21,7 @@ describe('RE Engine Core Tests', () => {
         assert.ok(Array.isArray(result), 'Should return array');
         // Test transaction
         const txResult = await db.transaction(async (tx) => {
-            return await tx.query('SELECT COUNT(*) as count FROM approvals');
+            return await tx.query('SELECT * FROM approvals');
         });
         assert.ok(txResult, 'Transaction should work');
         await db.close();

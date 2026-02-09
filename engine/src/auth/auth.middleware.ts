@@ -36,7 +36,7 @@ export class AuthMiddleware {
           return res.status(401).json({ error: 'Invalid or expired token' });
         }
 
-        req.user = authToken;
+        (req as any).user = authToken;
         next();
 
       } catch (error) {
@@ -50,15 +50,15 @@ export class AuthMiddleware {
   authorize(requiredPermission: string) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        if (!req.user) {
+        if (!(req as any).user) {
           return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        if (!req.user.permissions.includes(requiredPermission)) {
+        if (!(req as any).user.permissions.includes(requiredPermission)) {
           return res.status(403).json({
             error: 'Insufficient permissions',
             required: requiredPermission,
-            current: req.user.permissions
+            current: (req as any).user.permissions
           });
         }
 
@@ -110,15 +110,15 @@ export class AuthMiddleware {
   // Get current user info
   async getCurrentUser(req: Request, res: Response) {
     try {
-      if (!req.user) {
+      if (!(req as any).user) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
       res.json({
         success: true,
-        user: req.user.user,
-        permissions: req.user.permissions,
-        expiresAt: req.user.expiresAt
+        user: (req as any).user.user,
+        permissions: (req as any).user.permissions,
+        expiresAt: (req as any).user.expiresAt
       });
 
     } catch (error) {
@@ -130,7 +130,7 @@ export class AuthMiddleware {
   // Change password
   async changePassword(req: Request, res: Response) {
     try {
-      if (!req.user) {
+      if (!(req as any).user) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
@@ -141,7 +141,7 @@ export class AuthMiddleware {
       }
 
       const success = await this.authService.changePassword(
-        req.user.user.user_id,
+        (req as any).user.user.user_id,
         oldPassword,
         newPassword
       );
@@ -177,11 +177,11 @@ export class AuthMiddleware {
   // Generate API key for user
   async generateApiKey(req: Request, res: Response) {
     try {
-      if (!req.user) {
+      if (!(req as any).user) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
 
-      const apiKey = this.authService.generateApiKey(req.user.user.user_id);
+      const apiKey = this.authService.generateApiKey((req as any).user.user.user_id);
 
       res.json({
         success: true,
