@@ -119,7 +119,7 @@ export class REEngineAPIServer extends EventEmitter {
       // CRM webhooks require a fully initialized database
       // They will be mounted by the caller after full server initialization
       this.logger.info('📡 CRM Webhook routes ready to be mounted at /api/webhooks/crm');
-      
+
       // To use CRM webhooks, call REEngineAPIServer.mountCRMWebhooks(dbManager, propertyDb)
       // after initialization is complete
     } catch (error) {
@@ -136,22 +136,39 @@ export class REEngineAPIServer extends EventEmitter {
       const { CRMIntegrationService } = await import('../integrations/crm-integration.service.js');
       const { createCRMWebhookRouter } = await import('./crm-webhooks.js');
       const { PropertyDatabaseService } = await import('../database/property-database.service.js');
-      
+
       const propertyDb = new PropertyDatabaseService(neonPool);
-      
+
       const crmConfig = {
         zillow: { enabled: true, apiKey: process.env.ZILLOW_API_KEY || 'mock-key', syncInterval: 60 },
         realtor: { enabled: true, apiKey: process.env.REALTOR_API_KEY || 'mock-key', syncInterval: 60 },
         mls: { enabled: true, apiKey: process.env.MLS_API_KEY || 'mock-key', provider: 'rapido' as const, endpoint: '', syncInterval: 60 },
         rateLimiting: { requestsPerMinute: 60, burstLimit: 100 }
       };
-      
+
       const crmService = new CRMIntegrationService(crmConfig, dbManager, propertyDb);
       this.app.use('/api/webhooks/crm', createCRMWebhookRouter(crmService));
-      
+
       this.logger.info('✅ CRM Webhook routes mounted successfully');
     } catch (error) {
       this.logger.error('❌ Failed to mount CRM webhooks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mount Voice/Video webhooks with proper dependencies
+   * Call this after database and voice-video service are fully initialized
+   */
+  async mountVoiceVideoWebhooks(voiceVideoService: any): Promise<void> {
+    try {
+      const { createVoiceVideoWebhookRouter } = await import('./voice-video-webhooks.js');
+
+      this.app.use('/api/webhooks', createVoiceVideoWebhookRouter(voiceVideoService));
+
+      this.logger.info('✅ Voice/Video Webhook routes mounted at /api/webhooks/voice and /api/webhooks/video');
+    } catch (error) {
+      this.logger.error('❌ Failed to mount Voice/Video webhooks:', error);
       throw error;
     }
   }

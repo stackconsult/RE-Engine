@@ -547,50 +547,57 @@ export class VoiceVideoMessagingService {
 
   // Private helper methods
   private async initializeVoiceProvider(): Promise<void> {
-    // Initialize voice provider (Twilio, Vonage, etc.)
     this.logger.info(`Initializing voice provider: ${this.config.voice.provider}`);
+    try {
+      if (this.config.voice.provider === 'twilio') {
+        const { default: twilio } = await import('twilio');
+        this.twilioClient = twilio(this.config.voice.apiKey, this.config.voice.apiSecret);
+        this.logger.info('Twilio client initialized for Voice');
+      }
+    } catch (error) {
+      this.logger.error('Failed to initialize Twilio client', error);
+      // Don't throw here to allow service to start even if credentials are bad, 
+      // but individual calls will fail
+    }
   }
 
   private async initializeVideoProvider(): Promise<void> {
-    // Initialize video provider (Twilio, Agora, etc.)
     this.logger.info(`Initializing video provider: ${this.config.video.provider}`);
+    try {
+      if (!this.twilioClient && (this.config.video.provider === 'twilio' || this.config.video.provider === 'agora')) {
+        // Prepare client if not already initialized (Twilio handles both voice/video usually)
+        // If Agora, we'd init Agora SDK here. Assuming Twilio for now as per plan.
+        const { default: twilio } = await import('twilio');
+        this.twilioClient = twilio(this.config.video.apiKey, this.config.video.apiSecret);
+        this.logger.info('Twilio client initialized for Video');
+      }
+    } catch (error) {
+      this.logger.error('Failed to initialize Video provider', error);
+    }
   }
 
   private async sendVoiceViaProvider(phoneNumber: string, recordingUrl: string): Promise<any> {
-    // Send voice message via provider
-    return {
-      messageId: this.generateId(),
-      duration: 28,
-      cost: 0.15,
-    };
-  }
+    if (!this.twilioClient) {
+      throw new Error('Voice provider not initialized');
+    }
 
-  private async transcribeAudio(audioBuffer: Buffer): Promise<{
-    text: string;
-    sentiment: 'positive' | 'neutral' | 'negative';
-    summary: string;
-  }> {
-    // Transcribe audio using AI service
-    return {
-      text: 'Hello, I\'m interested in learning more about the property on Main Street. Is it still available?',
-      sentiment: 'neutral',
-      summary: 'Lead inquiring about property availability',
-    };
-  }
+    try {
+      const call = await this.twilioClient.calls.create({
+        url: recordingUrl, // Twilio usually expects TwiML URL, or we can use a TwiML bin/function that plays this audio
+        to: phoneNumber,
+        from: process.env.TWILIO_PHONE_NUMBER || '+15005550006' // Magic number for testing if not set
+      });
 
-  private async uploadAudioRecording(audioBuffer: Buffer, leadId: string): Promise<string> {
-    // Upload to storage service
-    return `https://storage.example.com/recordings/${leadId}/${Date.now()}.mp3`;
-  }
-
-  private async uploadTranscription(transcription: string, leadId: string): Promise<string> {
-    // Upload transcription to storage
-    return `https://storage.example.com/transcriptions/${leadId}/${Date.now()}.txt`;
-  }
-
-  private async downloadAudioFromProvider(url: string): Promise<Buffer> {
-    // Download audio from provider
-    return Buffer.from('mock audio data');
+      return {
+        messageId: call.sid,
+        duration: 0, // Will be updated via webhook
+        cost: 0, // Will be updated via webhook
+        status: call.status
+      };
+    } catch (error) {
+      this.logger.error('Twilio call creation failed', error);
+      throw error;
+    }
   }
 
   private async createVideoRoom(options: {
@@ -598,41 +605,86 @@ export class VoiceVideoMessagingService {
     scheduledFor?: Date;
     maxParticipants: number;
   }): Promise<{ roomId: string; name: string; url: string }> {
-    // Create video room via provider
+    if (!this.twilioClient) {
+      // Fallback to mock if no client (for dev/testing without creds)
+      this.logger.warn('Video provider not initialized, returning mock room');
+      return {
+        roomId: this.generateId(),
+        name: options.name,
+        url: `https://meet.jit.si/${options.name}` // Use Jitsi as fallback for dev? Or just mock.
+      };
+    }
+
+    try {
+      // Create Twilio Video Room
+      const room = await this.twilioClient.video.v1.rooms.create({
+        uniqueName: options.name,
+        type: 'go', // 'go', 'peer-to-peer', 'group', 'group-small'
+        maxParticipants: options.maxParticipants
+      });
+
+      return {
+        roomId: room.sid,
+        name: room.uniqueName,
+        url: room.url || `https://video.twilio.com/rooms/${room.uniqueName}` // URL to join? Usually requires token generation
+      };
+    } catch (error) {
+      this.logger.error('Twilio video room creation failed', error);
+      throw error;
+    }
+  }
+
+  // ... (keeping other helper methods like upload/transcribe as placeholders requires external storage/AI services which we might not have yet)
+  private async uploadAudioRecording(audioBuffer: Buffer, leadId: string): Promise<string> {
+    // In a real app, upload to S3. For now, return a placeholder or local path.
+    return `https://api.re-engine.com/recordings/${leadId}/${Date.now()}.mp3`;
+  }
+
+  private async transcribeAudio(audioBuffer: Buffer): Promise<{
+    text: string;
+    sentiment: 'positive' | 'neutral' | 'negative';
+    summary: string;
+  }> {
+    // Mock transcription for now
     return {
-      roomId: this.generateId(),
-      name: options.name,
-      url: `https://video.example.com/room/${this.generateId()}`,
+      text: 'Voice message transcription pending integration.',
+      sentiment: 'neutral',
+      summary: 'Voice message received.'
     };
   }
 
+  private async uploadTranscription(transcription: string, leadId: string): Promise<string> {
+    return `https://api.re-engine.com/transcriptions/${leadId}/${Date.now()}.txt`;
+  }
+
+  private async downloadAudioFromProvider(url: string): Promise<Buffer> {
+    return Buffer.from(''); // Placeholder
+  }
+
   private async getVideoRecording(callId: string): Promise<string> {
-    // Get video recording from provider
-    return `https://storage.example.com/recordings/${callId}.mp4`;
+    return `https://api.re-engine.com/recordings/video/${callId}.mp4`;
   }
 
   private async storeVoiceMessage(message: VoiceMessage): Promise<void> {
-    // Store in database
     this.logger.info('Storing voice message', { messageId: message.id });
+    // TODO: Implement actual DB insert using dbManager
   }
 
   private async storeVideoCall(call: VideoCall): Promise<void> {
-    // Store in database
     this.logger.info('Storing video call', { callId: call.id });
+    // TODO: Implement actual DB insert using dbManager
   }
 
   private async updateVideoCall(call: VideoCall): Promise<void> {
-    // Update in database
     this.logger.info('Updating video call', { callId: call.id });
+    // TODO: Implement actual DB update using dbManager
   }
 
   private async getVideoCall(callId: string): Promise<VideoCall | null> {
-    // Get from database
-    return null; // Placeholder
+    return null;
   }
 
   private async createVoiceApproval(message: VoiceMessage, tenantId: string): Promise<void> {
-    // Create approval for voice message review
     await this.dbManager.createApproval({
       lead_id: message.leadId,
       type: 'message',
@@ -650,13 +702,15 @@ export class VoiceVideoMessagingService {
   }
 
   private async sendVideoCallNotifications(call: VideoCall): Promise<void> {
-    // Send notifications to participants
     this.logger.info('Sending video call notifications', { callId: call.id });
   }
 
   private generateId(): string {
     return `vv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  // Client property for Twilio
+  private twilioClient: any;
 
   // Cleanup
   cleanup(): void {
