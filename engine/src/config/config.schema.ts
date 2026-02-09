@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const ConfigSchema = z.object({
     // Server Configuration
-    NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+    NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
     PORT: z.coerce.number().default(3000),
     HOST: z.string().default('localhost'),
     ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
@@ -54,6 +54,10 @@ export const ConfigSchema = z.object({
     LLAMA_API_KEY: z.string().default('dev-key'),
     CORE_API_KEY: z.string().default('dev-key'),
     OUTREACH_API_KEY: z.string().default('dev-key'),
+
+    // Billing & Monetization
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
     // Network Security Configuration
     API_IP_WHITELIST: z.string().optional(),

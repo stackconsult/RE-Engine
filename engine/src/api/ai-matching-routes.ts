@@ -7,6 +7,8 @@ import { Router, Request, Response } from 'express';
 import { EmbeddingService, LeadPreferencesForEmbedding } from '../ai/embedding.service.js';
 import { PropertyDatabaseService } from '../database/property-database.service.js';
 import { Logger } from '../utils/logger.js';
+import { authenticateToken } from '../auth/auth.middleware.js';
+import { checkBalance, deductCost } from '../middleware/usage-tracker.js';
 
 const logger = new Logger('AIMatchingRoutes', true);
 
@@ -20,80 +22,90 @@ export function createAIMatchingRouter(
      * POST /api/ai/match-properties
      * Find semantically similar properties based on lead preferences
      */
-    router.post('/match-properties', async (req: Request, res: Response) => {
-        try {
-            const { tenantId, preferences, limit = 10, minSimilarity = 0.5 } = req.body;
+    router.post('/match-properties',
+        authenticateToken,
+        checkBalance(5),
+        deductCost(5, 'AI Property Matching'),
+        async (req: Request, res: Response) => {
+            try {
+                const { preferences, limit = 10, minSimilarity = 0.5 } = req.body;
+                // Use authenticated tenant ID
+                const tenantId = (req as any).user?.tenant_id;
 
-            if (!tenantId) {
-                return res.status(400).json({ error: 'tenantId is required' });
-            }
+                if (!tenantId) {
+                    return res.status(401).json({ error: 'Unauthorized: No tenant context' });
+                }
 
-            if (!preferences) {
-                return res.status(400).json({ error: 'preferences object is required' });
-            }
+                if (!preferences) {
+                    return res.status(400).json({ error: 'preferences object is required' });
+                }
 
-            // Generate embedding from lead preferences
-            const preferenceEmbedding = await embeddingService.generateLeadPreferenceEmbedding(
-                preferences as LeadPreferencesForEmbedding
-            );
+                // Generate embedding from lead preferences
+                const preferenceEmbedding = await embeddingService.generateLeadPreferenceEmbedding(
+                    preferences as LeadPreferencesForEmbedding
+                );
 
-            if (!preferenceEmbedding) {
-                return res.status(503).json({
-                    error: 'Embedding service unavailable',
-                    message: 'OpenAI API key may be missing or invalid'
+                if (!preferenceEmbedding) {
+                    return res.status(503).json({
+                        error: 'Embedding service unavailable',
+                        message: 'OpenAI API key may be missing or invalid'
+                    });
+                }
+
+                // Search properties by vector similarity
+                const matches = await propertyDb.searchByVectorSimilarity(
+                    preferenceEmbedding,
+                    tenantId,
+                    { limit, minSimilarity, listingStatus: 'active' }
+                );
+
+                logger.info(`Found ${matches.length} property matches for tenant ${tenantId}`);
+
+                res.json({
+                    success: true,
+                    matches,
+                    total: matches.length,
+                    embeddingDimensions: preferenceEmbedding.length,
                 });
+            } catch (error) {
+                logger.error('Failed to match properties', error);
+                res.status(500).json({ error: 'Failed to match properties' });
             }
-
-            // Search properties by vector similarity
-            const matches = await propertyDb.searchByVectorSimilarity(
-                preferenceEmbedding,
-                tenantId,
-                { limit, minSimilarity, listingStatus: 'active' }
-            );
-
-            logger.info(`Found ${matches.length} property matches for tenant ${tenantId}`);
-
-            res.json({
-                success: true,
-                matches,
-                total: matches.length,
-                embeddingDimensions: preferenceEmbedding.length,
-            });
-        } catch (error) {
-            logger.error('Failed to match properties', error);
-            res.status(500).json({ error: 'Failed to match properties' });
-        }
-    });
+        });
 
     /**
      * POST /api/ai/generate-embedding
      * Generate embedding for arbitrary text (utility endpoint)
      */
-    router.post('/generate-embedding', async (req: Request, res: Response) => {
-        try {
-            const { text } = req.body;
+    router.post('/generate-embedding',
+        authenticateToken,
+        checkBalance(1),
+        deductCost(1, 'Generate Embedding'),
+        async (req: Request, res: Response) => {
+            try {
+                const { text } = req.body;
 
-            if (!text || typeof text !== 'string') {
-                return res.status(400).json({ error: 'text is required' });
+                if (!text || typeof text !== 'string') {
+                    return res.status(400).json({ error: 'text is required' });
+                }
+
+                const embedding = await embeddingService.generateEmbedding(text);
+
+                if (!embedding) {
+                    return res.status(503).json({ error: 'Embedding service unavailable' });
+                }
+
+                res.json({
+                    success: true,
+                    embedding,
+                    dimensions: embedding.length,
+                    textLength: text.length,
+                });
+            } catch (error) {
+                logger.error('Failed to generate embedding', error);
+                res.status(500).json({ error: 'Failed to generate embedding' });
             }
-
-            const embedding = await embeddingService.generateEmbedding(text);
-
-            if (!embedding) {
-                return res.status(503).json({ error: 'Embedding service unavailable' });
-            }
-
-            res.json({
-                success: true,
-                embedding,
-                dimensions: embedding.length,
-                textLength: text.length,
-            });
-        } catch (error) {
-            logger.error('Failed to generate embedding', error);
-            res.status(500).json({ error: 'Failed to generate embedding' });
-        }
-    });
+        });
 
     /**
      * GET /api/ai/property/:propertyId/similar

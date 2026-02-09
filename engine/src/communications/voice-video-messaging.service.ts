@@ -4,8 +4,9 @@
  * Multi-modal communication capabilities
  */
 
-import { Logger } from '../utils/logger';
-import { UnifiedDatabaseManager } from '../database/unified-database-manager';
+import { Logger } from '../utils/logger.js';
+import { UnifiedDatabaseManager } from '../database/unified-database-manager.js';
+import { BalanceService } from '../billing/balance.service.js';
 
 export interface VoiceVideoConfig {
   voice: {
@@ -122,11 +123,13 @@ export class VoiceVideoMessagingService {
   private logger: Logger;
   private config: VoiceVideoConfig;
   private dbManager: UnifiedDatabaseManager;
+  private balanceService: BalanceService;
   private activeCalls: Map<string, VideoCall> = new Map();
 
-  constructor(config: VoiceVideoConfig, dbManager: UnifiedDatabaseManager) {
+  constructor(config: VoiceVideoConfig, dbManager: UnifiedDatabaseManager, balanceService: BalanceService) {
     this.config = config;
     this.dbManager = dbManager;
+    this.balanceService = balanceService;
     this.logger = new Logger('VoiceVideoMessaging', true);
   }
 
@@ -154,6 +157,13 @@ export class VoiceVideoMessagingService {
   async sendVoiceMessage(leadId: string, agentId: string, audioBuffer: Buffer, phoneNumber: string, tenantId: string): Promise<VoiceMessage> {
     try {
       this.logger.info('Sending voice message', { leadId, agentId, phoneNumber });
+
+      // Check balance (2 credits for voice message)
+      const cost = 2;
+      const hasBalance = await this.balanceService.checkBalance(tenantId, cost);
+      if (!hasBalance) {
+        throw new Error('Insufficient balance for voice message');
+      }
 
       // Upload audio to storage
       const recordingUrl = await this.uploadAudioRecording(audioBuffer, leadId);
@@ -213,6 +223,10 @@ export class VoiceVideoMessagingService {
       }, tenantId);
 
       this.logger.info('Voice message sent successfully', { messageId: voiceMessage.id });
+
+      // Deduct credits
+      await this.balanceService.deductCredits(tenantId, cost, `Voice message to ${phoneNumber}`);
+
       return voiceMessage;
     } catch (error) {
       this.logger.error('Failed to send voice message', error);
@@ -294,6 +308,13 @@ export class VoiceVideoMessagingService {
     try {
       this.logger.info('Scheduling video call', { leadId, agentId, scheduledFor });
 
+      // Check balance (5 credits for video call scheduling)
+      const cost = 5;
+      const hasBalance = await this.balanceService.checkBalance(tenantId, cost);
+      if (!hasBalance) {
+        throw new Error('Insufficient balance to schedule video call');
+      }
+
       // Create video room
       const room = await this.createVideoRoom({
         name: `re-engine-${leadId}-${Date.now()}`,
@@ -345,6 +366,10 @@ export class VoiceVideoMessagingService {
       await this.sendVideoCallNotifications(videoCall);
 
       this.logger.info('Video call scheduled successfully', { callId: videoCall.id });
+
+      // Deduct credits
+      await this.balanceService.deductCredits(tenantId, cost, `Scheduled video call with ${participants.length} participants`);
+
       return videoCall;
     } catch (error) {
       this.logger.error('Failed to schedule video call', error);
@@ -355,6 +380,13 @@ export class VoiceVideoMessagingService {
   async startInstantVideoCall(leadId: string, agentId: string, tenantId: string): Promise<VideoCall> {
     try {
       this.logger.info('Starting instant video call', { leadId, agentId });
+
+      // Check balance (5 credits for instant video call)
+      const cost = 5;
+      const hasBalance = await this.balanceService.checkBalance(tenantId, cost);
+      if (!hasBalance) {
+        throw new Error('Insufficient balance for instant video call');
+      }
 
       // Create immediate video room
       const room = await this.createVideoRoom({
@@ -406,6 +438,10 @@ export class VoiceVideoMessagingService {
       }, tenantId);
 
       this.logger.info('Instant video call started', { callId: videoCall.id });
+
+      // Deduct credits
+      await this.balanceService.deductCredits(tenantId, cost, `Instant video call with lead ${leadId}`);
+
       return videoCall;
     } catch (error) {
       this.logger.error('Failed to start instant video call', error);

@@ -13,6 +13,7 @@ import { EventEmitter } from 'events';
 import { WorkflowService, WorkflowTemplateService, workflowTemplateService } from '../services/workflow-service';
 import { MasterOrchestrator } from '../orchestration/master-orchestrator';
 import { createWorkflowAPIRouter, createTemplateAPIRouter } from './workflow-api';
+import billingRoutes from './routes/billing.routes.js';
 import { Logger } from '../utils/logger';
 import { ConfigService } from '../config/config.service.js';
 
@@ -320,7 +321,12 @@ export class REEngineAPIServer extends EventEmitter {
     }
 
     // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.json({
+      limit: '10mb',
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      }
+    }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // Request logging
@@ -390,6 +396,9 @@ export class REEngineAPIServer extends EventEmitter {
     // Template API routes
     const templateRouter = createTemplateAPIRouter();
     this.app.use('/api/templates', templateRouter);
+
+    // Billing routes
+    this.app.use('/api/billing', billingRoutes);
 
     // CRM Webhook routes are initialized in initializeCRMWebhooks() called from initialize()
 
