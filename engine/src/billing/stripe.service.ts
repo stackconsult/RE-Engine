@@ -1,21 +1,39 @@
-import Stripe from 'stripe';
 import { Logger } from '../utils/logger.js';
 import { ConfigService } from '../config/config.service.js';
+
+// Stripe types - dynamically loaded
+type Stripe = any;
 
 export class StripeService {
     private stripe: Stripe | null = null;
     private logger: Logger;
     private webhookSecret: string | undefined;
+    private initialized = false;
 
     constructor() {
         this.logger = new Logger('StripeService');
+    }
+
+    async initialize(): Promise<void> {
+        if (this.initialized) return;
+
         try {
-            const config = ConfigService.getInstance().getConfig();
+            // Dynamic import to handle missing stripe package gracefully
+            // @ts-ignore - stripe may not be installed
+            const StripeModule = await import('stripe').catch(() => null);
+
+            if (!StripeModule) {
+                this.logger.warn('Stripe package not installed. Payment features disabled.');
+                this.initialized = true;
+                return;
+            }
+
+            const config = ConfigService.getInstance().getAll();
 
             if (config.STRIPE_SECRET_KEY) {
+                const Stripe = StripeModule.default;
                 this.stripe = new Stripe(config.STRIPE_SECRET_KEY, {
-                    // Using a recent API version compatible with v17+
-                    apiVersion: '2024-12-18.acacia',
+                    apiVersion: '2024-12-18.acacia' as any,
                     typescript: true,
                 });
                 this.webhookSecret = config.STRIPE_WEBHOOK_SECRET;
@@ -26,13 +44,15 @@ export class StripeService {
         } catch (error) {
             this.logger.error('Failed to initialize Stripe service', error instanceof Error ? error : new Error(String(error)));
         }
+
+        this.initialized = true;
     }
 
     get isConfigured(): boolean {
         return !!this.stripe;
     }
 
-    async createPaymentIntent(amount: number, currency: string, tenantId: string, metadata: Record<string, string> = {}): Promise<Stripe.PaymentIntent> {
+    async createPaymentIntent(amount: number, currency: string, tenantId: string, metadata: Record<string, string> = {}): Promise<any> {
         if (!this.stripe) {
             throw new Error('Stripe service is not configured');
         }
@@ -61,7 +81,7 @@ export class StripeService {
         }
     }
 
-    constructEvent(payload: string | Buffer, signature: string): Stripe.Event {
+    constructEvent(payload: string | Buffer, signature: string): any {
         if (!this.stripe) {
             throw new Error('Stripe service is not configured');
         }

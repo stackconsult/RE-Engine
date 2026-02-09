@@ -1,16 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { BalanceService } from '../billing/balance.service.js';
-
-// Assuming global augmentation handled elsewhere, but defining interface for clarity here
-interface AuthenticatedRequest extends Request {
-    user?: {
-        id: string;
-        tenant_id: string;
-        email?: string;
-        role?: string;
-        [key: string]: any;
-    };
-}
+import { AuthToken } from '../auth/auth.service.js';
 
 const balanceService = new BalanceService();
 
@@ -21,15 +11,16 @@ const balanceService = new BalanceService();
 export const checkBalance = (minimumAmount: number = 0) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const authReq = req as AuthenticatedRequest;
+            // Access user from global Express augmentation
+            const user = (req as any).user as AuthToken | undefined;
 
             // Skip check if no tenant context (auth middleware should handle 401)
-            // Or maybe this route is public? But public routes usually don't cost money.
-            if (!authReq.user || !authReq.user.tenant_id) {
+            if (!user || !user.user?.tenant_id) {
                 return next();
             }
 
-            const hasFunds = await balanceService.checkBalance(authReq.user.tenant_id, minimumAmount);
+            const tenantId = user.user.tenant_id;
+            const hasFunds = await balanceService.checkBalance(tenantId, minimumAmount);
 
             if (!hasFunds) {
                 res.status(402).json({
@@ -54,8 +45,8 @@ export const checkBalance = (minimumAmount: number = 0) => {
  */
 export const deductCost = (amount: number, description: string) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-        const authReq = req as AuthenticatedRequest;
-        const tenantId = authReq.user?.tenant_id;
+        const user = (req as any).user as AuthToken | undefined;
+        const tenantId = user?.user?.tenant_id;
 
         if (!tenantId) return next();
 
@@ -63,7 +54,7 @@ export const deductCost = (amount: number, description: string) => {
         res.on('finish', async () => {
             if (res.statusCode >= 200 && res.statusCode < 300) {
                 try {
-                    await balanceService.deductCredits(tenantId!, amount, description);
+                    await balanceService.deductCredits(tenantId, amount, description);
                 } catch (error) {
                     console.error(`CRITICAL: Failed to deduct ${amount} credits for tenant ${tenantId}`, error);
                     // TODO: Report to Sentry/Alerting system
