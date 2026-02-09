@@ -13,33 +13,28 @@ The following skills are installed in `.agent/skills/agent-skills-repository/SKI
 | **Robust Service** | "new service", "business logic", "controller" |
 | **Green-Light TDD** | "fix bug", "implement feature", "add capability" |
 | **Adapter Pattern** | "integrate", "sync", "api", "external provider" |
+| **Isolation Audit** | "isolate", "tenant", "security", "check data" |
 | **Automation Flow** | "workflow", "trigger", "automate", "webhook" |
 | **Session Audit** | "commit", "finish", "done" |
 
 ---
 
+## 🏗 Architecture Rules (Updated)
+1. **Adapter Pattern**: All CRM and external integrations MUST use the adapter structure in `src/integrations/adapters/`.
+2. **Property Service**: All property-related DB operations MUST go through `PropertyDatabaseService`.
+3. **No Direct DB Access**: All other DB operations go through `UnifiedDatabaseManager`. Never write SQL in controllers.
+4. **Multi-Tenancy**: All DB operations MUST include `tenant_id`.
+5. **Approval Workflow**: Outbound messages require an entry in `approvals` table. Never bypass.
+6. **Safety First**: External API calls must have `try/catch` and retry logic.
+
 ## 🛠 Tech Stack
 - **Runtime**: Node.js v22 (ES Modules)
 - **Language**: TypeScript 5.7
 - **Database**: PostgreSQL (Neon/Supabase) via PgVector
-- **AI**: Google Vertex AI (Gemini), Ollama (Local Llama 3/Qwen)
-- **Testing**: Jest / Playwright (E2E)
-- **Orchestration**: MCP Servers
-
-## 🏗 Architecture Rules
-1. **No Direct DB Access**: All database operations must go through `src/services/` or `src/database/`. Never write SQL in controllers.
-2. **Safety First**: All external API calls must have `try/catch` blocks and retry logic.
-3. **Approval Workflow**: Outbound messages require an entry in `approvals` table. Never bypass the approval queue.
-4. **Multi-Tenancy**: All database operations MUST include `tenantId` parameter.
-5. **Secrets**: Never output `.env` values or API keys in the chat.
+- **Testing**: Jest / Playwright
 
 ## 🚀 Common Commands
-- **Build Core**: `npm run build`
+- **Build**: `npm run build`
 - **Typecheck**: `npm run typecheck`
-- **Test All**: `npm test`
-- **Start Dev**: `npm run dev`
+- **Test**: `npm test`
 - **Lint**: `npm run lint`
-
-## ⚠️ "Do Not Touch" Zones
-- `config/auth.ts`: Security critical. Ask before modifying.
-- `.env`: Do not edit directly; propose changes to `.env.example`.

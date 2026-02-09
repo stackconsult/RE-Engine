@@ -101,8 +101,57 @@ export class REEngineAPIServer extends EventEmitter {
       this.logger.info('✅ RE Engine API Server initialized successfully');
       this.emit('initialized');
 
+      // Initialize CRM webhooks after main server is ready
+      await this.initializeCRMWebhooks();
+
     } catch (error) {
       this.logger.error('❌ Failed to initialize server:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize CRM Webhook endpoints
+   * Note: This is a placeholder for future CRM integration
+   */
+  private async initializeCRMWebhooks(): Promise<void> {
+    try {
+      // CRM webhooks require a fully initialized database
+      // They will be mounted by the caller after full server initialization
+      this.logger.info('📡 CRM Webhook routes ready to be mounted at /api/webhooks/crm');
+      
+      // To use CRM webhooks, call REEngineAPIServer.mountCRMWebhooks(dbManager, propertyDb)
+      // after initialization is complete
+    } catch (error) {
+      this.logger.warn('⚠️ CRM Webhooks could not be initialized:', error);
+    }
+  }
+
+  /**
+   * Mount CRM webhooks with proper dependencies
+   * Call this after database is fully initialized
+   */
+  async mountCRMWebhooks(dbManager: any, neonPool: any): Promise<void> {
+    try {
+      const { CRMIntegrationService } = await import('../integrations/crm-integration.service.js');
+      const { createCRMWebhookRouter } = await import('./crm-webhooks.js');
+      const { PropertyDatabaseService } = await import('../database/property-database.service.js');
+      
+      const propertyDb = new PropertyDatabaseService(neonPool);
+      
+      const crmConfig = {
+        zillow: { enabled: true, apiKey: process.env.ZILLOW_API_KEY || 'mock-key', syncInterval: 60 },
+        realtor: { enabled: true, apiKey: process.env.REALTOR_API_KEY || 'mock-key', syncInterval: 60 },
+        mls: { enabled: true, apiKey: process.env.MLS_API_KEY || 'mock-key', provider: 'rapido' as const, endpoint: '', syncInterval: 60 },
+        rateLimiting: { requestsPerMinute: 60, burstLimit: 100 }
+      };
+      
+      const crmService = new CRMIntegrationService(crmConfig, dbManager, propertyDb);
+      this.app.use('/api/webhooks/crm', createCRMWebhookRouter(crmService));
+      
+      this.logger.info('✅ CRM Webhook routes mounted successfully');
+    } catch (error) {
+      this.logger.error('❌ Failed to mount CRM webhooks:', error);
       throw error;
     }
   }
@@ -307,6 +356,8 @@ export class REEngineAPIServer extends EventEmitter {
     // Template API routes
     const templateRouter = createTemplateAPIRouter();
     this.app.use('/api/templates', templateRouter);
+
+    // CRM Webhook routes are initialized in initializeCRMWebhooks() called from initialize()
 
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {

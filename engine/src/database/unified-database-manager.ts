@@ -289,6 +289,15 @@ export class UnifiedDatabaseManager {
     }
   }
 
+  async listTenants(): Promise<any[]> {
+    this.ensureInitialized();
+    if (this.config.dbType === 'postgresql') {
+      return await this.neon.listTenants();
+    }
+    // Fallback for CSV or testing
+    return [{ id: 'default', slug: 'default', name: 'Default Tenant' }];
+  }
+
   // Approval operations
   async createApproval(approval: any, tenantId: string): Promise<string> {
     this.ensureInitialized();

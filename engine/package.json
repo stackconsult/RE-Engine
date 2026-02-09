@@ -33,6 +33,7 @@
     "@types/express": "^5.0.6",
     "@vercel/node": "^5.5.30",
     "amqplib": "^0.10.3",
+    "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "bull": "^4.12.2",
     "compression": "^1.8.1",

@@ -185,6 +185,17 @@ export class NeonIntegrationService {
         tenant_id UUID NOT NULL
       );
 
+      -- Tenants table
+      CREATE TABLE IF NOT EXISTS tenants (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(200) NOT NULL,
+        slug VARCHAR(100) UNIQUE NOT NULL,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        metadata JSONB DEFAULT '{}'
+      );
+
       -- ICP Profiles table
       CREATE TABLE IF NOT EXISTS icp_profiles (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -593,6 +604,12 @@ export class NeonIntegrationService {
     const query = 'SELECT * FROM agents WHERE email = $1 AND tenant_id = $2';
     const result = await this.pool.query(query, [email, tenantId]);
     return result.rows[0] || null;
+  }
+
+  async listTenants(): Promise<any[]> {
+    const query = 'SELECT * FROM tenants WHERE status = $1';
+    const result = await this.pool.query(query, ['active']);
+    return result.rows;
   }
 
   async updateAgentMetrics(id: string, activeLeads: number, conversionRate: number, tenantId: string): Promise<boolean> {
