@@ -452,4 +452,207 @@ export class PropertyDatabaseService {
             updated_at: row.updated_at,
         };
     }
+
+    // ========================================
+    // PGVECTOR SEMANTIC SEARCH METHODS
+    // ========================================
+
+    /**
+     * Update property embedding for semantic search
+     */
+    async updatePropertyEmbedding(
+        propertyId: string,
+        embedding: number[],
+        tenantId: string
+    ): Promise<void> {
+        const client = await this.pool.connect();
+        try {
+            const embeddingStr = `[${embedding.join(',')}]`;
+            const query = `
+                UPDATE properties
+                SET embedding = $1::vector
+                WHERE property_id = $2 AND tenant_id = $3
+            `;
+
+            await client.query(query, [embeddingStr, propertyId, tenantId]);
+
+            this.logger.info(`Updated embedding for property ${propertyId}`, {
+                tenant_id: tenantId,
+                dimensions: embedding.length,
+            });
+        } catch (error) {
+            this.logger.error('Failed to update property embedding', error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Search properties by vector similarity (cosine distance)
+     * Returns properties ordered by similarity to the input embedding
+     */
+    async searchByVectorSimilarity(
+        embedding: number[],
+        tenantId: string,
+        options: {
+            limit?: number;
+            minSimilarity?: number;
+            listingStatus?: string;
+        } = {}
+    ): Promise<Array<PropertyData & { similarity: number }>> {
+        const client = await this.pool.connect();
+        try {
+            const { limit = 10, minSimilarity = 0.5, listingStatus } = options;
+            const embeddingStr = `[${embedding.join(',')}]`;
+
+            let query = `
+                SELECT *,
+                    1 - (embedding <=> $1::vector) AS similarity
+                FROM properties
+                WHERE tenant_id = $2
+                    AND embedding IS NOT NULL
+            `;
+            const values: any[] = [embeddingStr, tenantId];
+            let paramIndex = 3;
+
+            if (listingStatus) {
+                query += ` AND listing_status = $${paramIndex}`;
+                values.push(listingStatus);
+                paramIndex++;
+            }
+
+            query += `
+                    AND 1 - (embedding <=> $1::vector) >= ${minSimilarity}
+                ORDER BY similarity DESC
+                LIMIT $${paramIndex}
+            `;
+            values.push(limit);
+
+            const result = await client.query(query, values);
+
+            return result.rows.map(row => ({
+                ...this.mapRowToProperty(row),
+                similarity: parseFloat(row.similarity),
+            }));
+        } catch (error) {
+            this.logger.error('Failed to search by vector similarity', error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Find similar properties to a given property
+     */
+    async findSimilarProperties(
+        propertyId: string,
+        tenantId: string,
+        limit: number = 5
+    ): Promise<Array<PropertyData & { similarity: number }>> {
+        const client = await this.pool.connect();
+        try {
+            // First get the source property's embedding
+            const source = await client.query(
+                'SELECT embedding FROM properties WHERE property_id = $1 AND tenant_id = $2',
+                [propertyId, tenantId]
+            );
+
+            if (source.rows.length === 0 || !source.rows[0].embedding) {
+                return [];
+            }
+
+            // Find similar properties (excluding the source)
+            const query = `
+                SELECT *,
+                    1 - (embedding <=> $1::vector) AS similarity
+                FROM properties
+                WHERE tenant_id = $2
+                    AND property_id != $3
+                    AND embedding IS NOT NULL
+                ORDER BY embedding <=> $1::vector
+                LIMIT $4
+            `;
+
+            const result = await client.query(query, [
+                source.rows[0].embedding,
+                tenantId,
+                propertyId,
+                limit,
+            ]);
+
+            return result.rows.map(row => ({
+                ...this.mapRowToProperty(row),
+                similarity: parseFloat(row.similarity),
+            }));
+        } catch (error) {
+            this.logger.error('Failed to find similar properties', error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Get properties without embeddings (for batch processing)
+     */
+    async getPropertiesWithoutEmbeddings(
+        tenantId: string,
+        limit: number = 100
+    ): Promise<PropertyData[]> {
+        const client = await this.pool.connect();
+        try {
+            const query = `
+                SELECT * FROM properties
+                WHERE tenant_id = $1
+                    AND embedding IS NULL
+                    AND description IS NOT NULL
+                ORDER BY created_at DESC
+                LIMIT $2
+            `;
+
+            const result = await client.query(query, [tenantId, limit]);
+            return result.rows.map(row => this.mapRowToProperty(row));
+        } catch (error) {
+            this.logger.error('Failed to get properties without embeddings', error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Check if pgvector extension is enabled
+     */
+    async isPgvectorEnabled(): Promise<boolean> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                "SELECT 1 FROM pg_extension WHERE extname = 'vector'"
+            );
+            return result.rows.length > 0;
+        } catch (error) {
+            return false;
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Enable pgvector extension (requires superuser)
+     */
+    async enablePgvector(): Promise<boolean> {
+        const client = await this.pool.connect();
+        try {
+            await client.query('CREATE EXTENSION IF NOT EXISTS vector');
+            this.logger.info('pgvector extension enabled');
+            return true;
+        } catch (error) {
+            this.logger.error('Failed to enable pgvector extension', error instanceof Error ? error : new Error(String(error)));
+            return false;
+        } finally {
+            client.release();
+        }
+    }
 }

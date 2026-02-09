@@ -174,6 +174,23 @@ export class REEngineAPIServer extends EventEmitter {
   }
 
   /**
+   * Mount AI Matching routes with proper dependencies
+   * Call this after database is fully initialized
+   */
+  async mountAIMatchingRoutes(embeddingService: any, propertyDb: any): Promise<void> {
+    try {
+      const { createAIMatchingRouter } = await import('./ai-matching-routes.js');
+
+      this.app.use('/api/ai', createAIMatchingRouter(embeddingService, propertyDb));
+
+      this.logger.info('✅ AI Matching routes mounted at /api/ai');
+    } catch (error) {
+      this.logger.error('❌ Failed to mount AI Matching routes:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Start the server
    */
   async start(): Promise<void> {
